@@ -186,7 +186,7 @@ hotkey.bind({"alt"}, "q", function()
 	-- get the active app
 	frontApp = application:frontmostApplication()
 	fnutils.concat( mod.choices, scriptsModule.loadAppScripts(frontApp) )
-	fnutils.concat( mod.choices, mod.fetchMenuItems() )
+	-- fnutils.concat( mod.choices, mod.fetchMenuItems() )
 	mod.barboyChooser:show()
 end)
 
