@@ -7,8 +7,8 @@ m.id = 'com.apple.Preview'
 m.thisApp = nil
 m.modal = hotkey.modal.new()
 
-local uiPane1 = {{'AXWindow', 1}, {'AXSplitGroup', 1}, {'AXScrollArea', 1}} --, {'AXList', 1}}
-local uiPane2 = {{'AXWindow', 1}, {'AXSplitGroup', 1}, {'AXScrollArea', 2}} --, {'AXGroup', 1}}
+local uiPane1 = {{'AXWindow', 1}, {'AXSplitGroup', 1}, {'AXScrollArea', 1}, {'AXList', 1}}
+local uiPane2 = {{'AXWindow', 1}, {'AXSplitGroup', 1}, {'AXScrollArea', 2}, {'AXGroup', 1}}
 
 local function pane1()
   ui.getUIElement(m.thisApp, uiPane1):setAttributeValue('AXFocused', true)

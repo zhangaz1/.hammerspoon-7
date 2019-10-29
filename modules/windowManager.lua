@@ -1,18 +1,42 @@
 local hsgrid = require("hs.grid")
 local hswindow = require("hs.window")
 local hsgeometry = require("hs.geometry")
-local hshotkey = require("hs.hotkey")
+local hotkey = require("hs.hotkey")
 local drawing = require("hs.drawing")
 local screen = require("hs.screen")
 
-local hyper = {'cmd', 'alt', 'ctrl', 'shift'}
+local obj = {}
 
 hsgrid.setMargins(hsgeometry.point({0, 0}))
 hsgrid.setGrid('2x2')
 
-local obj = {}
+local hyper = {'cmd', 'alt', 'ctrl', 'shift'}
 
-local possibleCells = {
+obj.windowManagerModal = hotkey.modal.new()
+    :bind(hyper, "w", function() obj.destroyModal() end)
+    :bind({}, "return", function() obj.destroyModal() end)
+    :bind({}, "escape", function() obj.destroyModal() end)
+    :bind({}, "up", function() obj.move('up') end, nil, function() obj.move('up') end)
+    :bind({}, "down", function() obj.move('down') end, nil, function() obj.move('down') end)
+    :bind({}, "right", function() obj.move('right') end, nil, function() obj.move('right') end)
+    :bind({}, "left", function() obj.move('left') end, nil, function() obj.move('left') end)
+    :bind({"cmd"}, "right", function() obj.resize("growToRight") end, nil, function() obj.resize("growToRight") end)
+    :bind({"cmd"}, "down", function() obj.resize("growToBottom") end, nil, function() obj.resize("growToBottom") end)
+    :bind({"shift", "cmd"}, "left", function() obj.resize("shrinkFromRight") end, nil, function() obj.resize("shrinkFromRight") end)
+    :bind({"shift", "cmd"}, "up", function() obj.resize("shrinkFromBottom") end, nil, function() obj.resize("shrinkFromBottom") end)
+
+hotkey.bind(hyper, "Up", function() obj.pushToGrid('Up') end)
+hotkey.bind(hyper, "Down", function() obj.pushToGrid('Down') end)
+hotkey.bind(hyper, "Right", function() obj.pushToGrid('Right') end)
+hotkey.bind(hyper, "Left", function() obj.pushToGrid('Left') end)
+hotkey.bind(hyper, "Return", function() obj.maximize() end)
+hotkey.bind(hyper, "C", function() obj.center() end)
+
+hotkey.bind(hyper, "w", function()
+    obj.enterModal()
+end)
+
+obj.possibleCells = {
     {id = 'q1', rect = {0.0, 0.0, 1, 1}, onLeft = 'leftHalf', onRight = 'q2', onUp = 'upperHalf', onDown = 'q4'},
     {id = 'q2', rect = {1.0, 0.0, 1, 1}, onLeft = 'q1', onRight = 'rightHalf', onUp = 'upperHalf', onDown = 'q3'},
     {id = 'q3', rect = {1.0, 1.0, 1, 1}, onLeft = 'q4', onRight = 'rightHalf', onUp = 'q2', onDown = 'lowerHalf' },
@@ -24,9 +48,9 @@ local possibleCells = {
     {id = 'fullScreen', rect = {0.0, 0.0, 2.0, 2.0}, onLeft = 'leftHalf', onRight = 'rightHalf', onUp = 'upperHalf', onDown = 'lowerHalf' },
 }
 
-local function getCellIdByWindowSize(frontWindow)
+obj.getCellIdByWindowSize = function(frontWindow)
     local cellSize = hsgrid.get(frontWindow)
-    for _, v in pairs(possibleCells) do
+    for _, v in pairs(obj.possibleCells) do
         if hsgeometry.new(v.rect) == cellSize then
             return v
         end
@@ -34,8 +58,8 @@ local function getCellIdByWindowSize(frontWindow)
     return nil
 end
 
-local function setWindowSizeByCellId(frontWindow, cellType)
-    for _, v in pairs(possibleCells) do
+obj.setWindowSizeByCellId = function(frontWindow, cellType)
+    for _, v in pairs(obj.possibleCells) do
         if v.id == cellType then
             return hsgrid.set(frontWindow, v.rect)
         end
@@ -43,51 +67,42 @@ local function setWindowSizeByCellId(frontWindow, cellType)
     return nil
 end
 
-local function pushToGrid(direction)
+obj.pushToGrid = function(direction)
     local frontWindow = hswindow.focusedWindow()
-    local c = getCellIdByWindowSize(frontWindow)
-    setWindowSizeByCellId(frontWindow, c['on' .. direction])
+    local c = obj.getCellIdByWindowSize(frontWindow)
+    obj.setWindowSizeByCellId(frontWindow, c['on' .. direction])
 end
 
-local function maximize()
+obj.maximize = function()
     local frontWindow = hswindow.focusedWindow()
-    local currentCell = getCellIdByWindowSize(frontWindow)
+    local currentCell = obj.getCellIdByWindowSize(frontWindow)
     if currentCell and currentCell.id == 'fullScreen' then
-        setWindowSizeByCellId(frontWindow, 'q1')
+        obj.setWindowSizeByCellId(frontWindow, 'q1')
         frontWindow:centerOnScreen()
     else
-        setWindowSizeByCellId(frontWindow, 'fullScreen')
+        obj.setWindowSizeByCellId(frontWindow, 'fullScreen')
     end
 end
 
-local function center()
+obj.center = function()
     hswindow.focusedWindow():centerOnScreen()
 end
 
-hshotkey.bind(hyper, "Up", function() pushToGrid('Up') end)
-hshotkey.bind(hyper, "Down", function() pushToGrid('Down') end)
-hshotkey.bind(hyper, "Right", function() pushToGrid('Right') end)
-hshotkey.bind(hyper, "Left", function() pushToGrid('Left') end)
-hshotkey.bind(hyper, "Return", function() maximize() end)
-hshotkey.bind(hyper, "C", function() center() end)
-
---
-
-local function move(direction)
+obj.move = function(direction)
     local point
     if direction == 'right' then
-        point = {30, 0}
+        point = {60, 0}
     elseif direction == 'left' then
-        point = {-30, 0}
+        point = {-60, 0}
     elseif direction == 'up' then
-        point = {0, -30}
+        point = {0, -60}
     elseif direction == 'down' then
-        point = {0, 30}
+        point = {0, 60}
     end
     hswindow.focusedWindow():move(point)
 end
 
-local function resize(resizeKind)
+obj.resize = function(resizeKind)
     local rect
     local currentFrame = hswindow.focusedWindow():frame()
     local x = currentFrame._x
@@ -121,69 +136,48 @@ obj.keyMap = [[
 ⌘↓ Grow to Bottom
 ]]
 
-local background
+obj.background = nil
+obj.actualText = nil
 
-obj.textObject = nil
-obj.textFrame = nil
-obj.textStyle = { size = 27, alignment = "center" }
+obj.createGui = function()
+    local mainScreen = screen.mainScreen():frame()
+    local screenHorizCenter = (mainScreen.w / 2)
+    local screenVertCenter = (mainScreen.h / 2)
 
-local function enterModal()
-
-    obj.windowManagerModal:enter()
-
-    local currentScreenFrame = screen.mainScreen():frame()
-    local currentScreenHorizontalCenter = (currentScreenFrame.w / 2)
-    local currentScreenVerticalCenter = (currentScreenFrame.h / 2)
-
-    obj.textFrame = drawing.getTextDrawingSize(obj.keyMap, obj.textStyle)
-
-    background = drawing.rectangle({
-        w = obj.textFrame.w + 50,
-        h = obj.textFrame.h + 50,
-        x = currentScreenHorizontalCenter - ((obj.textFrame.w + 50) / 2),
-        y = currentScreenVerticalCenter - ((obj.textFrame.h + 50) / 2)
+    local textFrame = drawing.getTextDrawingSize(obj.keyMap, {
+        size = 27,
+        alignment = "center"
     })
-        :setRoundedRectRadii(15, 15)
-        :setStroke(false)
-        :setFillColor({hex = "#3a3a3c", alpha = "0.5"})
-        :bringToFront(true)
-        :show()
 
+    obj.actualText = drawing.text({
+        w = textFrame.w + 5, -- safety buffer
+        h = textFrame.h + 5, -- safety buffer
+        x = screenHorizCenter - (textFrame.w / 2),
+        y = screenVertCenter - (textFrame.h / 2)
+    }, obj.keyMap):bringToFront(true)
 
-
-
-    obj.textObject = drawing.text({
-        w = obj.textFrame.w + 5, -- safety buffer
-        h = obj.textFrame.h + 5, -- safety buffer
-        x = currentScreenHorizontalCenter - (obj.textFrame.w / 2),
-        y = currentScreenVerticalCenter - (obj.textFrame.h / 2)
-    }, obj.keyMap)
-        :bringToFront(true)
-        :show()
+    obj.background = drawing.rectangle({
+       w = textFrame.w + 50,
+       h = textFrame.h + 50,
+       x = screenHorizCenter - ((textFrame.w + 50) / 2),
+       y = screenVertCenter - ((textFrame.h + 50) / 2)
+       })
+       :setRoundedRectRadii(15, 15)
+       :setStroke(false)
+       :setFillColor({hex = "#3a3a3c", alpha = "0.5"})
+       :bringToFront(true)
 end
 
-local function destroyModal()
-    background:delete()
-    obj.textObject:delete()
+
+obj.enterModal = function()
+    obj.windowManagerModal:enter()
+    obj.createGui()
+    obj.background:show()
+    obj.actualText:show()
+end
+
+obj.destroyModal = function()
     obj.windowManagerModal:exit()
+    obj.background:delete()
+    obj.actualText:delete()
 end
-
-
-
-obj.windowManagerModal = hshotkey.modal.new()
-obj.windowManagerModal:bind(hyper, "w", function() destroyModal() end)
-obj.windowManagerModal:bind({}, "return", function() destroyModal() end)
-obj.windowManagerModal:bind({}, "escape", function() destroyModal() end)
-obj.windowManagerModal:bind({}, "up", function() move('up') end, nil, function() move('up') end)
-obj.windowManagerModal:bind({}, "down", function() move('down') end, nil, function() move('down') end)
-obj.windowManagerModal:bind({}, "right", function() move('right') end, nil, function() move('right') end)
-obj.windowManagerModal:bind({}, "left", function() move('left') end, nil, function() move('left') end)
-
-obj.windowManagerModal:bind({"cmd"}, "right", function() resize("growToRight") end, nil, function() resize("growToRight") end)
-obj.windowManagerModal:bind({"cmd"}, "down", function() resize("growToBottom") end, nil, function() resize("growToBottom") end)
-obj.windowManagerModal:bind({"shift", "cmd"}, "left", function() resize("shrinkFromRight") end, nil, function() resize("shrinkFromRight") end)
-obj.windowManagerModal:bind({"shift", "cmd"}, "up", function() resize("shrinkFromBottom") end, nil, function() resize("shrinkFromBottom") end)
-
-hshotkey.bind(hyper, "w", function()
-    enterModal()
-end)

@@ -6,12 +6,13 @@ local appEnvs = {}
 
 -- REQUIRE APP SCRIPTS
 -- function mod.loadLuaFiles()
-    local iterFn, dirObj = fs.dir('./apps')
+	local appModulesDir = "modules/apps"
+    local iterFn, dirObj = fs.dir(appModulesDir)
     if iterFn then
         for file in iterFn, dirObj do
             if file:sub(-4) == ".lua" then
                 local name, _ = file:gsub('.lua', '')
-                table.insert( appEnvs, require('/apps/' .. name))
+                table.insert( appEnvs, require(appModulesDir.."/"..name))
             end
         end
     end

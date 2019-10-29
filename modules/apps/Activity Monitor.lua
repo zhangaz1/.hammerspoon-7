@@ -1,4 +1,3 @@
-
 local hotkey = require('hs.hotkey')
 local ax = require("hs._asm.axuielement")
 local ui = require("util.ui")

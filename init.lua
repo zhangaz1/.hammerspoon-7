@@ -3,14 +3,18 @@ local window = require("hs.window")
 local alert = require("hs.alert")
 local screen = require("hs.screen")
 local ipc = require("hs.ipc")
+local application = require("hs.application")
 
 -------------------
 -- PERSONAL MODULES
 -------------------
-require("modules.appMonitor").init()
-require("modules.pathMonitor").init()
-require("modules.wifiWatcher").init()
+require("modules.reloadConfigWatcher").init()
 require("modules.forceABC").init()
+require("modules.appMonitor").init()
+require("modules.wifiWatcher").init()
+require("modules.appearance").init()
+require("modules.batteryMonitor").init()
+
 require("modules.barboy.menuItems")
 require("modules.notificationCenter")
 require("modules.globalHotkeys")
@@ -20,6 +24,7 @@ require("modules.NSPanelGoToFolder")
 ----------------------------------
 -- HAMMERSPOON SETTINGS, VARIABLES
 ----------------------------------
+application.enableSpotlightForNameSearches(true)
 hs.allowAppleScript(true)
 hs.autoLaunch(true)
 hs.automaticallyCheckForUpdates(true)
@@ -29,3 +34,9 @@ ipc.cliInstall()
 window.animationDuration = 0
 
 alert.show("Config Loaded", {atScreenEdge = 1}, screen.mainScreen(), 0.5)
+
+------------------
+-- GLOBAL WATCHERS
+------------------
+-- hs.eventtap.new
+-- pathwatcher.new

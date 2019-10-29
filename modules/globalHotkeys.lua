@@ -1,3 +1,4 @@
+local hs = hs
 local hotkey = require("hs.hotkey")
 local eventtap = require("hs.eventtap")
 local timer = require("hs.timer")
@@ -13,7 +14,7 @@ hotkey.bind(hyper, 'L', function()
     eventtap.keyStroke({'cmd'}, 'c')
     timer.doAfter(0.4, function()
         local arg = "dict://"..pasteboard.getContents()
-        hs.execute(string.format([["/usr/bin/open" "%s"]], arg))
+        hs.task.new("/usr/bin/open", nil, { arg }):start()
     end)
 end)
 
@@ -40,3 +41,20 @@ hotkey.bind(hyper, 'O', function()
     local thisApp = application.frontmostApplication()
     ax.applicationElement(thisApp):focusedUIElement():performAction('AXShowMenu')
 end)
+
+-- Switch to English for Emoji & Symbols, and Spotlight
+-- BEGIN HEBREW RELATED
+eventtap.new(
+{eventtap.event.types.keyUp},
+function(event)
+	local keyName = keycodes.map[event:getKeyCode()]
+    if keyName == "space" then
+        local eventFlags = event:getFlags()
+        if eventFlags:containExactly({"ctrl", "cmd"}) or eventFlags:containExactly({"alt"}) then
+            if keycodes.currentLayout() == "ABC" then return end
+            keycodes.setLayout("ABC")
+		end
+	end
+end
+):start()
+-- END HEBREW RELATED

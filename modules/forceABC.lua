@@ -4,45 +4,43 @@ local settings = require("hs.settings")
 
 local mod = {}
 
-local menuBarIcon;
+mod.menuBarIcon = nil
 
-function mod.keepState()
-    local currentState = settings.get("forceABC")
-    if currentState == "enabled" then
-        keycodes.setLayout("ABC")
+-- BEGIN HEBREW --
+function mod.currentState()
+    return settings.get("forceABC")
+end
+
+function mod.keepState(appObj)
+    if mod.currentState() == "enabled" then
+        if appObj and appObj:bundleID() == "desktop.WhatsApp" then
+            keycodes.setLayout("Hebrew")
+        else
+            keycodes.setLayout("ABC")
+        end
+        mod.menuBarIcon:removeFromMenuBar()
+    else
+        mod.menuBarIcon:returnToMenuBar()
     end
 end
 
 function mod.toggleState()
-    local currentState = settings.get("forceABC")
-    -- toggling  enabled -> disabled
-    if currentState == "enabled" then
+    if mod.currentState() == "enabled" then
         settings.set("forceABC", "disabled")
-        menuBarIcon:returnToMenuBar()
-    -- toggling disabled -> enabled
-    elseif currentState == "disabled" then
+    elseif mod.currentState() == "disabled" then
         settings.set("forceABC", "enabled")
-        menuBarIcon:removeFromMenuBar()
     end
-    print("NOW: ==> " .. settings.get("forceABC"))
-    if currentState == "enabled" then
-        keycodes.setLayout("ABC")
-    end
+    mod.keepState()
 end
 
 function mod.init()
-    menuBarIcon = menubar:new():setTitle("✓HEB"):removeFromMenuBar()
-    local currentState = settings.get("forceABC")
-    -- initialize if not previously set
-    if not currentState then
+    mod.menuBarIcon = menubar.new():setTitle('✓HEB'):removeFromMenuBar()
+    -- initialize if not previously set, default to enabled
+    if not mod.currentState() then
         settings.set("forceABC", "enabled")
     end
-
-    if currentState == "enabled" then
-        keycodes.setLayout("ABC")
-    else
-        menuBarIcon:returnToMenuBar()
-    end
+    mod.keepState()
 end
 
 return mod
+-- END HEBREW --

@@ -3,6 +3,7 @@ local application = require("hs.application")
 local hotkey = require('hs.hotkey')
 local chooser = require('hs.chooser')
 local fnutils = require('hs.fnutils')
+local console = require("hs.console")
 
 local scriptsModule = require("modules.barboy.appScripts")
 
@@ -62,6 +63,12 @@ function mod.fuzzyMatcher(query)
 end
 
 function mod.barboyExecute(choice)
+
+	local hsConsoleAsWindow = console.hswindow()
+	if hsConsoleAsWindow then
+    hsConsoleAsWindow:close()
+	end
+
 	if not choice then
 		return
 	elseif choice.type == 'appScript' then

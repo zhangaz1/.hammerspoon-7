@@ -1,8 +1,8 @@
-local application = require('hs.application')
 local ax = require("hs._asm.axuielement")
+
 local mod = {}
 
-function mod.getUIElement(appOrWindowOrAx, uiPathTable, axObject)
+function mod.getUIElement(appOrWindowOrAx, uiPathTable)
 	local n;
 	local match;
 	local numeralReference;

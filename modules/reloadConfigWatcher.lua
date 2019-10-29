@@ -1,3 +1,4 @@
+local hs = hs
 local pathwatcher = require("hs.pathwatcher")
 
 local mod = {}
@@ -15,7 +16,8 @@ local function patchWatcherCallbackFn(files)
 end
 
 function mod.init()
-    pathwatcher.new(".", patchWatcherCallbackFn):start()
+    pathWatcher = pathwatcher.new(".", patchWatcherCallbackFn)
+    pathWatcher:start()
 end
 
 return mod

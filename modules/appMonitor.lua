@@ -6,58 +6,57 @@ local mod = {}
 
 -- load individual app modules into the appEnvs table
 local appEnvs = {}
-local iterFn, dirObj = fs.dir("apps")
+local appModulesDir = "modules/apps"
+local iterFn, dirObj = fs.dir(appModulesDir)
 if iterFn then
-    for file in iterFn, dirObj do
-        if file:sub(-4) == ".lua" then
-            local name, _ = file:gsub(".lua", "")
-            table.insert(appEnvs, require("apps." .. name))
-        end
+  for file in iterFn, dirObj do
+    if file:sub(-4) == ".lua" then
+      local name, _ = file:gsub(".lua", "")
+      table.insert(appEnvs, require(appModulesDir .. "/" .. name))
     end
-end
-
-local function toggleActiveModal(argForModalSwitch, hsAppObj)
-    -- if called on init, hsAppObj is nil
-    local id
-    if not hsAppObj then
-        -- if called from appWatcher, appObj is a sent argument
-        hsAppObj = application.frontmostApplication()
-    end
-    id = hsAppObj:bundleID()
-    for _, appEnv in ipairs(appEnvs) do
-        if appEnv.id == id then
-            if argForModalSwitch == "on" then
-                appEnv.thisApp = hsAppObj
-                if appEnv.modal then
-                    appEnv.modal:enter()
-                end
-            elseif argForModalSwitch == "off" then
-                if appEnv.modal then
-                    appEnv.modal:exit()
-                end
-            end
-            return
-        end
-    end
+  end
 end
 
 -- app watcher callBack
-local function handleGlobalAppEvent(_, event, appObj)
-    if (event == application.watcher.activated) then -- 5
-        -- BEGIN HEBREW-RELATED
-          forceABC.keepState()
-        -- END HEBREW-RELATED
-        toggleActiveModal("on", appObj)
-    elseif (event == application.watcher.deactivated) then -- 6
-        toggleActiveModal("off", appObj)
+local function appWatcherCallbackFn(_, event, appObj)
+  if (event == application.watcher.activated) then
+    -- BEGIN HEBREW-RELATED
+    forceABC.keepState(appObj)
+    -- END HEBREW-RELATED
+    local id = appObj:bundleID()
+    for _, appEnv in ipairs(appEnvs) do
+      local modal = appEnv.modal
+      local listeners = appEnv.listeners
+      if appEnv.id == id then
+        appEnv.thisApp = appObj
+        if modal then
+          modal:enter()
+        end
+        if listeners then
+          for _, listener in ipairs(listeners) do
+            listener:start()
+          end
+        end
+      else
+        if modal then
+          modal:exit()
+        end
+        if listeners then
+          for _, listener in ipairs(listeners) do
+            listener:stop()
+          end
+        end
+      end
     end
+  end
 end
 
 function mod.init()
-    -- activate active modal, if any -- saves an redundant cmd+tab
-    toggleActiveModal("on")
-    -- start the path watcher
-    application.watcher.new(handleGlobalAppEvent):start()
+  -- on reload, enter modal (if any) for the front app (saves an redundant cmd+tab)
+  appWatcherCallbackFn(nil, application.watcher.activated, application.frontmostApplication())
+  -- start the path watcher
+  appWatcher = application.watcher.new(appWatcherCallbackFn)
+  appWatcher:start()
 end
 
 return mod

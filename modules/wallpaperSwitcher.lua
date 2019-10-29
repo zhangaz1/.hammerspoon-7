@@ -1,7 +1,7 @@
 
 -- local sort_func = function( a,b ) return string.lower(a) < string.lower(b) end
-
-
+-- /System/Library/CoreServices/
+-- /System/Library/Desktop Pictures
 -- wpSwitch = function()
 --     local wallpapers = {}
 --     local paths = {

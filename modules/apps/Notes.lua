@@ -32,6 +32,7 @@ local function writingDirection(direction)
         end tell
     ]])
 end
+
 local function pane1()
     ui.getUIElement(m.thisApp, {
         {'AXWindow', 1}, {'AXSplitGroup', 1}, {'AXScrollArea', 1}, {'AXOutline', 1}
@@ -40,13 +41,14 @@ end
 
 local function pane2()
     ui.getUIElement(m.thisApp, {
-        {'AXWindow', 1}, {'AXSplitGroup', 1}, {'AXSplitGroup', 1}, {'AXGroup', 1}, {'AXScrollArea', 1}, {'AXTable', 1}
+        {'AXWindow', 1}, {'AXSplitGroup', 1}, {'AXSplitGroup', 1}, {'AXScrollArea', 1}
     }):setAttributeValue('AXFocused', true)
 end
 
 local function pane3()
     ui.getUIElement(m.thisApp, {
-        {'AXWindow', 1}, {'AXSplitGroup', 1}, {'AXSplitGroup', 1}, {'AXGroup', 2}, {'AXScrollArea', 1}, {'AXTextArea', 1}
+        -- text area 1 of scroll area 1 of group 1 of splitter group 1 of splitter group 1 of window "Notes"  of application process "Notes"
+        {'AXWindow', 1}, {'AXSplitGroup', 1}, {'AXSplitGroup', 1}, {'AXGroup', 1}, {'AXScrollArea', 1}, {'AXTextArea', 1}
     }):setAttributeValue('AXFocused', true)
 end
 

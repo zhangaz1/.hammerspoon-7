@@ -7,16 +7,6 @@ local window = require("hs.window")
 
 local mod = {}
 
-function mod.isHighSierra()
-    local bool;
-    local isHs = settings.get('isHighSierra')
-    if isHs == nil then
-        if host.operatingSystemVersion()["minor"] < 14 then bool = true else bool = false end
-        settings.set('isHighSierra', bool)
-    end
-    return isHs
-end
-
 function mod.doubleLeftClick(coords, mods)
     -- requires a table
     local point = geometry.point(coords)
