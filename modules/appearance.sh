@@ -45,7 +45,7 @@ if [[ "${MODE}" == "dark" ]]; then
 elif [[ "${MODE}" == "light" ]]; then
 	LAUNCHBAR="at.obdev.LaunchBar.theme.Default"
 fi
-defaults write "at.obdev.LaunchBar" Theme -string "${LAUNCHBAR}"
+defaults write "at.obdev.LaunchBar" Theme -string "${LAUNCHBAR}" &
 
 ### cardhop ###
 if [[ "${MODE}" == "dark" ]]; then
@@ -53,7 +53,7 @@ if [[ "${MODE}" == "dark" ]]; then
 elif [[ "${MODE}" == "light" ]]; then
 	arg=true
 fi
-defaults write "com.flexibits.cardhop.mac" LightTheme -bool "${arg}"
+defaults write "com.flexibits.cardhop.mac" LightTheme -bool "${arg}" &
 
 ### contexts ###
 if [[ "${MODE}" == "dark" ]]; then
@@ -63,30 +63,17 @@ elif [[ "${MODE}" == "light" ]]; then
 fi
 if [[ "$(defaults read "com.contextsformac.Contexts" CTAppearanceTheme)" != "${CONTEXTS}" ]]
 then
-	defaults write "com.contextsformac.Contexts" CTAppearanceTheme -string "${CONTEXTS}"
+	(defaults write "com.contextsformac.Contexts" CTAppearanceTheme -string "${CONTEXTS}"
 	killall Contexts
 	sleep 1
-	open -j -g -a Contexts
+	open -j -g -a Contexts) &
 fi
 
 
 # hammerspoon's console
-run=false
-hsDarkThemeOn="$(defaults read org.hammerspoon.Hammerspoon HSConsoleDarkModeKey)"
 if [[ "${MODE}" == "dark" ]]; then
-	if [[ "${hsDarkThemeOn}" == "0" ]]
-	then
-		HS="true"
-		run=true
-	fi
+	HS="true"
 elif [[ "${MODE}" == "light" ]]; then
-		if [[ "${hsDarkThemeOn}" == "1" ]]
-		then
-			HS="false"
-			run=true
-		fi
+	HS="false"
 fi
-if "${run}"
-then
-	/usr/bin/osascript -e "tell application \"Hammerspoon\" to execute lua code \"hs.console.darkMode(${HS})\"" &>/dev/null &
-fi
+/usr/bin/osascript -e "tell application \"Hammerspoon\" to execute lua code \"hs.console.darkMode(${HS})\"" &>/dev/null &

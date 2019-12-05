@@ -52,23 +52,9 @@ local function pane3()
     }):setAttributeValue('AXFocused', true)
 end
 
-local function textCompletion()
-    local trulyFocusedAppIdentifier = hs.window.focusedWindow():application():bundleID()
-    local writingAreaAXIdentifier = ax.applicationElement(m.thisApp):focusedUIElement():attributeValue('AXRole')
-	if (writingAreaAXIdentifier ~= 'AXTextArea') or (trulyFocusedAppIdentifier ~= m.id) then
-		m.modal:exit()
-		eventtap.keyStroke({}, 'tab')
-		m.modal:enter()
-	else
-		eventtap.keyStroke({}, 'f5')
-	end
-end
-
-
 m.modal:bind({'alt'}, '1', function() pane1() end)
 m.modal:bind({'alt'}, '2', function() pane2() end)
 m.modal:bind({'alt'}, '3', function() pane3() end)
-m.modal:bind({'cmd'}, 'd', function() textCompletion() end)
 
 m.appScripts = {
     {title = 'Left to Right Writing Direction', func = function() writingDirection("Left to Right") end},

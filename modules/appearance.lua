@@ -1,52 +1,46 @@
 local task = require("hs.task")
 local settings = require("hs.settings")
 local pathwatcher = require("hs.pathwatcher")
-local plist = require("hs.plist")
+local Host = require("hs.host")
 
 local obj = {}
 
-local plistFile = os.getenv("HOME") .. "/Library/Preferences/.GlobalPreferences.plist"
-obj.scriptPath = "modules/appearance.sh"
-
-function obj.currentStyle()
-  return plist.read(plistFile).AppleInterfaceStyle
-end
-
 function obj.setStyle()
-  local currentStyle = obj.currentStyle()
-  local cachedStyle = settings.get("HSAppearanceWatcherInterfaceStyle")
-
-  if not currentStyle then
-    currentStyle = "Light"
+  local currentSystemStyle = Host.interfaceStyle()
+  if not currentSystemStyle then
+    currentSystemStyle = "Light"
   end
 
-  if currentStyle ~= cachedStyle then
-    local arg
-    if currentStyle == "Dark" then
-      arg = "dark"
-    elseif currentStyle == "Light" then
-      arg = "light"
+  local cachedStyle = settings.get("HSAppearanceWatcherInterfaceStyle")
+
+  if currentSystemStyle ~= cachedStyle then
+    print("detected system interface style change, to => " .. currentSystemStyle)
+    print("cached system interface style is currently => " .. (cachedStyle or "NOT_CACHED"))
+
+    local interfaceParameter
+    if currentSystemStyle == "Dark" then
+      interfaceParameter = "dark"
+    elseif currentSystemStyle == "Light" then
+      interfaceParameter = "light"
     end
 
+    settings.set("HSAppearanceWatcherInterfaceStyle", currentSystemStyle)
+
+    print("cached system interface style change is now => " .. (settings.get("HSAppearanceWatcherInterfaceStyle") or "NOT_CACHED"))
+
     task.new(
-      obj.scriptPath,
+      "modules/appearance.sh",
       function(exitCode, stdOut, stdErr)
         print(exitCode, stdOut, stdErr)
-        settings.set("HSAppearanceWatcherInterfaceStyle", currentStyle)
-        print("Current style is: "..currentStyle)
-        if not cachedStyle then
-          cachedStyle = currentStyle
-        end
-        print("Cached style is: "..cachedStyle)
       end,
-      {arg}
+      {interfaceParameter}
     ):start()
   end
 end
 
 function obj.init()
   obj.setStyle()
-  appearanceWatcher = pathwatcher.new(plistFile, obj.setStyle)
+  appearanceWatcher = pathwatcher.new(os.getenv("HOME") .. "/Library/Preferences/.GlobalPreferences.plist", obj.setStyle)
   appearanceWatcher:start()
 end
 

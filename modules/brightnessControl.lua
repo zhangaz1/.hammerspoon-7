@@ -10,7 +10,6 @@ local currentScreenFrame = screen.mainScreen():frame()
 local currentScreenHorizontalCenter = (currentScreenFrame.w / 2)
 local currentScreenVerticalCenter = (currentScreenFrame.h / 2)
 
-local textStyle = { size = 30, alignment = "center" }
 local background;
 local textObject;
 
@@ -33,25 +32,36 @@ local function createAndShowBackground()
         x = currentScreenHorizontalCenter - 50,
         y = currentScreenVerticalCenter - 50
     })
-    background:setRoundedRectRadii(15, 15)
-    background:setStroke(false)
-    background:setFillColor({hex = "#3a3a3c", alpha = "0.5"})
-    background:bringToFront(true)
-    background:show()
+        :setRoundedRectRadii(15, 15)
+        :setStroke(false)
+        :setFillColor(drawing.color.colorsFor("System")["windowBackgroundColor"])
+        :bringToFront(true)
+        :show()
 end
 
 local function displayBrightnessText()
     local currentBrightness = getBrightness()
-    if textObject then
+    if textObject ~= nil and textObject["delete"] then
         textObject:delete()
     end
-    local textFrame = drawing.getTextDrawingSize(currentBrightness, textStyle)
+    local textStyle = {
+        font = {
+          name = "System Font",
+          size = 27
+        },
+        paragraphStyle = {
+          alignment = "center"
+        },
+        color = drawing.color.colorsFor("System")["secondaryLabelColor"]
+      }
+    local theText = hs.styledtext.new(currentBrightness, textStyle)
+    local textFrame = drawing.getTextDrawingSize(theText)
     textObject = drawing.text({
         w = textFrame.w + 4, -- safety buffer
         h = textFrame.h + 4, -- safety buffer
         x = currentScreenHorizontalCenter - (textFrame.w / 2),
         y = currentScreenVerticalCenter - (textFrame.h / 2)
-    }, currentBrightness)
+    }, theText)
         :bringToFront(true)
         :show()
 end

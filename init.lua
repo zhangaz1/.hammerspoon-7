@@ -1,9 +1,13 @@
 local hs = hs
+
 local window = require("hs.window")
 local alert = require("hs.alert")
 local screen = require("hs.screen")
 local ipc = require("hs.ipc")
 local application = require("hs.application")
+
+hs.logger.defaultLogLevel = "error"
+hs.hotkey.setLogLevel("error")
 
 -------------------
 -- PERSONAL MODULES
@@ -19,7 +23,11 @@ require("modules.barboy.menuItems")
 require("modules.notificationCenter")
 require("modules.globalHotkeys")
 require("modules.windowManager")
-require("modules.NSPanelGoToFolder")
+
+require("MouseGrids").init()
+
+hs.loadSpoon("KSheet")
+hs.loadSpoon("DownloadsListener"):start()
 
 ----------------------------------
 -- HAMMERSPOON SETTINGS, VARIABLES
@@ -34,9 +42,3 @@ ipc.cliInstall()
 window.animationDuration = 0
 
 alert.show("Config Loaded", {atScreenEdge = 1}, screen.mainScreen(), 0.5)
-
-------------------
--- GLOBAL WATCHERS
-------------------
--- hs.eventtap.new
--- pathwatcher.new

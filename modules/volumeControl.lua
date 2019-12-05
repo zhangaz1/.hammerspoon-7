@@ -39,7 +39,7 @@ local currentScreenFrame = screen.mainScreen():frame()
 local currentScreenHorizontalCenter = (currentScreenFrame.w / 2)
 local currentScreenVerticalCenter = (currentScreenFrame.h / 2)
 
-function mod.init()
+function mod.start()
   mod.currentAudioDevice()
   background = drawing.rectangle({
     w = 100,
@@ -51,7 +51,7 @@ function mod.init()
   :setStroke(false)
   :setFillColor(drawing.color.colorsFor("System")["windowBackgroundColor"])
   :bringToFront(true)
-  :show()
+  :show(0.2)
   mod.displayTextForCurrentVolume()
   mod.volumeControlModal:enter()
 end
@@ -83,7 +83,6 @@ end
 function mod.displayTextForCurrentVolume()
   local currVol = tostring(mod.getCurrentVolume())
   if textObject ~= nil and textObject["delete"] then
-    -- print(hs.inspect(textObject))
     textObject:delete()
   end
   local textStyle = {
@@ -105,7 +104,7 @@ function mod.displayTextForCurrentVolume()
     y = currentScreenVerticalCenter - (textFrame.h / 2)
   }, styledText)
     :bringToFront(true)
-    :show()
+    :show(0.2)
 end
 
 function mod.updateVolume(increaseOrDecrease)

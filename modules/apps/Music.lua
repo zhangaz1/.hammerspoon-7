@@ -7,7 +7,7 @@ m.thisApp = nil
 m.modal = hotkey.modal.new()
 
 m.uiPane1 = {{'AXWindow', 1}, {'AXSplitGroup', 1}, {'AXScrollArea', 1}, {'AXOutline', 1}}
-m.uiPane2 = {{'AXWindow', 1}, {'AXSplitGroup', 1}, {'AXScrollArea', 2}}
+m.uiPane2 = {{'AXWindow', 1}, {'AXSplitGroup', 1}, {'AXGroup', 1}, {'AXGroup', 1}, {'AXScrollArea', 1}}
 
 local function pane1()
     return ui.getUIElement(m.thisApp, m.uiPane1):setAttributeValue('AXFocused', true)

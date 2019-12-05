@@ -9,6 +9,24 @@ local keycodes = require("hs.keycodes")
 
 local hyper = {'cmd', 'alt', 'ctrl', 'shift'}
 
+-- Switch to English for Emoji & Symbols, and Spotlight
+-- BEGIN HEBREW RELATED
+emojiAndSymbolsListener = eventtap.new(
+{eventtap.event.types.keyUp},
+function(event)
+    -- local space = keycodes.map[49]
+    if event:getKeyCode() == 49 then
+        local eventFlags = event:getFlags()
+        if eventFlags:containExactly({"ctrl", "cmd"}) or eventFlags:containExactly({"alt"}) then
+            if keycodes.currentLayout() == "ABC" then return end
+            keycodes.setLayout("ABC")
+		end
+	end
+end
+)
+emojiAndSymbolsListener:start()
+-- END HEBREW RELATED
+
 -- Look up in Dictionary
 hotkey.bind(hyper, 'L', function()
     eventtap.keyStroke({'cmd'}, 'c')
@@ -41,20 +59,3 @@ hotkey.bind(hyper, 'O', function()
     local thisApp = application.frontmostApplication()
     ax.applicationElement(thisApp):focusedUIElement():performAction('AXShowMenu')
 end)
-
--- Switch to English for Emoji & Symbols, and Spotlight
--- BEGIN HEBREW RELATED
-eventtap.new(
-{eventtap.event.types.keyUp},
-function(event)
-	local keyName = keycodes.map[event:getKeyCode()]
-    if keyName == "space" then
-        local eventFlags = event:getFlags()
-        if eventFlags:containExactly({"ctrl", "cmd"}) or eventFlags:containExactly({"alt"}) then
-            if keycodes.currentLayout() == "ABC" then return end
-            keycodes.setLayout("ABC")
-		end
-	end
-end
-):start()
--- END HEBREW RELATED

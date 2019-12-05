@@ -1,29 +1,24 @@
+local AppleScript = require("hs.osascript")
+local Plist = require("hs.plist")
+local CloudSettings = require("util.cloudSettings")
 
--- local sort_func = function( a,b ) return string.lower(a) < string.lower(b) end
--- /System/Library/CoreServices/
--- /System/Library/Desktop Pictures
--- wpSwitch = function()
---     local wallpapers = {}
---     local paths = {
---         '/Library/Desktop Pictures',
---         '/Users/roey/Pictures/wallpapers',
---     }
---     for _,path in ipairs(paths) do
---         local iterFn, dirObj = hs.fs.dir(path)
---         if iterFn then
---         for file in iterFn, dirObj do
---             if file:sub(-5) == ".heic" then
---             table.insert( wallpapers, path .. '/' .. file )
---             end
---         end
---         else
---             print(string.format("The following error occurred: %s", dirObj))
---             end
---     end
---     table.sort( wallpapers, sort_func )
---     for i,v in ipairs(wallpapers) do
---         print(i,v)
---     end
--- end
+local mod = {}
 
--- wpSwitch()
+local cloudSettings = "settings/cloudSettings.plist"
+
+function mod.setWallpaper(theWallpaper)
+  AppleScript.applescript(string.format([[
+    tell application "System Events" to set picture of (a reference to current desktop) to "%s"
+  ]], theWallpaper))
+  CloudSettings.update("currentDesktopShouldBe", theWallpaper)
+end
+
+function mod.init()
+  local _, currentDesktop, _ = AppleScript.applescript([[tell application "System Events" to get picture of (a reference to current desktop)]])
+  local currentDesktopShouldBe = Plist.read(cloudSettings).currentDesktopShouldBe
+  if currentDesktopShouldBe ~= currentDesktop then
+    mod.setWallpaper(currentDesktopShouldBe)
+  end
+end
+
+return mod

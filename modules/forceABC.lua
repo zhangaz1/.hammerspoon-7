@@ -20,7 +20,7 @@ function mod.keepState(appObj)
         end
         mod.menuBarIcon:removeFromMenuBar()
     else
-        mod.menuBarIcon:returnToMenuBar()
+        mod.menuBarIcon:returnToMenuBar():setTitle("✓HEB")
     end
 end
 
@@ -34,7 +34,7 @@ function mod.toggleState()
 end
 
 function mod.init()
-    mod.menuBarIcon = menubar.new():setTitle('✓HEB'):removeFromMenuBar()
+    mod.menuBarIcon = menubar.new()
     -- initialize if not previously set, default to enabled
     if not mod.currentState() then
         settings.set("forceABC", "enabled")

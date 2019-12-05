@@ -11,7 +11,7 @@ local doNotMuteNetworks = {
   "Biran",
   "Biran2",
   "BiranTLV",
-  "condo"
+  "rbrt"
   }
 
 -- the default output device

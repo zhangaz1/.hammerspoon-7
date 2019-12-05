@@ -5,10 +5,10 @@ local mod = {}
 function mod.getUIElement(appOrWindowOrAx, uiPathTable)
 	local n;
 	local match;
-	local numeralReference;
+	local numeralIndexReferenceMode;
 	local role;
-	local index;
-	local attr;
+	local indexOrAttribute;
+	local attributeValue;
 	local childs;
 
 	local targetElement;
@@ -25,30 +25,30 @@ function mod.getUIElement(appOrWindowOrAx, uiPathTable)
 	-- pathItem is sent by the user
 	for _, pathItem in ipairs(uiPathTable) do
 		role = pathItem[1]
-		index = pathItem[2]
+		indexOrAttribute = pathItem[2]
 		-- iterator
 		n = 1
 		-- all child UI elements
 		childs = targetElement:attributeValue("AXChildren")
 		-- for the current pathItem, checking for an index/attribute-value reference
-		if tonumber(index) then
-			numeralReference = true
+		if tonumber(indexOrAttribute) then
+			numeralIndexReferenceMode = true
 		else
-			numeralReference = false
-			attr = pathItem[3]
+			numeralIndexReferenceMode = false
+			attributeValue = pathItem[3]
 		end
 		match = false
 		for _, childElement in ipairs(childs) do
 			-- checking for matching role
 			if childElement:attributeValue("AXRole") == role then
 				-- checking if a numeral index
-				if numeralReference then
-					if index == n then
+				if numeralIndexReferenceMode then
+					if indexOrAttribute == n then
 						match = true
 					else
 						n = n + 1
 					end
-				elseif childElement:attributeValue(index) == attr then
+				elseif childElement:attributeValue(indexOrAttribute) == attributeValue then
 					match = true
 				end
 			end
