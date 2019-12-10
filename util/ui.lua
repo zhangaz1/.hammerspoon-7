@@ -2,6 +2,14 @@ local ax = require("hs._asm.axuielement")
 
 local mod = {}
 
+local function tableCount(t)
+  local n = 0
+  for _, _ in pairs(t) do
+    n = n + 1
+  end
+  return n
+end
+
 function mod.getUIElement(appOrWindowOrAx, uiPathTable)
 	local n;
 	local match;
@@ -30,6 +38,13 @@ function mod.getUIElement(appOrWindowOrAx, uiPathTable)
 		n = 1
 		-- all child UI elements
 		childs = targetElement:attributeValue("AXChildren")
+
+		-- if 0 childs, return
+		-- print(hs.inspect(childs))
+		if not childs or tableCount(childs) == 0 then
+			return nil
+		end
+
 		-- for the current pathItem, checking for an index/attribute-value reference
 		if tonumber(indexOrAttribute) then
 			numeralIndexReferenceMode = true

@@ -8,6 +8,7 @@ local ui = require("util.ui")
 local keycodes = require("hs.keycodes")
 local timer = require("hs.timer")
 local pressAndHold = require("util.pressAndHold")
+local DoubleLeftClick = require("util.doubleLeftClick")
 
 local keyMap = {
   -- hs.keycodes.map.l
@@ -104,7 +105,6 @@ end
 
 function m.addressBarObserver(arg)
   if arg == "stop" then
-    print("stopping observer...")
     m.axObserver:stop()
     return
   end
@@ -112,7 +112,6 @@ function m.addressBarObserver(arg)
     if m.axObserver and m.axObserver:isRunning() then
       return
     end
-    print("starting observer...")
     local safariAXObject = ax.applicationElement(m.thisApp)
     local safariPid = m.thisApp:pid()
     m.axObserver =
@@ -138,7 +137,6 @@ end
 
 function m.awaitReturnKeyFn(arg)
   if arg == "stop" then
-    print("stopping return tapping")
     m.returnKeyEventTap:stop()
     return
   end
@@ -146,12 +144,10 @@ function m.awaitReturnKeyFn(arg)
     if m.returnKeyEventTap and m.returnKeyEventTap:isEnabled() then
       return
     end
-    print("starting return tapping")
     m.returnKeyEventTap =
       eventtap.new(
       {eventtap.event.types.keyDown},
       function(event)
-        print(keycodes.map[event:getKeyCode()])
         if keycodes.map[event:getKeyCode()] == "return" and event:getFlags():containExactly({}) then
           timer.doAfter(
             0.5,
@@ -159,9 +155,10 @@ function m.awaitReturnKeyFn(arg)
               local currentUrl = m.returnFrontTabURL()
               local match = string.find(currentUrl, "https://.+google")
               if match then
+                --
                 m.pane1(true)
+              --
               end
-              print("Changing to english...")
               -- BEGIN HEBREW RELATED
               keycodes.setLayout("ABC")
               -- END HEBREW RELATED
@@ -342,7 +339,7 @@ function m.rightSizeBookmarksOrHistoryColumn()
   end
   local x = data.x + data.w
   local y = data.y + 5
-  util.doubleLeftClick({x, y})
+  DoubleLeftClick.start({x, y})
 end
 
 function m.duplicateTab()

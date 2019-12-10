@@ -12,22 +12,21 @@ hs.hotkey.setLogLevel("error")
 -------------------
 -- PERSONAL MODULES
 -------------------
-require("modules.reloadConfigWatcher").init()
+hs.loadSpoon("ConfigWatcher"):start()
+
 require("modules.forceABC").init()
 require("modules.appMonitor").init()
 require("modules.wifiWatcher").init()
-require("modules.appearance").init()
-require("modules.batteryMonitor").init()
-
 require("modules.barboy.menuItems")
 require("modules.notificationCenter")
 require("modules.globalHotkeys")
 require("modules.windowManager")
 
-require("MouseGrids").init()
-
+hs.loadSpoon("DownloadsWatcher"):start()
+hs.loadSpoon("BluetoothWatcher"):start()
+hs.loadSpoon("AppearanceWatcher"):start()
 hs.loadSpoon("KSheet")
-hs.loadSpoon("DownloadsListener"):start()
+hs.loadSpoon("MouseGrids")
 
 ----------------------------------
 -- HAMMERSPOON SETTINGS, VARIABLES

@@ -7,7 +7,7 @@ local image = require("hs.image")
 local urlevent = require("hs.urlevent")
 local ax = require("hs._asm.axuielement")
 local ui = require("util.ui")
-local chooser = require("hs.chooser")
+local fuzzyChooser = require("util.FuzzyChooser")
 
 local m = {}
 m.id = "com.apple.mail"
@@ -87,7 +87,6 @@ local function copySenderAddress()
 end
 
 local function mailGetLinks()
-	local output = {}
 	local window = ax.windowElement(m.thisApp:focusedWindow())
 	local e =
 		ui.getUIElement(
@@ -105,35 +104,33 @@ local function mailGetLinks()
 		})
 	)
 	local links = e:attributeValue("AXLinkUIElements")
+	local choices = {}
 	if not next(links) then
-		table.insert(output, {["text"] = "Message Contains No Links"})
+		-- TODO: replace with notification
+		table.insert(choices, {["text"] = "Message Contains No Links"})
 	else
 		for _, v in ipairs(links) do
 			local title = v:attributeValue("AXTitle")
 			local url = v:attributeValue("AXURL")
 			table.insert(
-				output,
+				choices,
 				{
-					["text"] = title or url,
-					["subText"] = url,
-					["url"] = url,
-					["image"] = image.imageFromPath(
+					text = title or url,
+					subText = url,
+					url = url,
+					image = image.imageFromPath(
 						"/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/InternetLocation.icns"
 					)
 				}
 			)
 		end
 	end
-	local function openURL(choice)
+	local function chooserCallback(choice)
 		if choice then
 			urlevent.openURL(choice.url)
 		end
 	end
-	local rows
-	for i, _ in ipairs(output) do
-		rows = i
-	end
-	chooser.new(openURL):choices(output):rows(rows):show()
+	fuzzyChooser.start(chooserCallback, choices, {"text", "subText"})
 end
 
 m.modal:bind(
@@ -166,9 +163,12 @@ m.modal:bind(
 )
 
 m.appScripts = {
-	{title = "Copy Sender Address", func = function()
+	{
+		title = "Copy Sender Address",
+		func = function()
 			copySenderAddress()
-		end}
+		end
+	}
 }
 
 return m

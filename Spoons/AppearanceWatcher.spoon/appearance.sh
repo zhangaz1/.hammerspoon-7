@@ -69,7 +69,6 @@ then
 	open -j -g -a Contexts) &
 fi
 
-
 # hammerspoon's console
 if [[ "${MODE}" == "dark" ]]; then
 	HS="true"
