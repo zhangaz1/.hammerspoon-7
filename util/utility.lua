@@ -1,6 +1,4 @@
-local geometry = require("hs.geometry")
 local eventtap = require("hs.eventtap")
-local timer = require("hs.timer")
 local window = require("hs.window")
 
 local mod = {}

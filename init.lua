@@ -12,16 +12,16 @@ hs.hotkey.setLogLevel("error")
 -------------------
 -- PERSONAL MODULES
 -------------------
-hs.loadSpoon("ConfigWatcher"):start()
 
 require("modules.forceABC").init()
-require("modules.appMonitor").init()
 require("modules.wifiWatcher").init()
-require("modules.barboy.menuItems")
 require("modules.notificationCenter")
 require("modules.globalHotkeys")
 require("modules.windowManager")
+require("modules.appScripts")
 
+hs.loadSpoon("ConfigWatcher"):start()
+hs.loadSpoon("AppWatcher"):start()
 hs.loadSpoon("DownloadsWatcher"):start()
 hs.loadSpoon("BluetoothWatcher"):start()
 hs.loadSpoon("AppearanceWatcher"):start()

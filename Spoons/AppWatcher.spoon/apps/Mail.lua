@@ -4,15 +4,14 @@ local eventtap = require("hs.eventtap")
 local pasteboard = require("hs.pasteboard")
 local geometry = require("hs.geometry")
 local image = require("hs.image")
-local urlevent = require("hs.urlevent")
 local ax = require("hs._asm.axuielement")
 local ui = require("util.ui")
 local fuzzyChooser = require("util.FuzzyChooser")
 
-local m = {}
-m.id = "com.apple.mail"
-m.thisApp = nil
-m.modal = hotkey.modal.new()
+local obj = {}
+obj.id = "com.apple.mail"
+obj.thisApp = nil
+obj.modal = hotkey.modal.new()
 
 local function getSelectedMessages()
 	local _, messageIds, _ =
@@ -36,14 +35,14 @@ end
 
 local function pane1()
 	-- focus on mailbox list
-	local e = ui.getUIElement(m.thisApp, {{"AXWindow", 1}, {"AXSplitGroup", 1}, {"AXScrollArea", 1}, {"AXOutline", 1}})
+	local e = ui.getUIElement(obj.thisApp, {{"AXWindow", 1}, {"AXSplitGroup", 1}, {"AXScrollArea", 1}, {"AXOutline", 1}})
 	e:setAttributeValue("AXFocused", true)
 end
 
 local function pane2()
 	-- focus on messages list
 	local msgsList = {{"AXWindow", 1}, {"AXSplitGroup", 1}, {"AXSplitGroup", 1}, {"AXScrollArea", 1}, {"AXTable", 1}}
-	local e = ui.getUIElement(m.thisApp, msgsList)
+	local e = ui.getUIElement(obj.thisApp, msgsList)
 	e:setAttributeValue("AXFocused", true)
 	if not getSelectedMessages() then
 		for _ = 1, 2 do
@@ -64,7 +63,7 @@ local function pane3()
 		{"AXScrollArea", 1},
 		{"AXGroup", 1}
 	}
-	local e = ui.getUIElement(m.thisApp, msgArea)
+	local e = ui.getUIElement(obj.thisApp, msgArea)
 	-- without a mouse click link highlighting would not work
 	local pos = e:attributeValue("AXPosition")
 	local point = geometry.point({pos.x + 10, pos.y + 10})
@@ -86,24 +85,35 @@ local function copySenderAddress()
 	pasteboard.setContents(table.concat(b, "\n"))
 end
 
+local function chooserCallback(choice)
+	os.execute(string.format([["/usr/bin/open" "%s"]], choice.url))
+end
+
 local function mailGetLinks()
-	local window = ax.windowElement(m.thisApp:focusedWindow())
-	local e =
+	local window = ax.windowElement(obj.thisApp:focusedWindow())
+	-- when viewed in the main app
+	local messageWindow =
 		ui.getUIElement(
 		window,
 		({
 			{"AXSplitGroup", 1},
 			{"AXSplitGroup", 1},
-			{"AXScrollArea", 2},
+			{"AXScrollArea", 2}
+		})
+	) or ui.getUIElement(window, ({{"AXScrollArea", 1}})) -- when viewed in a standalone container
+	local webArea =
+		ui.getUIElement(
+		messageWindow,
+		{
 			{"AXGroup", 1},
 			{"AXScrollArea", 1},
 			{"AXGroup", 1},
 			{"AXGroup", 1},
 			{"AXScrollArea", 1},
 			{"AXWebArea", 1}
-		})
+		}
 	)
-	local links = e:attributeValue("AXLinkUIElements")
+	local links = webArea:attributeValue("AXLinkUIElements")
 	local choices = {}
 	if not next(links) then
 		-- TODO: replace with notification
@@ -125,36 +135,31 @@ local function mailGetLinks()
 			)
 		end
 	end
-	local function chooserCallback(choice)
-		if choice then
-			urlevent.openURL(choice.url)
-		end
-	end
 	fuzzyChooser.start(chooserCallback, choices, {"text", "subText"})
 end
 
-m.modal:bind(
+obj.modal:bind(
 	{"alt"},
 	"1",
 	function()
 		pane1()
 	end
 )
-m.modal:bind(
+obj.modal:bind(
 	{"alt"},
 	"2",
 	function()
 		pane2()
 	end
 )
-m.modal:bind(
+obj.modal:bind(
 	{"alt"},
 	"3",
 	function()
 		pane3()
 	end
 )
-m.modal:bind(
+obj.modal:bind(
 	{"alt"},
 	"o",
 	function()
@@ -162,7 +167,7 @@ m.modal:bind(
 	end
 )
 
-m.appScripts = {
+obj.appScripts = {
 	{
 		title = "Copy Sender Address",
 		func = function()
@@ -171,4 +176,4 @@ m.appScripts = {
 	}
 }
 
-return m
+return obj

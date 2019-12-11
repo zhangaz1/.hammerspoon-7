@@ -89,14 +89,12 @@ local function shouldProcessPath(path, flagTable)
   if displayName == nil then
     return
   end
-
   -- ignore misc files
   local escapedDisplayName = displayName:gsub("%p", "%%%1")
   local parentDir, _ = path:gsub(escapedDisplayName, "")
   if displayName:match("%.download/?$") or displayName == ".DS_Store" then
     return
   end
-
   -- ignore changes in subdirs
   if parentDir ~= downloadsDir and parentDir ~= downloadsDir .. "/" then
     return
@@ -106,25 +104,23 @@ local function shouldProcessPath(path, flagTable)
   lastDownloadedDate = lastDownloadedDate:match("%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d %+%d%d%d%d")
   local lastUsedDate = mdlsquery(path, "kMDItemLastUsedDate")
 
-  print(path, lastDownloadedDate, lastUsedDate, hs.inspect(flagTable))
-
   -- ignore renames
   if flagTable.itemRenamed then
-    if lastUsedDate ~= "(null)" and lastDownloadedDate ~= "(null)" then
-      if (tonumber(obj.eventTime) - tonumber(toEpochDate(lastUsedDate))) > 1 then
+    if lastUsedDate ~= "(null)" then
+      local diff = (tonumber(obj.eventTime) - 7200) - tonumber(toEpochDate(lastUsedDate))
+      print(diff)
+      if diff > 1 then
         return
       end
     end
   end
 
-  -- print(path, lastDownloadedDate, lastUsedDate, hs.inspect(flagTable))
-
-  -- checking if a file hasn't been opened before (opening a file triggers a pathwatcher event)
-  if lastUsedDate == "(null)" then
+  -- ignoring openings
+  if lastUsedDate ~= lastDownloadedDate then
     return
   end
 
-  -- print(path, lastDownloadedDate, lastUsedDate, hs.inspect(flagTable))
+  print(path, lastDownloadedDate, lastUsedDate, hs.inspect(flagTable))
   return true
 end
 

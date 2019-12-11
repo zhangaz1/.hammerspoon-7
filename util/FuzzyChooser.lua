@@ -4,9 +4,10 @@ local Console = require("hs.console")
 
 local obj = {}
 
-obj.chooser = nil
 obj.choices = {}
 obj.searchBy = nil
+
+local chooser = nil
 
 local function tableCount(t)
 	local n = 0
@@ -45,20 +46,24 @@ function obj.fuzzyQuery(s, m)
 end
 
 function obj.fuzzyMatcher(query)
-	if not obj.chooser then
+	if not chooser then
 		-- errors if it's the first run and the chooser is not
 		-- yet initialized?
 		return
 	end
 	if query:len() == 0 then
-		return obj.chooser:choices(obj.choices)
+		return chooser:choices(obj.choices)
 	end
 	local pickedChoices = {}
 
 	for _, choice in pairs(obj.choices) do
 		local searchTerm = ""
 		for _, choiceField in ipairs(obj.searchBy) do
-			searchTerm = searchTerm .. choice[choiceField]:lower()
+			local field = choice[choiceField]
+			if not field then
+				field = ""
+			end
+			searchTerm = searchTerm .. field:lower()
 		end
 		local score = obj.fuzzyQuery(searchTerm, query:lower())
 		if score > 0 then
@@ -70,25 +75,36 @@ function obj.fuzzyMatcher(query)
 		return a["fzf_score"] > b["fzf_score"]
 	end
 	table.sort(pickedChoices, sort_func)
-	return obj.chooser:choices(pickedChoices):rows(tableCount(pickedChoices))
+	chooser = chooser:choices(pickedChoices):rows((tableCount(pickedChoices)))
+	return chooser
 end
 
-
-function obj.start(callback, choices, searchBy)
+function obj.start(sentCallback, choices, searchBy, options)
 	-- local consoleWindow = Console.hswindow()
 	-- if consoleWindow then
 	--     consoleWindow:close()
 	-- end
 	obj.searchBy = searchBy
 	obj.choices = choices
-	obj.chooser = Chooser.new(callback)
+	local defaultCallback = function(choice)
+		if choice then
+			sentCallback(choice)
+		end
+		chooser:delete()
+		chooser = nil
+	end
+	chooser = Chooser.new(defaultCallback)
+	chooser:choices(obj.choices)
+	chooser:searchSubText(false)
+	chooser:width(33)
+	chooser:queryChangedCallback(obj.fuzzyMatcher)
+	chooser:rows(tableCount(choices))
+	chooser:show()
+	return chooser
+end
 
-	obj.chooser:choices(obj.choices)
-	obj.chooser:searchSubText(false)
-	obj.chooser:width(33)
-	obj.chooser:queryChangedCallback(obj.fuzzyMatcher)
-	obj.chooser:rows(tableCount(choices))
-	obj.chooser:show()
+function obj.upgrade(chooser)
+	-- body
 end
 
 return obj

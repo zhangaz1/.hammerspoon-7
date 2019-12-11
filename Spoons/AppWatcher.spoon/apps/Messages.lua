@@ -1,7 +1,6 @@
 local hotkey = require("hs.hotkey")
 local UI = require("util.ui")
-local chooser = require("util.FuzzyChooser")
-local URLEvent = require("hs.urlevent")
+local Chooser = require("util.FuzzyChooser")
 
 local obj = {}
 obj.id = "com.apple.iChat"
@@ -9,12 +8,7 @@ obj.thisApp = nil
 obj.modal = hotkey.modal.new()
 
 local function chooserCallback(choice)
-  local url = choice.text
-  if not url:match("^http") then
-    url = "http://" .. url
-  end
-  URLEvent.openURL(url)
-  -- os.execute(string.format([["/usr/bin/open" "%s"]], choice.text))
+  os.execute(string.format([["/usr/bin/open" "%s"]], choice.text))
 end
 
 local function getLinks()
@@ -37,7 +31,7 @@ local function getLinks()
       }
     )
   end
-  chooser.start(chooserCallback, choices, {"text"})
+  Chooser.start(chooserCallback, choices, {"text"})
 end
 
 obj.modal:bind(
