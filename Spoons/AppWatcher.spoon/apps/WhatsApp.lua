@@ -4,13 +4,14 @@ local eventtap = require("hs.eventtap")
 local keycodes = require("hs.keycodes")
 local timer = require("hs.timer")
 
-local mod = {}
+local obj = {}
 
-mod.id = "desktop.WhatsApp"
-mod.thisApp = nil
-mod.modal = hotkey.modal.new()
+obj.id = "desktop.WhatsApp"
+obj.thisApp = nil
+obj.modal = hotkey.modal.new()
 
-switchToEnglishOnSearch =
+-- BEGIN HEBREW RELATED
+obj.searchAction =
   eventtap.new(
   {eventtap.event.types.keyUp},
   function(event)
@@ -22,11 +23,12 @@ switchToEnglishOnSearch =
     return
   end
 )
+-- END HEBREW RELATED
 
 local function whatsAppMouseScripts(requestedAction)
   local x
   local y
-  local frame = mod.thisApp:focusedWindow():frame()
+  local frame = obj.thisApp:focusedWindow():frame()
   if requestedAction == "AttachFile" then
     x = (frame.x + frame.w - 85)
     y = (frame.y + 30)
@@ -60,24 +62,29 @@ local function insertGif()
   )
 end
 
--- BEGIN HEBREW RELATED
-mod.searchAction = switchToEnglishOnSearch
--- END HEBREW RELATED
-
-mod.appScripts = {
-  {title = "Insert GIF", func = function()
+obj.appScripts = {
+  {
+    title = "Insert GIF",
+    func = function()
       insertGif()
-    end},
-  {title = "Attach File", func = function()
+    end
+  },
+  {
+    title = "Attach File",
+    func = function()
       whatsAppMouseScripts("AttachFile")
-    end},
-  {title = "Use Here", func = function()
+    end
+  },
+  {
+    title = "Use Here",
+    func = function()
       whatsAppMouseScripts("Use Here")
-    end}
+    end
+  }
 }
 
-mod.listeners = {
-  mod.searchAction
+obj.listeners = {
+  obj.searchAction
 }
 
-return mod
+return obj

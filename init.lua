@@ -12,14 +12,14 @@ hs.hotkey.setLogLevel("error")
 -------------------
 -- PERSONAL MODULES
 -------------------
-
 require("modules.forceABC").init()
-require("modules.wifiWatcher").init()
 require("modules.notificationCenter")
 require("modules.globalHotkeys")
 require("modules.windowManager")
 require("modules.appScripts")
 
+hs.loadSpoon("WifiWatcher")
+hs.loadSpoon("VolumeControl")
 hs.loadSpoon("ConfigWatcher"):start()
 hs.loadSpoon("AppWatcher"):start()
 hs.loadSpoon("DownloadsWatcher"):start()

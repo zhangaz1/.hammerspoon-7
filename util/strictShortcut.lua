@@ -1,16 +1,24 @@
-local eventtap = require("hs.eventtap")
+local EventTap = require("hs.eventtap")
 local Window = require("hs.window")
 
-local mod = {}
+local obj = {}
 
-function mod.perform(keyBinding, HSModal, conditionalFunction, successFunction) -- HSAppObj
-    if conditionalFunction() then --and (HSAppObj:bundleID() == Window.focusedWindow():application():bundleID()) then
-        successFunction()
+function obj.perform(keyBinding, app, modal, conditionalFunction, successFunction)
+    if (app:bundleID() == Window.focusedWindow():application():bundleID()) then
+        local perform = true
+        if conditionalFunction ~= nil then
+            if not conditionalFunction() then
+                perform = false
+            end
+        end
+        if perform then
+            successFunction()
+        end
     else
-        HSModal:exit()
-        eventtap.keyStroke(table.unpack(keyBinding))
-        HSModal:enter()
+        modal:exit()
+        EventTap.keyStroke(table.unpack(keyBinding))
+        modal:enter()
     end
 end
 
-return mod
+return obj

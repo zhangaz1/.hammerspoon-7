@@ -73,17 +73,7 @@ function obj:start()
   self.pathWatcher:start()
 end
 
-local function mdlsquery(path, attr)
-  local result, _, _ = hs.execute(string.format([["/usr/bin/mdls" "-name" "%s" "-raw" "%s"]], attr, path))
-  return result
-end
-
-local function toEpochDate(dateString)
-  local _, _, year, month, day, hour, minute, second = dateString:find("(%d%d%d%d)-(%d%d)-(%d%d) (%d%d):(%d%d):(%d%d)")
-  return os.time({year = year, month = month, day = day, hour = hour, min = minute, sec = second})
-end
-
-local function shouldProcessPath(path, flagTable)
+local function shouldProcessPath(path)
   local displayName = FS.displayName(path)
   -- ignore deleted files
   if displayName == nil then
@@ -99,32 +89,16 @@ local function shouldProcessPath(path, flagTable)
   if parentDir ~= downloadsDir and parentDir ~= downloadsDir .. "/" then
     return
   end
-
-  local lastDownloadedDate = mdlsquery(path, "kMDItemDownloadedDate")
-  lastDownloadedDate = lastDownloadedDate:match("%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d %+%d%d%d%d")
-  local lastUsedDate = mdlsquery(path, "kMDItemLastUsedDate")
-
-  -- ignore renames
-  if flagTable.itemRenamed then
-    if lastUsedDate ~= "(null)" then
-      local diff = (tonumber(obj.eventTime) - 7200) - tonumber(toEpochDate(lastUsedDate))
-      print(diff)
-      if diff > 1 then
-        return
-      end
-    end
-  end
-
-  -- ignoring openings
-  if lastUsedDate ~= lastDownloadedDate then
+  -- ignore renames, openings
+  local diff = obj.eventTime - FS.attributes(path, "creation")
+  if diff > 1 then
     return
   end
-
-  print(path, lastDownloadedDate, lastUsedDate, hs.inspect(flagTable))
   return true
 end
 
 function obj.patchWatcherCallbackFn(paths, flagTables)
+  print(hs.inspect(paths), hs.inspect(flagTables))
   obj.eventTime = os.time()
   local pathsToUse = {}
   for i, path in ipairs(paths) do
@@ -156,3 +130,19 @@ function obj.patchWatcherCallbackFn(paths, flagTables)
 end
 
 return obj
+
+-- local function mdlsquery(path, attr)
+--   local result, _, _ = hs.execute(string.format([["/usr/bin/mdls" "-name" "%s" "-raw" "%s"]], attr, path))
+--   return result
+-- end
+  -- local lastDownloadedDate =
+  --   mdlsquery(path, "kMDItemDownloadedDate"):match("%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d %+%d%d%d%d")
+  -- local lastUsedDate = mdlsquery(path, "kMDItemLastUsedDate")
+  -- ignoring openings
+  -- if lastUsedDate ~= lastDownloadedDate then
+  --   return
+  -- end
+-- local function toEpochDate(dateString)
+--   local _, _, year, month, day, hour, minute, second = dateString:find("(%d%d%d%d)-(%d%d)-(%d%d) (%d%d):(%d%d):(%d%d)")
+--   return os.time({year = year, month = month, day = day, hour = hour, min = minute, sec = second})
+-- end

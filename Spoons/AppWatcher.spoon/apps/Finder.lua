@@ -7,13 +7,12 @@ local geometry = require("hs.geometry")
 local hotkey = require("hs.hotkey")
 local keycodes = require("hs.keycodes")
 local osascript = require("hs.osascript")
-local task = require("hs.task")
+local strictShortcut = require("util.strictShortcut")
 local timer = require("hs.timer")
 local ui = require("util.ui")
-local util = require("util.utility")
 local doubleLeftClick = require("util.doubleLeftClick")
 local window = require("hs.window")
-local pressAndHold = require("util.pressAndHold")
+local pressAndHold = require("util.PressAndHold")
 
 local keyboard = {
   ["]"] = keycodes.map[30],
@@ -361,7 +360,8 @@ end
 
 function obj.invertSelection()
   -- task.new("util/finder-invert-selection/cli.js", nil):start()
-  osascript.applescript([[
+  osascript.applescript(
+    [[
     tell application "Finder"
     set inverted to {}
     set fitems to items of window 1 as alias list
@@ -373,7 +373,8 @@ function obj.invertSelection()
     end repeat
     select inverted
   end tell
-  ]])
+  ]]
+  )
 end
 
 function obj.undoCloseTab()
@@ -586,7 +587,15 @@ obj.modal:bind(
   "n",
   nil,
   function()
-    util.newWindowForFrontApp(obj.thisApp, obj.modal)
+    strictShortcut.perform(
+      {{"cmd"}, "n"},
+      obj.thisApp,
+      obj.modal,
+      nil,
+      function()
+        eventtap.keyStroke({"cmd", "alt"}, "n")
+      end
+    )
   end,
   nil
 )
@@ -739,14 +748,3 @@ obj.appScripts = {
 }
 
 return obj
-
--- obj.modal:bind(
---   {"cmd"},
---   "down",
---   function()
---     pressAndHold.onKeyDown(0.2, obj.traverseDown)
---   end,
---   function()
---     pressAndHold.onKeyUp(obj.modal, {{"cmd"}, "down"})
---   end
--- )

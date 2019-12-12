@@ -3,6 +3,7 @@ local WiFi = require("hs.wifi")
 local Dialog = require("hs.dialog")
 local Image = require("hs.image")
 local FNutils = require("hs.fnutils")
+local Task = require("hs.task")
 
 local obj = {}
 
@@ -18,16 +19,26 @@ local function connect(network)
   if not network then
     return
   end
+  local shouldConnect = true
   local ssid = network.text
+  local password
   if network.secure then
     local button, pass = Dialog.textPrompt(ssid, "Requires password", "", "OK", "Cancel")
     if button ~= "Cancel" then
-      WiFi.associate(ssid, pass)
+      password = pass
+    else
+      shouldConnect = false
     end
+  else
+    password = ""
+  end
+  if shouldConnect then
+    Task.new("/usr/sbin/networksetup", nil, {"-setairportnetwork", "en0", ssid, password}):start()
   end
 end
 
 local function callback()
+  local currentWifi = WiFi.currentNetwork()
   local networks = {}
   local seenSSIDs = {}
   local interfaceDetails = WiFi.interfaceDetails()
@@ -43,14 +54,15 @@ local function callback()
       secure = true
     end
     if not FNutils.contains(seenSSIDs, v.ssid) then
-      table.insert(
-        networks,
-        {
-          text = ssid,
-          secure = secure,
-          image = Image.imageFromPath(imagePath)
-        }
-      )
+      local item = {
+        text = ssid,
+        secure = secure,
+        image = Image.imageFromPath(imagePath)
+      }
+      if ssid == currentWifi then
+        item.subText = "Connected"
+      end
+      table.insert(networks, item)
     end
     table.insert(seenSSIDs, ssid)
   end
