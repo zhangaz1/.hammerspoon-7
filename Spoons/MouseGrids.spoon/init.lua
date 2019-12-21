@@ -8,8 +8,6 @@ local EventTap = require("hs.eventtap")
 
 local obj = {}
 
-obj.theGrid = {}
-
 obj.textStyle = {
   font = {
     name = "System Font",
@@ -21,7 +19,7 @@ obj.textStyle = {
   color = drawing.color.colorsFor("System")["labelColor"],
   backgroundColor = drawing.color.colorsFor("System")["windowBackgroundColor"]
 }
-
+obj.theGrid = {}
 obj.hyper = {"cmd", "alt", "ctrl", "shift"}
 obj.numberOfColumns = 8
 obj.numberOfRows = 8
@@ -29,7 +27,6 @@ obj.boxWidth = nil
 obj.boxHeight = nil
 obj.keystrokesSent = ""
 obj.hintCharacters = "asdfgqwertzxcvb"
-
 obj.hintCharactersTable = {}
 obj.mouseGridsModal = nil
 
@@ -46,15 +43,23 @@ function obj:init()
     table.insert(self.hintCharactersTable, char)
   end
 
-  for _, key in ipairs(self.hintCharactersTable) do
+  for _, character in ipairs(self.hintCharactersTable) do
     self.mouseGridsModal:bind(
       {},
-      key,
+      character,
       function()
-        self:handleKeyPress(key)
+        self:handleKeyPress(character)
       end
     )
   end
+
+  Hotkey.bind(
+    self.hyper,
+    "m",
+    function()
+      obj:start()
+    end
+  )
 
   for _, hotkey in ipairs(
     {
@@ -72,30 +77,40 @@ function obj:init()
       end
     )
   end
-
-  Hotkey.bind(
-    self.hyper,
-    "m",
-    function()
-      obj:start()
-    end
-  )
-
-  local mainScreen = screen.mainScreen():fullFrame()
-  self.boxWidth = mainScreen.w / self.numberOfColumns
-  self.boxHeight = mainScreen.h / self.numberOfRows
-  if self.theGrid[1] then
-    return
-  end
-  self:buildGrid()
 end
 
 function obj:start()
+  local mainScreen = screen.mainScreen():fullFrame()
+  self.boxWidth = mainScreen.w / self.numberOfColumns
+  self.boxHeight = mainScreen.h / self.numberOfRows
+
+  self:buildGrid()
+
   for _, box in ipairs(self.theGrid) do
     box:show(0.2)
     box.assignedHint:show(0.2)
   end
+
   self.mouseGridsModal:enter()
+end
+
+function obj:stop()
+  self.keystrokesSent = ""
+  for _, box in ipairs(self.theGrid) do
+    box:hide(0.2)
+    box.assignedHint:hide(0.2)
+  end
+  hs.timer.doAfter(
+    0.3,
+    function()
+      for _, box in ipairs(self.theGrid) do
+        box:delete()
+        box.assignedHint:delete()
+      end
+      self.theGrid = {}
+      self.mouseGridsModal:exit()
+    end
+  )
 end
 
 function obj:buildGrid()
@@ -157,15 +172,6 @@ function obj:handleKeyPress(theKey)
       return
     end
   end
-end
-
-function obj:stop()
-  self.keystrokesSent = ""
-  for _, box in ipairs(self.theGrid) do
-    box:hide(0.2)
-    box.assignedHint:hide(0.2)
-  end
-  self.mouseGridsModal:exit()
 end
 
 return obj

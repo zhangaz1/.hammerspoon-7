@@ -14,7 +14,6 @@ obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
-
 local doNotMuteNetworks = {
   "Biran",
   "Biran2",
@@ -22,28 +21,28 @@ local doNotMuteNetworks = {
   "rbrt"
 }
 
+local function watcherCallback()
+  timer.doAfter(
+    2,
+    function()
+      local audioDevice = audiodevice.defaultOutputDevice()
+      local currentWifi = wifi.currentNetwork()
+      if fnutils.contains(doNotMuteNetworks, currentWifi) then
+        audioDevice:setOutputMuted(false)
+      else
+        if plist.read(env.settings).muteSoundWhenJoiningUnknownNetworks then
+          audioDevice:setOutputMuted(true)
+        end
+      end
+    end
+  )
+end
+
 obj.wifiWatcher = nil
 
 function obj:init()
-  self.wifiWatcher =
-    wifi.watcher.new(
-    function()
-      timer.doAfter(
-        2,
-        function()
-          local audioDevice = audiodevice.defaultOutputDevice()
-          local currentWifi = wifi.currentNetwork()
-          if fnutils.contains(doNotMuteNetworks, currentWifi) then
-            audioDevice:setOutputMuted(false)
-          else
-            if plist.read(env.settings).muteSoundWhenJoiningUnknownNetworks then
-              audioDevice:setOutputMuted(true)
-            end
-          end
-        end
-      )
-    end
-  ):start()
+  self.wifiWatcher = wifi.watcher.new(watcherCallback):start()
+  watcherCallback()
 end
 
 return obj

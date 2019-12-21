@@ -1,25 +1,29 @@
 local timer = require("hs.timer")
 local eventtap = require("hs.eventtap")
 
-local m = {}
+local obj = {}
 
--- http://phrogz.net/lua/LearningLua_Scope.html
 -- https://github.com/Hammerspoon/Spoons/blob/master/Source/HoldToQuit.spoon/init.lua
 
-m.delayedTimer = nil
+obj.sentCallback = nil
+obj.delayedTimer = nil
 
-m.onKeyDown = function(delay, callBackFn)
-    m.delayedTimer = timer.delayed.new(delay, callBackFn)
-    m.delayedTimer:start()
+local function timerCallback() obj.sentCallback() end
+
+if not obj.delayedTimer then obj.delayedTimer = timer.delayed.new(0, timerCallback) end
+
+obj.onKeyDown = function(delay, callBackFn)
+  obj.sentCallback = callBackFn
+  obj.delayedTimer:setDelay(delay):start()
 end
 
-m.onKeyUp = function(modal, keys)
-  if m.delayedTimer:running() then
-    m.delayedTimer:stop()
+obj.onKeyUp = function(modal, keys)
+  if obj.delayedTimer and obj.delayedTimer:running() then
+    obj.delayedTimer:stop()
     modal:exit()
     eventtap.keyStroke(table.unpack(keys))
     modal:enter()
   end
 end
 
-return m
+return obj

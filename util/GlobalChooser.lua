@@ -1,4 +1,3 @@
--- TESTS
 local Chooser = require("hs.chooser")
 local Console = require("hs.console")
 
@@ -6,8 +5,8 @@ local obj = {}
 
 obj.choices = {}
 obj.searchBy = nil
-
-local chooser = nil
+obj.chooser = nil
+obj.sentCallback = nil
 
 local function tableCount(t)
 	local n = 0
@@ -17,7 +16,7 @@ local function tableCount(t)
 	return n
 end
 
-function obj.fuzzyQuery(s, m)
+local function fuzzyQuery(s, m)
 	local s_index = 1
 	local m_index = 1
 	local match_start = nil
@@ -45,14 +44,14 @@ function obj.fuzzyQuery(s, m)
 	end
 end
 
-function obj.fuzzyMatcher(query)
-	if not chooser then
+local function fuzzyMatcher(query)
+	if not obj.chooser then
 		-- errors if it's the first run and the chooser is not
 		-- yet initialized?
 		return
 	end
 	if query:len() == 0 then
-		return chooser:choices(obj.choices)
+		return obj.chooser:choices(obj.choices)
 	end
 	local pickedChoices = {}
 
@@ -65,7 +64,7 @@ function obj.fuzzyMatcher(query)
 			end
 			searchTerm = searchTerm .. field:lower()
 		end
-		local score = obj.fuzzyQuery(searchTerm, query:lower())
+		local score = fuzzyQuery(searchTerm, query:lower())
 		if score > 0 then
 			choice["fzf_score"] = score
 			table.insert(pickedChoices, choice)
@@ -75,36 +74,30 @@ function obj.fuzzyMatcher(query)
 		return a["fzf_score"] > b["fzf_score"]
 	end
 	table.sort(pickedChoices, sort_func)
-	chooser = chooser:choices(pickedChoices):rows((tableCount(pickedChoices)))
-	return chooser
+	return obj.chooser:choices(pickedChoices):rows((tableCount(pickedChoices)))
 end
 
-function obj.start(sentCallback, choices, searchBy, options)
+obj.defaultCallback = function(choice)
+	if not choice then
+		return
+	end
+	obj.sentCallback(choice)
+end
+
+function obj:init()
+	self.chooser = Chooser.new(self.defaultCallback):searchSubText(false):width(33):queryChangedCallback(fuzzyMatcher)
+end
+
+function obj:start(sentCallback, choices, searchBy)
 	-- local consoleWindow = Console.hswindow()
 	-- if consoleWindow then
 	--     consoleWindow:close()
 	-- end
-	obj.searchBy = searchBy
-	obj.choices = choices
-	local defaultCallback = function(choice)
-		if choice then
-			sentCallback(choice)
-		end
-		chooser:delete()
-		chooser = nil
-	end
-	chooser = Chooser.new(defaultCallback)
-	chooser:choices(obj.choices)
-	chooser:searchSubText(false)
-	chooser:width(33)
-	chooser:queryChangedCallback(obj.fuzzyMatcher)
-	chooser:rows(tableCount(choices))
-	chooser:show()
-	return chooser
-end
-
-function obj.upgrade(chooser)
-	-- body
+	-- ):rows(tableCount(choices))
+	self.choices = choices
+	self.sentCallback = sentCallback
+	self.searchBy = searchBy
+	self.chooser:choices(choices):rows(tableCount(choices)):show()
 end
 
 return obj

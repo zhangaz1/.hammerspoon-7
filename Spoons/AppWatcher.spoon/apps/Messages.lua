@@ -1,6 +1,6 @@
 local hotkey = require("hs.hotkey")
 local UI = require("util.ui")
-local Chooser = require("util.FuzzyChooser")
+local GlobalChooser = require("util.GlobalChooser")
 
 local obj = {}
 obj.id = "com.apple.iChat"
@@ -31,7 +31,7 @@ local function getLinks()
       }
     )
   end
-  Chooser.start(chooserCallback, choices, {"text"})
+  GlobalChooser:start(chooserCallback, choices, {"text"})
 end
 
 obj.modal:bind(

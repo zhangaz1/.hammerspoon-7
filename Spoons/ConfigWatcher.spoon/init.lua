@@ -10,6 +10,8 @@ obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
+obj.pathWatcher = nil
+
 local function patchWatcherCallbackFn(files, flagTables)
   local doReload = false
   for i, file in pairs(files) do
@@ -25,14 +27,8 @@ local function patchWatcherCallbackFn(files, flagTables)
   end
 end
 
-obj.pathWatcher = nil
-
 function obj:init()
-  self.pathWatcher = PathWatcher.new(".", patchWatcherCallbackFn)
-end
-
-function obj:start()
-  self.pathWatcher:start()
+  self.pathWatcher = PathWatcher.new(".", patchWatcherCallbackFn):start()
 end
 
 return obj

@@ -1,5 +1,6 @@
 local hs = hs
 
+local FS = require("hs.fs")
 local window = require("hs.window")
 local alert = require("hs.alert")
 local screen = require("hs.screen")
@@ -12,21 +13,18 @@ hs.hotkey.setLogLevel("error")
 -------------------
 -- PERSONAL MODULES
 -------------------
-require("modules.forceABC").init()
-require("modules.notificationCenter")
 require("modules.globalHotkeys")
 require("modules.windowManager")
-require("modules.appScripts")
+require("util.GlobalChooser"):init()
 
-hs.loadSpoon("WifiWatcher")
-hs.loadSpoon("VolumeControl")
-hs.loadSpoon("ConfigWatcher"):start()
-hs.loadSpoon("AppWatcher"):start()
-hs.loadSpoon("DownloadsWatcher"):start()
-hs.loadSpoon("BluetoothWatcher"):start()
-hs.loadSpoon("AppearanceWatcher"):start()
-hs.loadSpoon("KSheet")
-hs.loadSpoon("MouseGrids")
+local iterFn, dirObj = FS.dir("Spoons/")
+if iterFn then
+  for spoon in iterFn, dirObj do
+    if string.sub(spoon, -5) == "spoon" then
+      hs.loadSpoon(string.sub(spoon, 1, -7))
+    end
+  end
+end
 
 ----------------------------------
 -- HAMMERSPOON SETTINGS, VARIABLES

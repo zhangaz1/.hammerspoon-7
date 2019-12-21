@@ -1,9 +1,9 @@
-local chooser = require("util.FuzzyChooser")
 local WiFi = require("hs.wifi")
 local Dialog = require("hs.dialog")
 local Image = require("hs.image")
 local FNutils = require("hs.fnutils")
 local Task = require("hs.task")
+local GlobalChooser = require("util.GlobalChooser")
 
 local obj = {}
 
@@ -15,7 +15,7 @@ end
 local locked = script_path() .. "/locked.pdf"
 local unlocked = script_path() .. "/unlocked.pdf"
 
-local function connect(network)
+local function chooserCallback(network)
   if not network then
     return
   end
@@ -37,7 +37,7 @@ local function connect(network)
   end
 end
 
-local function callback()
+local function scanCallback()
   local currentWifi = WiFi.currentNetwork()
   local networks = {}
   local seenSSIDs = {}
@@ -66,14 +66,11 @@ local function callback()
     end
     table.insert(seenSSIDs, ssid)
   end
-  chooser.start(connect, networks, {"text"})
-end
-
-function obj:init()
+  GlobalChooser:start(chooserCallback, networks, {"text"})
 end
 
 function obj:start()
-  WiFi.backgroundScan(callback)
+  WiFi.backgroundScan(scanCallback)
 end
 
 return obj

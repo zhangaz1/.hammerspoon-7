@@ -1,17 +1,15 @@
 local Window = require("hs.window")
-local Chooser = require("util.FuzzyChooser")
+local GlobalChooser = require("util.GlobalChooser")
 local Image = require("hs.image")
 
 local obj = {}
 
-obj.chooser = nil
-
-local function fn(choice)
+local function chooserCallback(choice)
   Window.get(choice.id):focus()
 end
 
 -- local filter = Window.filter.new(nil)
-function obj.start()
+function obj:start()
   local wins = {}
   local visibleWindows = Window.visibleWindows()
   for _, win in ipairs(visibleWindows) do
@@ -39,9 +37,9 @@ function obj.start()
       )
     end
   end
-  obj.chooser = Chooser.start(fn, wins, {"text", "subText"})
+  GlobalChooser:start(chooserCallback, wins, {"text", "subText"})
 end
 
-obj.start()
+obj:start()
 
 return obj

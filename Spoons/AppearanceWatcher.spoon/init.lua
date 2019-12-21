@@ -18,20 +18,16 @@ local function script_path()
 end
 
 obj.spoonPath = script_path()
-obj.appearanceWatcher = nil
+obj.pathwatcher = nil
 
 function obj:init()
-  self.appearanceWatcher =
+  self.pathwatcher =
     pathwatcher.new(
     os.getenv("HOME") .. "/Library/Preferences/.GlobalPreferences.plist",
     function()
       obj:setStyle()
     end
-  )
-end
-
-function obj:start()
-  self.appearanceWatcher:start()
+  ):start()
   obj:setStyle()
 end
 

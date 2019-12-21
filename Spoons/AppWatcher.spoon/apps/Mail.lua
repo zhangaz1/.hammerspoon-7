@@ -6,12 +6,16 @@ local geometry = require("hs.geometry")
 local image = require("hs.image")
 local ax = require("hs._asm.axuielement")
 local ui = require("util.ui")
-local fuzzyChooser = require("util.FuzzyChooser")
+local GlobalChooser = require("util.GlobalChooser")
 
 local obj = {}
 obj.id = "com.apple.mail"
 obj.thisApp = nil
 obj.modal = hotkey.modal.new()
+
+local function chooserCallback(choice)
+	os.execute(string.format([["/usr/bin/open" "%s"]], choice.url))
+end
 
 local function getSelectedMessages()
 	local _, messageIds, _ =
@@ -85,10 +89,6 @@ local function copySenderAddress()
 	pasteboard.setContents(table.concat(b, "\n"))
 end
 
-local function chooserCallback(choice)
-	os.execute(string.format([["/usr/bin/open" "%s"]], choice.url))
-end
-
 local function mailGetLinks()
 	local window = ax.windowElement(obj.thisApp:focusedWindow())
 	-- when viewed in the main app
@@ -135,7 +135,7 @@ local function mailGetLinks()
 			)
 		end
 	end
-	fuzzyChooser.start(chooserCallback, choices, {"text", "subText"})
+	GlobalChooser:start(chooserCallback, choices, {"text", "subText"})
 end
 
 obj.modal:bind(

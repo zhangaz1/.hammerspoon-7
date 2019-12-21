@@ -18,24 +18,19 @@ local function script_path()
 end
 
 obj.spoonPath = script_path()
-obj.bluetoothWatcher = nil
-obj.airPodsMenuBarIcon = nil
-obj.magicMouseMenuBarIcon = nil
-obj.bothIcon = nil
-obj.rightIcon = nil
-obj.leftIcon = nil
-obj.magicMouseIcon = nil
-
-local airPodsAddress = "94-16-25-09-80-3c"
+obj.pathwatcher = nil
+obj.airPodsMenuBarItem = nil
+obj.magicMouseMenuBarItem = nil
+obj.airPodsMacAddress = "94-16-25-09-80-3c"
+obj.bothIcon = obj.spoonPath .. "/AirPodsBothBlack.pdf"
+obj.rightIcon = obj.spoonPath .. "/airPodBlackRight.pdf"
+obj.leftIcon = obj.spoonPath .. "/airPodBlackLeft.pdf"
+obj.magicMouseIcon = obj.spoonPath .. "/MagicMouse.pdf"
 
 function obj:init()
-  self.bothIcon = self.spoonPath .. "/AirPodsBothBlack.pdf"
-  self.rightIcon = self.spoonPath .. "/airPodBlackRight.pdf"
-  self.leftIcon = self.spoonPath .. "/airPodBlackLeft.pdf"
-  self.magicMouseIcon = self.spoonPath .. "/MagicMouse.pdf"
-  self.airPodsMenuBarIcon = Menubar.new()
-  self.magicMouseMenuBarIcon = Menubar.new()
-  self.bluetoothWatcher =
+  self.airPodsMenuBarItem = Menubar.new()
+  self.magicMouseMenuBarItem = Menubar.new()
+  self.pathwatcher =
     PathWatcher.new(
     "/Library/Preferences/com.apple.Bluetooth.plist",
     function()
@@ -46,48 +41,44 @@ function obj:init()
         end
       )
     end
-  )
-end
-
-function obj:start()
-  self.bluetoothWatcher:start()
+  ):start()
   self:getStatus()
 end
 
 function obj:getStatus()
   local airPodsFound = false
   for _, device in ipairs(Battery.privateBluetoothBatteryInfo()) do
-    if device.address == airPodsAddress then
+    if device.address == obj.airPodsMacAddress then
       -- primary -- the first airpod inserted?
       local primaryInEar = (device.primaryInEar == "YES")
       local secondaryInEar = (device.secondaryInEar == "YES")
       if primaryInEar and secondaryInEar then
-        self.airPodsMenuBarIcon:returnToMenuBar():setIcon(self.bothIcon)
+        self.airPodsMenuBarItem:returnToMenuBar():setIcon(self.bothIcon)
       elseif primaryInEar then
-        self.airPodsMenuBarIcon:returnToMenuBar():setIcon(self.rightIcon)
+        self.airPodsMenuBarItem:returnToMenuBar():setIcon(self.rightIcon)
       elseif secondaryInEar then
-        self.airPodsMenuBarIcon:returnToMenuBar():setIcon(self.leftIcon)
+        self.airPodsMenuBarItem:returnToMenuBar():setIcon(self.leftIcon)
       else
-        self.airPodsMenuBarIcon:removeFromMenuBar()
+        self.airPodsMenuBarItem:removeFromMenuBar()
       end
       airPodsFound = true
       break
     end
   end
   if not airPodsFound then
-    self.airPodsMenuBarIcon:removeFromMenuBar()
+    self.airPodsMenuBarItem:removeFromMenuBar()
   end
 
   local mouseFound = false
   for _, device in ipairs(Battery.otherBatteryInfo()) do
     if string.find(device.Product, "Magic Mouse") then
-      self.magicMouseMenuBarIcon:returnToMenuBar():setIcon(self.magicMouseIcon)
+      self.magicMouseMenuBarItem:returnToMenuBar():setIcon(self.magicMouseIcon)
       mouseFound = true
       break
     end
   end
   if not mouseFound then
-    self.magicMouseMenuBarIcon:removeFromMenuBar():setIcon(self.magicMouseIcon)
+    self.magicMouseMenuBarItem:removeFromMenuBar():setIcon(self.magicMouseIcon)
   end
 end
 
