@@ -16,6 +16,7 @@ hs.hotkey.setLogLevel("error")
 require("modules.globalHotkeys")
 require("modules.windowManager")
 require("util.GlobalChooser"):init()
+require("modules.BrightnessControl"):init()
 
 local iterFn, dirObj = FS.dir("Spoons/")
 if iterFn then

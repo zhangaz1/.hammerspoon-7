@@ -4,9 +4,7 @@ local Image = require("hs.image")
 
 local obj = {}
 
-local function chooserCallback(choice)
-  Window.get(choice.id):focus()
-end
+local function chooserCallback(choice) Window.get(choice.id):focus() end
 
 -- local filter = Window.filter.new(nil)
 function obj:start()
@@ -21,20 +19,10 @@ function obj:start()
     local id = win:id()
     if title == "" then
       title = nil
-      if appName == "Finder" or appName == "Safari" then
-        add = false
-      end
+      if appName == "Finder" or appName == "Safari" then add = false end
     end
     if add then
-      table.insert(
-        wins,
-        {
-          text = appName,
-          subText = title,
-          id = id,
-          image = Image.imageFromAppBundle(bundle)
-        }
-      )
+      table.insert(wins, {text = appName, subText = title, id = id, image = Image.imageFromAppBundle(bundle)})
     end
   end
   GlobalChooser:start(chooserCallback, wins, {"text", "subText"})

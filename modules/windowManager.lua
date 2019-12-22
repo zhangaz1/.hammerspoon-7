@@ -15,70 +15,71 @@ obj.possibleCells = {
     onLeft = "west",
     onRight = "northEast",
     onUp = "north",
-    onDown = "southEast"
-    -- counterpart = "northEast"
+    onDown = "southEast",
+    counterpart = "northEast"
   }, {
     id = "northEast",
     rect = {1.0, 0.0, 1.0, 1.0},
     onLeft = "northWest",
     onRight = "east",
     onUp = "north",
-    onDown = "southWest"
-    -- counterpart = "northWest"
+    onDown = "southWest",
+    counterpart = "northWest"
   }, {
     id = "southWest",
     rect = {1.0, 1.0, 1.0, 1.0},
     onLeft = "southEast",
     onRight = "east",
     onUp = "northEast",
-    onDown = "south"
+    onDown = "south",
+    counterpart = "southEast"
   }, {
     id = "southEast",
     rect = {0.0, 1.0, 1.0, 1.0},
     onLeft = "west",
     onRight = "southWest",
     onUp = "northWest",
-    onDown = "south"
+    onDown = "south",
+    counterpart = "southWest"
   }, {
     id = "west",
     rect = {0.0, 0.0, 1.0, 2.0},
     onLeft = "fullScreen",
     onRight = "east",
     onUp = "northWest",
-    onDown = "southEast"
-    -- counterpart = "east"
+    onDown = "southEast",
+    counterpart = "east"
   }, {
     id = "east",
     rect = {1.0, 0.0, 1.0, 2.0},
     onLeft = "west",
     onRight = "fullScreen",
     onUp = "northEast",
-    onDown = "southWest"
-    -- counterpart = "west"
+    onDown = "southWest",
+    counterpart = "west"
   }, {
     id = "south",
     rect = {0.0, 1.0, 2.0, 1.0},
     onLeft = "southEast",
     onRight = "southWest",
     onUp = "north",
-    onDown = "fullScreen"
+    onDown = "fullScreen",
+    counterpart = "north"
   }, {
     id = "north",
     rect = {0.0, 0.0, 2.0, 1.0},
     onLeft = "northWest",
     onRight = "northEast",
     onUp = "fullScreen",
-    onDown = "south"
+    onDown = "south",
+    counterpart = "south"
   },
   {id = "fullScreen", rect = {0.0, 0.0, 2.0, 2.0}, onLeft = "west", onRight = "east", onUp = "north", onDown = "south"}
 }
 
 local fallbacks = {Up = "north", Down = "south", Right = "east", Left = "west"}
-
 local function getSystemBlueColor() return Drawing.color.lists()["System"]["systemBlueColor"] end
-
 local function getMainScreen() return Screen.mainScreen() end
-
 local function defaultGrid() return Grid.setMargins(Geometry.point({0, 0})).setGrid("2x2", getMainScreen(), nil) end
 
 local function paintOverlay(counterpartID)
@@ -91,14 +92,20 @@ local function paintOverlay(counterpartID)
   end
 end
 
+local function secondWindowTimedOppurtunity(counterpart)
+  -- print("Entering transient modal...")
+  -- local tabBind = hs.hotkey.bind({}, "tab", function() paintOverlay(counterpart) end)
+  -- hs.timer.doAfter(0.5, function() tabBind:disable() end)
+end
+
 local function setWindowSizeByCellId(frontWindow, cellID)
   for _, possibleCell in pairs(obj.possibleCells) do
     if possibleCell.id == cellID then
       defaultGrid().set(frontWindow, possibleCell.rect)
+      -- begin second window sequence, if a counter part is defined
+      obj.overlay.hide()
       if possibleCell.counterpart then
-        paintOverlay(possibleCell.counterpart)
-      else
-        obj.overlay.hide()
+        secondWindowTimedOppurtunity(possibleCell.counterpart)
       end
       return
     end
@@ -145,17 +152,6 @@ obj.overlay = {
   end
 }
 
-function obj.maximize()
-  local frontWindow = Window.focusedWindow()
-  local currentCell = getCellObjectByWindowSize(frontWindow)
-  if currentCell and currentCell.id == "fullScreen" then
-    setWindowSizeByCellId(frontWindow, "northWest")
-    frontWindow:centerOnScreen()
-  else
-    setWindowSizeByCellId(frontWindow, "fullScreen")
-  end
-end
-
 function obj.pushToCell(direction)
   local frontWindow = Window.focusedWindow()
   local cellObject = getCellObjectByWindowSize(frontWindow)
@@ -167,6 +163,17 @@ function obj.pushToCell(direction)
     targetCell = fallbacks[direction]
   end
   setWindowSizeByCellId(frontWindow, targetCell)
+end
+
+function obj.maximize()
+  local frontWindow = Window.focusedWindow()
+  local currentCell = getCellObjectByWindowSize(frontWindow)
+  if currentCell and currentCell.id == "fullScreen" then
+    setWindowSizeByCellId(frontWindow, "northWest")
+    frontWindow:centerOnScreen()
+  else
+    setWindowSizeByCellId(frontWindow, "fullScreen")
+  end
 end
 
 return obj
