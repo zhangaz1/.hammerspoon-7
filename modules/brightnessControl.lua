@@ -10,7 +10,7 @@ obj.brightnessControlModal = nil
 local function systemKey(key)
   Eventtap.event.newSystemKeyEvent(string.upper(key), true):post()
   Eventtap.event.newSystemKeyEvent(string.upper(key), false):post()
-  obj.delayedTimer:start()
+  -- obj.delayedTimer:start()
 end
 
 local function increaseBrightness(repeating) systemKey("BRIGHTNESS_UP") end
@@ -26,7 +26,7 @@ function obj:stop()
 end
 
 function obj:init()
-  obj.delayedTimer = Timer.delayed.new(1, obj.stop)
+  -- obj.delayedTimer = Timer.delayed.new(1, obj.stop)
   obj.brightnessControlModal = Hotkey.modal.new()
     :bind({}, "right", nil, increaseBrightness, increaseBrightness, nil)
     :bind({}, "left", nil, decreaseBrightness, decreaseBrightness, nil)
