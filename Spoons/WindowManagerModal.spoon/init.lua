@@ -4,8 +4,16 @@ local Hotkey = require("hs.hotkey")
 local Screen = require("hs.screen")
 local Drawing = require("hs.drawing")
 local Webview = require("hs.webview")
+local util = require("rb.util")
 
 local obj = {}
+
+obj.__index = obj
+obj.name = "WindowManagerModal"
+obj.version = "1.0"
+obj.author = "roeybiran <roeybiran@icloud.com>"
+obj.homepage = "https://github.com/Hammerspoon/Spoons"
+obj.license = "MIT - https://opensource.org/licenses/MIT"
 
 obj.windowManagerModal = nil
 obj.cheatSheet = nil
@@ -55,49 +63,57 @@ local modalHotkeys = {
   {shortcut = {modifiers = {}, key = "up"}, pressedfn = move, repeatfn = move, arg = "up", txt = "Move Up"},
   {shortcut = {modifiers = {}, key = "down"}, pressedfn = move, repeatfn = move, arg = "down", txt = "Move Down"},
   {shortcut = {modifiers = {}, key = "left"}, pressedfn = move, repeatfn = move, arg = "left", txt = "Move Left"},
-  {shortcut = {modifiers = {}, key = "right"}, pressedfn = move, repeatfn = move, arg = "right", txt = "Move Right"}, {
+  {shortcut = {modifiers = {}, key = "right"}, pressedfn = move, repeatfn = move, arg = "right", txt = "Move Right"},
+  {
     shortcut = {modifiers = {"alt"}, key = "left"},
     pressedfn = resize,
     repeatfn = resize,
     arg = "shrinkFromRight",
     txt = "Shrink from Right"
-  }, {
+  },
+  {
     shortcut = {modifiers = {"alt"}, key = "right"},
     pressedfn = resize,
     repeatfn = resize,
     arg = "shrinkFromLeft",
     txt = "Shrink from Left"
-  }, {
+  },
+  {
     shortcut = {modifiers = {"alt"}, key = "up"},
     pressedfn = resize,
     repeatfn = resize,
     arg = "shrinkFromBottom",
     txt = "Shrink from Bottom"
-  }, {
+  },
+  {
     shortcut = {modifiers = {"alt"}, key = "down"},
     pressedfn = resize,
     repeatfn = resize,
     arg = "shrinkFromTop",
     txt = "Shrink from Top"
-  }, {
+  },
+  {
     shortcut = {modifiers = {"cmd"}, key = "right"},
     pressedfn = resize,
     repeatfn = resize,
     arg = "growToRight",
     txt = "Grow to Right"
-  }, {
+  },
+  {
     shortcut = {modifiers = {"cmd"}, key = "left"},
     pressedfn = resize,
     repeatfn = resize,
     arg = "growToLeft",
     txt = "Grow to Left"
-  }, {
+  },
+  {
     shortcut = {modifiers = {"cmd"}, key = "down"},
     pressedfn = resize,
     repeatfn = resize,
     arg = "growToBottom",
     txt = "Grow to Bottom"
-  }, {
+  },
+  {
     shortcut = {modifiers = {"cmd"}, key = "up"},
     pressedfn = resize,
     repeatfn = resize,
@@ -114,23 +130,34 @@ local function createCheatSheet()
   for _, keyDescription in ipairs(modalHotkeys) do
     local shortcut = keyDescription.shortcut
     local shortcutString = ""
-    for _, modifier in ipairs(shortcut.modifiers) do shortcutString = shortcutString .. glyps[modifier] end
+    for _, modifier in ipairs(shortcut.modifiers) do
+      shortcutString = shortcutString .. glyps[modifier]
+    end
     shortcutString = shortcutString .. glyps[shortcut.key]
     local action = keyDescription.txt
-    local row = string.format([[
+    local row =
+      string.format(
+      [[
         <tr>
             <td class="glyphs">%s</td>
             <td class="description">%s</td>
         </tr>
-    ]], shortcutString, action)
+    ]],
+      shortcutString,
+      action
+    )
     cheatSheetContents = cheatSheetContents .. "\n" .. row
   end
   -- format the html
-  local function toRGBA(t) return string.format([[rgba(%s, %s, %s, %s)]], t.red, t.green, t.blue, t.alpha) end
+  local function toRGBA(t)
+    return string.format([[rgba(%s, %s, %s, %s)]], t.red, t.green, t.blue, t.alpha)
+  end
   local cheatSheetBackgroundColor = Drawing.color.lists()["System"]["windowBackgroundColor"]
   local cheatSheetTextColor = Drawing.color.lists()["System"]["labelColor"]
 
-  local html = string.format([[
+  local html =
+    string.format(
+    [[
   <!DOCTYPE html>
   <html>
     <head>
@@ -138,12 +165,10 @@ local function createCheatSheet()
       html, body {
         background-color: %s;
         color: %s;
-        opacity: 0.7;
         font-family: -apple-system, sans-serif;
         font-size: 12px;
       }
       td {
-        opacity: 1.0;
       }
       table {
         padding-top: 24px;
@@ -166,22 +191,29 @@ local function createCheatSheet()
       <table>%s</table>
     </body>
   </html>
-  ]], "#262626", "#FFFFFF", cheatSheetContents)
+  ]],
+    util.winBackgroundColor(),
+    util.labelColor(),
+    cheatSheetContents
+  )
   local screenFrame = Screen.mainScreen():frame()
   local screenWidth = screenFrame.w
   local screenHeight = screenFrame.h
   local modalWidth = screenFrame.w / 7
   local modalHeight = screenFrame.h / 3
-  obj.cheatSheet = Webview.new({
-    x = (screenWidth - modalWidth) - 24,
-    y = (screenHeight - modalHeight) - 24,
-    w = modalWidth,
-    h = modalHeight
-  })
+  obj.cheatSheet =
+    Webview.new(
+    {
+      x = (screenWidth - modalWidth) - 24,
+      y = (screenHeight - modalHeight) - 24,
+      w = modalWidth,
+      h = modalHeight
+    }
+  )
   obj.cheatSheet:windowStyle({"titled", "nonactivating", "utility"})
-  obj.cheatSheet:darkMode(true)
+  -- obj.cheatSheet:darkMode(true)
+  -- obj.cheatSheet:transparent(true)
   obj.cheatSheet:shadow(true)
-  obj.cheatSheet:transparent(true)
   obj.cheatSheet:windowTitle("Window Manager")
   obj.cheatSheet:html(html)
   obj.cheatSheet:level(Drawing.windowLevels._MaximumWindowLevelKey)
@@ -202,12 +234,21 @@ function obj:init()
   obj.windowManagerModal = Hotkey.modal.new()
   for _, binding in ipairs(modalHotkeys) do
     local arg = binding.arg
-    obj.windowManagerModal:bind(binding.shortcut.modifiers, binding.shortcut.key, function() binding.pressedfn(arg) end,
-                                nil, function() binding.repeatfn(arg) end)
+    obj.windowManagerModal:bind(
+      binding.shortcut.modifiers,
+      binding.shortcut.key,
+      function()
+        binding.pressedfn(arg)
+      end,
+      nil,
+      function()
+        binding.repeatfn(arg)
+      end
+    )
   end
   obj.windowManagerModal:bind({}, "escape", obj.stop)
   obj.windowManagerModal:bind({}, "return", obj.stop)
-  Hotkey.bind({"cmd", "alt", "ctrl", "shift"}, "w", obj.start)
+  obj.windowManagerModal:bind({"cmd", "alt", "ctrl", "shift"}, "w", obj.stop)
 end
 
 return obj

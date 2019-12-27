@@ -8,14 +8,20 @@ obj.delayedTimer = nil
 obj.brightnessControlModal = nil
 
 local function systemKey(key)
-  Eventtap.event.newSystemKeyEvent(string.upper(key), true):post()
-  Eventtap.event.newSystemKeyEvent(string.upper(key), false):post()
+  Eventtap.event.newSystemKeyEvent(string.upper(key), true)
+    :post()
+  Eventtap.event.newSystemKeyEvent(string.upper(key), false)
+    :post()
   -- obj.delayedTimer:start()
 end
 
-local function increaseBrightness(repeating) systemKey("BRIGHTNESS_UP") end
+local function increaseBrightness(repeating)
+  systemKey("BRIGHTNESS_UP")
+end
 
-local function decreaseBrightness(repeating) systemKey("BRIGHTNESS_DOWN") end
+local function decreaseBrightness(repeating)
+  systemKey("BRIGHTNESS_DOWN")
+end
 
 function obj:start()
   obj.brightnessControlModal:enter()

@@ -7,6 +7,13 @@ local Drawing = require("hs.drawing")
 
 local obj = {}
 
+obj.__index = obj
+obj.name = "WindowManager"
+obj.version = "1.0"
+obj.author = "roeybiran <roeybiran@icloud.com>"
+obj.homepage = "https://github.com/Hammerspoon/Spoons"
+obj.license = "MIT - https://opensource.org/licenses/MIT"
+
 -- POSSIBLE CELLS --
 obj.possibleCells = {
   {

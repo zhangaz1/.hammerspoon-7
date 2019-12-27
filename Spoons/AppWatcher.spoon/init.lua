@@ -36,7 +36,7 @@ local function keepState(appObj)
     end
     obj.hebrewMenubarItem:removeFromMenuBar()
   else
-    obj.hebrewMenubarItem:returnToMenuBar():setTitle("ע")
+    obj.hebrewMenubarItem:returnToMenuBar():setTitle("HEB")
   end
 end
 

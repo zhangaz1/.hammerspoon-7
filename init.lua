@@ -14,8 +14,8 @@ hs.hotkey.setLogLevel("error")
 -- PERSONAL MODULES
 -------------------
 require("modules.globalHotkeys")
-require("modules.windowManager")
-require("WindowManagerModal"):init()
+-- require("modules.windowManager")
+-- require("WindowManagerModal"):init()
 
 require("util.GlobalChooser"):init()
 require("modules.BrightnessControl"):init()

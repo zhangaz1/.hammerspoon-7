@@ -10,16 +10,7 @@ local timer = require("hs.timer")
 local pressAndHold = require("util.PressAndHold")
 local DoubleLeftClick = require("util.doubleLeftClick")
 
-local keyMap = {
-  -- hs.keycodes.map.l
-  -- t = hs.keycodes.map[17],
-  -- l = hs.keycodes.map[37]
-  t = 17,
-  l = 37,
-  ["]"] = 30
-}
-
-local keyboard = {["]"] = keycodes.map[30], ["["] = keycodes.map[33]}
+local keyboard = {["]"] = keycodes.map["]"], ["["] = keycodes.map["["]}
 
 -- the statusbar overlay is AXWindow 1!
 local UIElementSidebar = {
@@ -49,8 +40,8 @@ local safariAXObject = nil
 
 obj.addressBarWatcher = eventtap.new({eventtap.event.types.keyUp}, function(event)
   -- https://github.com/Hammerspoon/hammerspoon/issues/2167
-  local keyCode = event:getKeyCode()
-  if (keyCode == keyMap.l or keyCode == keyMap.t) and event:getFlags():containExactly({"cmd"}) then
+  local keyChar = event:getCharacters()
+  if (keyChar == "l" or keyChar == "t") and event:getFlags():containExactly({"cmd"}) then
     obj.safariAXObject = ax.applicationElement(obj.thisApp)
     obj.safariPid = obj.thisApp:pid()
     -- BEGIN HEBREW RELATED

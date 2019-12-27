@@ -4,6 +4,7 @@ local timer = require("hs.timer")
 local fnutils = require("hs.fnutils")
 local env = require("env")
 local plist = require("hs.plist")
+local Settings = require("hs.settings")
 
 local obj = {}
 
@@ -30,8 +31,16 @@ local function watcherCallback()
       if fnutils.contains(doNotMuteNetworks, currentWifi) then
         audioDevice:setOutputMuted(false)
       else
-        if plist.read(env.settings).muteSoundWhenJoiningUnknownNetworks then
+        local vacationModeKey = "muteSoundWhenJoiningUnknownNetworks"
+        local vacationMode = Settings.get(vacationModeKey)
+        if vacationMode == nil then
+          Settings.set(vacationModeKey, true)
+          vacationMode = false
+        end
+        if not vacationMode then
           audioDevice:setOutputMuted(true)
+        else
+          print("VACATION MODE ON")
         end
       end
     end

@@ -2,25 +2,22 @@
 
 MODE="${1}"
 
-if [[ "${MODE}" != "light" ]] &&  [[ "${MODE}" != "dark" ]]; then
+if [[ "${MODE}" != "light" ]] && [[ "${MODE}" != "dark" ]]; then
 	printf "%s\n" "USAGE: $(basename "${SOURCE}") (dark|light)"
 	exit 0
 fi
 
 ### iterm ###
 ITERMSCRIPT="${HOME}/Library/Application Support/iTerm2/Scripts/AutoLaunch/changeColorPreset.py"
-if [[ -f "${ITERMSCRIPT}" ]]
-then
+if [[ -f "${ITERMSCRIPT}" ]]; then
 	if [[ "${MODE}" == "dark" ]]; then
 		ITERM="Solarized Dark"
 	elif [[ "${MODE}" == "light" ]]; then
 		ITERM="Solarized Light"
 	fi
 	ITERMDIR="${HOME}/Library/Application Support/iTerm2/iterm2env"
-	if [[ -d "${ITERMDIR}" ]]
-	then
-		for pythonVersion in "${ITERMDIR}/versions/"*"/bin/python3"
-		do
+	if [[ -d "${ITERMDIR}" ]]; then
+		for pythonVersion in "${ITERMDIR}/versions/"*"/bin/python3"; do
 			"${pythonVersion}" "${ITERMSCRIPT}" "${ITERM}" &
 			break
 		done
@@ -31,11 +28,10 @@ fi
 if [[ "${MODE}" == "dark" ]]; then
 	VSCODE="Solarized Dark"
 elif [[ "${MODE}" == "light" ]]; then
-  VSCODE="Solarized Light"
+	VSCODE="Solarized Light"
 fi
 VSCODESETTINGSFILE="${HOME}/Library/Application Support/Code/User/settings.json"
-if ! grep --silent "\"workbench.colorTheme\": \"${VSCODE}\"" "${VSCODESETTINGSFILE}"
-then
+if ! grep --silent "\"workbench.colorTheme\": \"${VSCODE}\"" "${VSCODESETTINGSFILE}"; then
 	/usr/bin/sed -E -i .bak "s|(\"workbench.colorTheme\":).+$|\1 \"${VSCODE}\",|" "${VSCODESETTINGSFILE}" &
 fi
 
@@ -61,12 +57,13 @@ if [[ "${MODE}" == "dark" ]]; then
 elif [[ "${MODE}" == "light" ]]; then
 	CONTEXTS="CTAppearanceNamedSubtle"
 fi
-if [[ "$(defaults read "com.contextsformac.Contexts" CTAppearanceTheme)" != "${CONTEXTS}" ]]
-then
-	(defaults write "com.contextsformac.Contexts" CTAppearanceTheme -string "${CONTEXTS}"
-	killall Contexts
-	sleep 1
-	open -j -g -a Contexts) &
+if [[ "$(defaults read "com.contextsformac.Contexts" CTAppearanceTheme)" != "${CONTEXTS}" ]]; then
+	(
+		defaults write "com.contextsformac.Contexts" CTAppearanceTheme -string "${CONTEXTS}"
+		killall Contexts
+		sleep 1
+		open -j -g -a Contexts
+	) &
 fi
 
 # hammerspoon's console
