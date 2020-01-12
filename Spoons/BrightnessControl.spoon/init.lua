@@ -4,14 +4,19 @@ local Timer = require("hs.timer")
 
 local obj = {}
 
+obj.__index = obj
+obj.name = "BrightnessControl"
+obj.version = "1.0"
+obj.author = "roeybiran <roeybiran@icloud.com>"
+obj.homepage = "https://github.com/Hammerspoon/Spoons"
+obj.license = "MIT - https://opensource.org/licenses/MIT"
+
 obj.delayedTimer = nil
 obj.brightnessControlModal = nil
 
 local function systemKey(key)
-  Eventtap.event.newSystemKeyEvent(string.upper(key), true)
-    :post()
-  Eventtap.event.newSystemKeyEvent(string.upper(key), false)
-    :post()
+  Eventtap.event.newSystemKeyEvent(string.upper(key), true):post()
+  Eventtap.event.newSystemKeyEvent(string.upper(key), false):post()
   -- obj.delayedTimer:start()
 end
 

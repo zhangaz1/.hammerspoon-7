@@ -23,6 +23,9 @@ obj.spoonPath = script_path()
 obj.appwatcher = nil
 obj.hebrewMenubarItem = nil
 
+-- shared across HS env
+obj.frontApp = nil
+
 local function currentState()
   return Settings.get("forceABC")
 end
@@ -61,6 +64,7 @@ local function appWatcherCallback(_, event, appObj)
       local listeners = appEnv.listeners
       if appEnv.id == id then
         appEnv.thisApp = appObj
+        obj.frontApp = appObj
         if modal then
           modal:enter()
         end
@@ -100,10 +104,11 @@ function obj:init()
       end
     end
   end
+  -- on reload, enter modal (if any) for the front app (saves an redundant cmd+tab)
+  obj.frontApp = Application.frontmostApplication()
+  appWatcherCallback(nil, Application.watcher.activated, obj.frontApp)
   -- create the watcher and start
   self.appwatcher = Application.watcher.new(appWatcherCallback):start()
-  -- on reload, enter modal (if any) for the front app (saves an redundant cmd+tab)
-  appWatcherCallback(nil, Application.watcher.activated, Application.frontmostApplication())
 end
 
 return obj

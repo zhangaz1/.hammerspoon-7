@@ -1,5 +1,5 @@
 local hotkey = require("hs.hotkey")
-local strictShortcut = require("util.strictShortcut")
+local Util = require("rb.util")
 
 local obj = {}
 obj.id = "com.adobe.xd"
@@ -10,7 +10,7 @@ obj.modal:bind(
   {"cmd"},
   "1",
   function()
-    strictShortcut.perform(
+    Util.strictShortcut(
       {{"cmd"}, "1"},
       obj.thisApp,
       obj.modal,
@@ -25,7 +25,7 @@ obj.modal:bind(
   {"cmd"},
   "2",
   function()
-    strictShortcut.perform(
+    Util.strictShortcut(
       {{"cmd"}, "2"},
       obj.thisApp,
       obj.modal,
@@ -40,7 +40,7 @@ obj.modal:bind(
   {"cmd"},
   "3",
   function()
-    strictShortcut.perform(
+    Util.strictShortcut(
       {{"cmd"}, "3"},
       obj.thisApp,
       obj.modal,

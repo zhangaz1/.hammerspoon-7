@@ -3,9 +3,9 @@ local drawing = require("hs.drawing")
 local pasteboard = require("hs.pasteboard")
 local eventtap = require("hs.eventtap")
 
-local m = {}
+local obj = {}
 
-m.setStyle = function(theText)
+function obj:start(theText)
   local styledText =
     styledtext.new(
     theText,
@@ -20,4 +20,7 @@ m.setStyle = function(theText)
   end
 end
 
-return m
+function obj:init()
+end
+
+return obj

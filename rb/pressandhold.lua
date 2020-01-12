@@ -1,5 +1,4 @@
 local timer = require("hs.timer")
-local eventtap = require("hs.eventtap")
 
 local obj = {}
 
@@ -8,21 +7,23 @@ local obj = {}
 obj.sentCallback = nil
 obj.delayedTimer = nil
 
-local function timerCallback() obj.sentCallback() end
+local function timerCallback()
+  obj.sentCallback()
+end
 
-if not obj.delayedTimer then obj.delayedTimer = timer.delayed.new(0, timerCallback) end
+if not obj.delayedTimer then
+  obj.delayedTimer = timer.delayed.new(0, timerCallback)
+end
 
-obj.onKeyDown = function(delay, callBackFn)
+function obj.onHold(delay, callBackFn)
   obj.sentCallback = callBackFn
   obj.delayedTimer:setDelay(delay):start()
 end
 
-obj.onKeyUp = function(modal, keys)
+function obj.onPress(func)
   if obj.delayedTimer and obj.delayedTimer:running() then
     obj.delayedTimer:stop()
-    modal:exit()
-    eventtap.keyStroke(table.unpack(keys))
-    modal:enter()
+    func()
   end
 end
 

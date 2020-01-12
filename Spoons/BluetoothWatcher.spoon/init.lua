@@ -2,6 +2,8 @@ local Menubar = require("hs.menubar")
 local PathWatcher = require("hs.pathwatcher")
 local Battery = require("hs.battery")
 local Timer = require("hs.timer")
+
+local Chooser = require("rb.fuzzychooser")
 local util = require("rb.util")
 
 local obj = {}
@@ -27,45 +29,82 @@ obj.magicMouseMenuBarItem = nil
 local airPodsMacAddress = util.cloudSettings.get("airPodsMacAddress")
 
 local icons = {
-  bothBlack = obj.spoonPath .. "/bothBlack.pdf",
-  rightBlack = obj.spoonPath .. "/rightBlack.pdf",
-  leftBlack = obj.spoonPath .. "/leftBlack.pdf",
+  bothBlack = obj.spoonPath .. "/AirPodsBothBlack.pdf",
+  bothRed = obj.spoonPath .. "/AirPodsBothRed.pdf",
+  RightBlack = obj.spoonPath .. "/AirPodsRightBlack.pdf",
+  LeftBlack = obj.spoonPath .. "/AirPodsLeftBlack.pdf",
   magicMouseBlack = obj.spoonPath .. "/MagicMouseBlack.pdf",
   magicMouseRed = obj.spoonPath .. "/MagicMouseRed.pdf"
 }
 
+local devices = {}
+
 local function getStatus()
-  local airPodsFound = false
+  local airPodsFound
+  local magicMouseFound
+  local icon
+  local template
   for _, device in ipairs(Battery.privateBluetoothBatteryInfo()) do
     if device.address == airPodsMacAddress then
       -- primary - the first airpod inserted?
       local primaryInEar = (device.primaryInEar == "YES")
       local secondaryInEar = (device.secondaryInEar == "YES")
-      local batteryPercentRight = device.batteryPercentRight
-      local batteryPercentLeft = device.batteryPercentLeft
 
       local primaryBud = device.primaryBud
       local secondaryBud
-      if primaryBud == "leftBlack" then
-        secondaryBud = "rightBlack"
-      else
-        secondaryBud = "leftBlack"
+      if primaryBud == "right" then
+        primaryBud = "Right"
+        secondaryBud = "Left"
+      elseif primaryBud == "left" then
+        primaryBud = "Left"
+        secondaryBud = "Right"
       end
 
-      local primaryIcon = icons[primaryBud]
-      local secondaryIcon = icons[secondaryBud]
+      local primaryBatteryPercent = tonumber(device["batteryPercent" .. primaryBud])
+      local secondaryBatteryPercent = tonumber(device["batteryPercent" .. secondaryBud])
 
-      if primaryInEar and secondaryInEar then
-        obj.airPodsMenuBarItem:returnToMenuBar():setIcon(icons.bothBlack)
-      elseif primaryInEar then
-        obj.airPodsMenuBarItem:returnToMenuBar():setIcon(primaryIcon)
-      elseif secondaryInEar then
-        obj.airPodsMenuBarItem:returnToMenuBar():setIcon(secondaryIcon)
-      else
-        obj.airPodsMenuBarItem:removeFromMenuBar()
+      if primaryInEar or secondaryInEar then
+        table.insert(
+          devices,
+          {
+            text = device.name,
+            address = device.address
+          }
+        )
+        airPodsFound = true
+        if primaryInEar and secondaryInEar then
+          if (primaryBatteryPercent < 20) and (secondaryBatteryPercent < 20) then
+            icon = icons.bothRed
+            template = false
+          elseif (primaryBatteryPercent > 20) and (secondaryBatteryPercent > 20) then
+            icon = icons.bothBlack
+            template = true
+          elseif (primaryBatteryPercent > 20) and (secondaryBatteryPercent < 20) then
+          elseif (primaryBatteryPercent < 20) and (secondaryBatteryPercent > 20) then
+          else
+            icon = icons.bothBlack
+            template = true
+          end
+        elseif primaryInEar then
+          if primaryBatteryPercent < 20 then
+            icon = icons[primaryBud .. "Red"]
+            template = false
+          else
+            icon = icons[primaryBud .. "Black"]
+            template = true
+          end
+        elseif secondaryInEar then
+          if secondaryBatteryPercent < 20 then
+            icon = icons[secondaryBud .. "Red"]
+            template = false
+          else
+            icon = icons[secondaryBud .. "Black"]
+            template = true
+          end
+        end
+        obj.airPodsMenuBarItem:returnToMenuBar():setIcon(icon, template)
+        break
       end
-      airPodsFound = true
-      break
     end
   end
   if not airPodsFound then
@@ -73,20 +112,44 @@ local function getStatus()
   end
 
   for _, device in ipairs(Battery.otherBatteryInfo()) do
-    if string.find(device.Product, "Magic Mouse") then
-      if device.BatteryPercent > 20 then
-        obj.magicMouseMenuBarItem:setIcon(icons.magicMouseBlack)
+    local productName = device.Product
+    if productName:find("Magic Mouse") then
+      table.insert(
+        devices,
+        {
+          text = productName,
+          address = device.DeviceAddress
+        }
+      )
+      magicMouseFound = true
+      if device.BatteryPercent < 20 then
+        icon = icons.magicMouseRed
+        template = false
       else
-        obj.magicMouseMenuBarItem:setIcon(icons.magicMouseRed, false)
+        icon = icons.magicMouseBlack
+        template = true
       end
-      return obj.magicMouseMenuBarItem:returnToMenuBar()
+      obj.magicMouseMenuBarItem:returnToMenuBar():setIcon(icon, template)
+      break
     end
   end
-  obj.magicMouseMenuBarItem:removeFromMenuBar()
+  if not magicMouseFound then
+    obj.magicMouseMenuBarItem:removeFromMenuBar()
+  end
 end
 
 local function delayedTimerCallback()
   getStatus()
+end
+
+local function chooserCallback(choice)
+  if choice then
+    print(choice)
+  end
+end
+
+function obj.start()
+  Chooser:start(chooserCallback, devices, {"text"})
 end
 
 function obj:init()
@@ -98,6 +161,7 @@ function obj:init()
     "/Library/Preferences/com.apple.Bluetooth.plist",
     function()
       self.delayedTimer:start()
+      -- getStatus()
     end
   ):start()
   getStatus()

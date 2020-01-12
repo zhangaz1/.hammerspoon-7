@@ -1,18 +1,15 @@
-local ax = require("hs._asm.axuielement")
-local Application = require("hs.application")
 local eventtap = require("hs.eventtap")
-local fnutils = require("hs.fnutils")
 local geometry = require("hs.geometry")
 local hotkey = require("hs.hotkey")
 local keycodes = require("hs.keycodes")
 local osascript = require("hs.osascript")
-local strictShortcut = require("util.strictShortcut")
 local timer = require("hs.timer")
-local ui = require("util.ui")
-local doubleLeftClick = require("util.doubleLeftClick")
-local window = require("hs.window")
-local pressAndHold = require("util.PressAndHold")
-local GlobalChooser = require("util.GlobalChooser")
+
+local ax = require("hs._asm.axuielement")
+local ui = require("rb.ui")
+local Util = require("rb.util")
+local GlobalChooser = require("rb.fuzzychooser")
+local pressAndHold = require("rb.pressandhold")
 
 local keyboard = {["]"] = keycodes.map["]"], ["["] = keycodes.map["["]}
 
@@ -39,145 +36,7 @@ local function getMainArea()
   end
 end
 
-local function isFilesAreaFocused()
-  local focusedWindow = obj.thisApp:focusedWindow()
-  if not focusedWindow then
-    return
-  end
-  local axApplication = ax.applicationElement(obj.thisApp)
-  -- if a file's name is currently being edited
-  if ui.getUIElement(axApplication, {{"AXTextField", 1}}) then
-    return
-  end
-  local focusedElement = axApplication:attributeValue("AXFocusedUIElement")
-  if not focusedElement then
-    return
-  end
-  local focusedElementDescription = focusedElement:attributeValue("AXDescription")
-  -- ONLY in icon/gallery views,
-  -- it will appear as if the files themselves are focused, even if there's an active context menu
-  if focusedElementDescription == "icon view" or focusedElementDescription == "gallery view" then
-    -- column view
-    -- checking for an active context menu
-    local contextMenu = focusedElement:attributeValue("AXChildren")[2]
-    if (contextMenu and contextMenu:attributeValue("AXRole") == "AXMenu") then
-      return
-    end
-  elseif focusedElement:attributeValue("AXRole") == "AXList" then
-    -- if the description is list view,
-    -- then we can count the Accessibility API that the files area is indeed focused
-    local axBrowser = focusedElement:attributeValue("AXParent"):attributeValue("AXParent"):attributeValue("AXParent")
-    if axBrowser:attributeValue("AXDescription") ~= "column view" then
-      return
-    end
-  elseif focusedElementDescription ~= "list view" then
-    return
-  end
-  -- EDGE CASES --
-  -- TODO: check for an mission control/dock (element at position)
-  -- TODO: check for Contexts.app
-  -- checking for open toolbar menus
-  local toolbar =
-    ui.getUIElement(
-    axApplication,
-    {
-      {"AXWindow", "AXMain", true},
-      {"AXToolbar", 1}
-    }
-  )
-  if toolbar then
-    for _, toolbarItem in ipairs(toolbar:attributeValue("AXChildren")) do
-      local firstElement = toolbarItem:attributeValue("AXChildren")
-      if firstElement then
-        -- axmenu!
-        if toolbarItem[2] then
-          return
-        end
-      end
-    end
-  end
-  -- checking for an open popup menu in a notification banner
-  if
-    ui.getUIElement(
-      Application("Notification Center"),
-      {
-        {"AXWindow", 1},
-        {"AXMenuButton", 1},
-        {"AXMenu", 1},
-        {"AXMenuItem", 1}
-      }
-    )
-   then
-    return
-  end
-  -- if we reached here, the file area is focused
-  return true
-end
-
-local function getSelection()
-  local _, selection, _ = osascript.applescript([[
-    set theSelectionPOSIX to {}
-    tell application "Finder" to set theSelection to selection as alias list
-    repeat with i from 1 to count theSelection
-      set end of theSelectionPOSIX to (POSIX path of item i of theSelection)
-    end repeat
-    set {saveTID, AppleScript's text item delimiters} to {AppleScript's text item delimiters, {linefeed}}
-    return theSelectionPOSIX as text
-    set AppleScript's text item delimiters to saveTID
-  ]])
-  if not selection then
-    return
-  end
-  selection = fnutils.split(selection, "\n")
-  -- remove?
-  local next = next
-  if next(selection) == nil then
-    return nil
-  else
-    return selection
-  end
-end
-
-local function selectionCount()
-  local selection = getSelection()
-  if not selection then
-    return 0
-  end
-  local n = 0
-  for i, _ in ipairs(selection) do
-    n = i
-  end
-  return n
-end
-
 ---
-
-local function bulkRenamer()
-  if isFilesAreaFocused() then
-    if (selectionCount() > 1) then
-      if (window.frontmostWindow():application():bundleID() == obj.id) then
-        local menuItems =
-          ui.getUIElement(
-          obj.thisApp,
-          {
-            {"AXMenuBar", 1},
-            {"AXMenuBarItem", "AXTitle", "File"},
-            {"AXMenu", 1}
-          }
-        ):attributeValue("AXChildren")
-        for _, v in ipairs(menuItems) do
-          local title = v:attributeValue("AXTitle")
-          if string.find(title, "Rename") then
-            return v:performAction("AXPress")
-          end
-        end
-      end
-    end
-  end
-  obj.modal:exit()
-  eventtap.keyStroke({}, "return")
-  obj.modal:enter()
-end
 
 local function deselectAll()
   for _, k in ipairs({{"Edit", "Select All"}, {"Edit", "Deselect All"}}) do
@@ -256,9 +115,9 @@ local function rightSizeColumn(arg)
   end
   local point = geometry.point({x, y})
   if arg == "this" then
-    doubleLeftClick.start(point)
+    Util.doubleLeftClick(point)
   elseif arg == "all" then
-    doubleLeftClick.start(point, {alt = true})
+    Util.doubleLeftClick(point, {alt = true})
   end
 end
 
@@ -269,7 +128,7 @@ local function browseInLaunchBar()
   end ignoring]])
 end
 
-function obj.duplicateTab()
+local function duplicateTab()
   -- behaves weirdly with a 0.2 (or shorter) delay
   timer.doAfter(
     0.3,
@@ -304,7 +163,7 @@ local function selectColumnChooserCallback(choice)
   ]])
 end
 
-function obj.toggleColumns()
+local function toggleColumns()
   local columnChoices = {}
   local columns = {
     "iCloud Status",
@@ -335,7 +194,7 @@ local function focusMainArea()
   -- assumption: the files area ui element is different for every view, but it is always to the first child
   getMainArea():setAttributeValue("AXFocused", true)
   for _ = 1, 3 do
-    if getSelection() == nil then
+    if Util.getFinderSelection() == nil then
       eventtap.keyStroke({}, "down")
     else
       break
@@ -343,7 +202,7 @@ local function focusMainArea()
   end
 end
 
-function obj.nextSearchScope()
+local function nextSearchScope()
   local searchScopesBar = {
     {"AXWindow", 1},
     {"AXSplitGroup", 1},
@@ -353,7 +212,7 @@ function obj.nextSearchScope()
   return ui.cycleUIElements(obj.thisApp, searchScopesBar, "AXRadioButton", "next")
 end
 
-function obj.toggleSortingDirection()
+local function toggleSortingDirection()
   -- this approach is buggy, returns "name column" even when "date added" is the sort column:
   -- tell application "Finder"
   --	tell list view options of Finder window visible
@@ -379,7 +238,7 @@ function obj.toggleSortingDirection()
   ]])
 end
 
-function obj.invertSelection()
+local function invertSelection()
   -- task.new("util/finder-invert-selection/cli.js", nil):start()
   osascript.applescript([[
     tell application "Finder"
@@ -396,7 +255,7 @@ function obj.invertSelection()
   ]])
 end
 
-function obj.undoCloseTab()
+local function undoCloseTab()
   osascript.applescript(
     [[
     tell application "Default Folder X" to set recentFinderWindows to GetRecentFinderWindows
@@ -430,7 +289,7 @@ function obj.undoCloseTab()
   )
 end
 
-function obj.showNavPopup(backOrForward)
+local function showNavPopup(backOrForward)
   local button
   if backOrForward == "back" then
     button = 1
@@ -450,15 +309,15 @@ function obj.showNavPopup(backOrForward)
   ):performAction("AXShowMenu")
 end
 
-function obj.showBackMenu()
-  obj.showNavPopup("back")
+local function showBackMenu()
+  showNavPopup("back")
 end
 
-function obj.showForwardMenu()
-  obj.showNavPopup("forward")
+local function showForwardMenu()
+  showNavPopup("forward")
 end
 
-function obj.traverseUp()
+local function traverseUp()
   osascript.applescript([[
     ignoring application responses
     tell application "LaunchBar" to perform action "Traverse Up"
@@ -466,7 +325,7 @@ function obj.traverseUp()
   ]])
 end
 
-function obj.traverseDown()
+local function traverseDown()
   osascript.applescript([[
     ignoring application responses
     tell application "LaunchBar" to perform action "Traverse Down"
@@ -474,7 +333,7 @@ function obj.traverseDown()
   ]])
 end
 
-function obj.browseFolderContents()
+local function browseFolderContents()
   osascript.applescript([[
     ignoring application responses
     tell application "LaunchBar" to perform action "Browse Folder Contents"
@@ -482,7 +341,7 @@ function obj.browseFolderContents()
   ]])
 end
 
-function obj.isSearchModeActive()
+local function isSearchModeActive()
   local title = obj.thisApp:focusedWindow():title()
   if string.match(title, "^Searching “.+”$") then
     -- if search field is focused
@@ -493,14 +352,7 @@ function obj.isSearchModeActive()
   end
 end
 
-function obj.assertCommandDown(fn, args)
-  if obj.isSearchModeActive() then
-    return focusMainArea()
-  end
-  fn(table.unpack(args))
-end
-
-function obj.openPackage()
+local function openPackage()
   osascript.applescript(string.format([[
         set f to "%s"
         tell application "Finder"
@@ -511,26 +363,16 @@ function obj.openPackage()
             set target of Finder window 1 to POSIX file f
           end try
         end tell
-      ]], getSelection()[1]))
+      ]], Util.getFinderSelection()[1]))
 end
 
 obj.modal:bind({"alt", "cmd"}, "a", deselectAll)
-obj.modal:bind({"alt", "cmd"}, "down", obj.browseFolderContents)
+obj.modal:bind({"alt", "cmd"}, "down", browseFolderContents)
 obj.modal:bind({"alt"}, "2", focusMainArea)
 obj.modal:bind({"alt"}, "f", browseInLaunchBar)
-obj.modal:bind({"alt"}, "o", obj.openPackage)
-obj.modal:bind({"shift", "cmd"}, "t", obj.undoCloseTab)
-obj.modal:bind({}, "return", bulkRenamer)
-obj.modal:bind(
-  {"cmd"},
-  "down",
-  function()
-    obj.assertCommandDown(pressAndHold.onKeyDown, {0.2, obj.traverseDown})
-  end,
-  function()
-    obj.assertCommandDown(pressAndHold.onKeyUp, {obj.modal, {{"cmd"}, "down"}})
-  end
-)
+obj.modal:bind({"alt"}, "o", openPackage)
+obj.modal:bind({"shift", "cmd"}, "t", undoCloseTab)
+
 obj.modal:bind(
   {"alt", "cmd"},
   "left",
@@ -564,7 +406,7 @@ obj.modal:bind(
   "n",
   nil,
   function()
-    strictShortcut.perform(
+    Util.strictShortcut(
       {{"cmd"}, "n"},
       obj.thisApp,
       obj.modal,
@@ -590,34 +432,75 @@ obj.modal:bind(
     obj.thisApp:selectMenuItem({"File", "Show Original"})
   end
 )
+
 obj.modal:bind(
   {"cmd"},
   keyboard["["],
   function()
-    pressAndHold.onKeyDown(0.2, obj.showBackMenu)
+    pressAndHold.onHold(0.2, showBackMenu)
   end,
   function()
-    pressAndHold.onKeyUp(obj.modal, {{"cmd"}, keyboard["["]})
+    pressAndHold.onPress(
+      function()
+        obj.modal:exit()
+        eventtap.keyStroke({"cmd"}, keyboard["["])
+        obj.modal:enter()
+      end
+    )
   end
 )
 obj.modal:bind(
   {"cmd"},
   keyboard["]"],
   function()
-    pressAndHold.onKeyDown(0.2, obj.showForwardMenu)
+    pressAndHold.onHold(0.2, showForwardMenu)
   end,
   function()
-    pressAndHold.onKeyUp(obj.modal, {{"cmd"}, keyboard["]"]})
+    pressAndHold.onPress(
+      function()
+        obj.modal:exit()
+        eventtap.keyStroke({"cmd"}, keyboard["]"])
+        obj.modal:enter()
+      end
+    )
   end
 )
 obj.modal:bind(
   {"cmd"},
   "up",
   function()
-    pressAndHold.onKeyDown(0.2, obj.traverseUp)
+    pressAndHold.onHold(0.2, traverseUp)
   end,
   function()
-    pressAndHold.onKeyUp(obj.modal, {{"cmd"}, "up"})
+    pressAndHold.onPress(
+      function()
+        obj.modal:exit()
+        eventtap.keyStroke({"cmd"}, "up")
+        obj.modal:enter()
+      end
+    )
+  end
+)
+obj.modal:bind(
+  {"cmd"},
+  "down",
+  function()
+    if isSearchModeActive() then
+      return focusMainArea()
+    end
+    pressAndHold.onHold(0.2, traverseDown)
+  end,
+  function()
+    if isSearchModeActive() then
+      return focusMainArea()
+    end
+    pressAndHold.onPress(
+      function()
+        obj.modal:exit()
+        eventtap.keyStroke({"cmd"}, "down")
+        obj.modal:enter()
+      end
+    )
   end
 )
 
@@ -625,13 +508,13 @@ obj.appScripts = {
   {
     title = "Toggle Columns",
     func = function()
-      obj.toggleColumns()
+      toggleColumns()
     end
   },
   {
     title = "Toggle Sort Direction",
     func = function()
-      obj.toggleSortingDirection()
+      toggleSortingDirection()
     end
   },
   {
@@ -649,7 +532,7 @@ obj.appScripts = {
   {
     title = "Duplicate Tab",
     func = function()
-      obj.duplicateTab()
+      duplicateTab()
     end
   },
   {
@@ -661,13 +544,13 @@ obj.appScripts = {
   {
     title = "Next Search Scope",
     func = function()
-      obj.nextSearchScope()
+      nextSearchScope()
     end
   },
   {
     title = "Invert Selection",
     func = function()
-      obj.invertSelection()
+      invertSelection()
     end
   }
 }

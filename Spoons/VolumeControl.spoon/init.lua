@@ -1,9 +1,11 @@
-local AX = require("hs._asm.axuielement")
-local Observer = require("hs._asm.axuielement").observer
-local UI = require("util.ui")
 local Application = require("hs.application")
 local Hotkey = require("hs.hotkey")
 local EventTap = require("hs.eventtap")
+
+local AX = require("hs._asm.axuielement")
+local Observer = require("hs._asm.axuielement").observer
+
+local UI = require("rb.ui")
 
 local obj = {}
 
@@ -29,7 +31,6 @@ function obj.modifyVolume(direction, withRepeat)
 end
 
 function obj.observerCallback()
-  hs.printf("volume popover closed...")
   observer:stop()
   obj.modal:exit()
 end
@@ -104,6 +105,20 @@ function obj:init()
       end
     },
     {
+      {"alt"},
+      "right",
+      function()
+        hs.audiodevice.defaultOutputDevice():setVolume(100)
+      end
+    },
+    {
+      {"alt"},
+      "left",
+      function()
+        hs.audiodevice.defaultOutputDevice():setVolume(0)
+      end
+    },
+    {
       {},
       "return",
       function()
@@ -115,6 +130,5 @@ function obj:init()
     self.modal:bind(table.unpack(v))
   end
 end
-
 
 return obj

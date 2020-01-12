@@ -1,6 +1,7 @@
 local hotkey = require("hs.hotkey")
-local UI = require("util.ui")
-local GlobalChooser = require("util.GlobalChooser")
+
+local UI = require("rb.ui")
+local GlobalChooser = require("rb.fuzzychooser")
 
 local obj = {}
 obj.id = "com.apple.iChat"

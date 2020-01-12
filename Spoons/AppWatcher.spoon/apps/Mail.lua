@@ -4,9 +4,11 @@ local eventtap = require("hs.eventtap")
 local pasteboard = require("hs.pasteboard")
 local geometry = require("hs.geometry")
 local image = require("hs.image")
+
 local ax = require("hs._asm.axuielement")
-local ui = require("util.ui")
-local GlobalChooser = require("util.GlobalChooser")
+
+local ui = require("rb.ui")
+local GlobalChooser = require("rb.fuzzychooser")
 
 local obj = {}
 obj.id = "com.apple.mail"
@@ -18,17 +20,14 @@ local function chooserCallback(choice)
 end
 
 local function getSelectedMessages()
-	local _, messageIds, _ =
-		osascript.applescript(
-		[[
+	local _, messageIds, _ = osascript.applescript([[
         set msgId to {}
         tell application "Mail" to set _selected to selection
         repeat with i from 1 to (count _selected)
             set end of msgId to id of item i of _selected
         end repeat
         return msgId
-    ]]
-	)
+]])
 	local next = next
 	if not next(messageIds) then
 		return nil
@@ -75,32 +74,21 @@ local function pane3()
 end
 
 local function copySenderAddress()
-	local _, b, _ =
-		osascript.applescript(
-		[[tell application "Mail"
+	local _, b, _ = osascript.applescript([[tell application "Mail"
 		set sendersList to {}
 		set theMessages to the selected messages of message viewer 0
 		repeat with aMessage in theMessages
 			set end of sendersList to extract address from (sender of aMessage)
 		end repeat
 		end tell
-		return sendersList]]
-	)
+		return sendersList]])
 	pasteboard.setContents(table.concat(b, "\n"))
 end
 
-local function mailGetLinks()
+local function getMessageLinks()
 	local window = ax.windowElement(obj.thisApp:focusedWindow())
-	-- when viewed in the main app
-	local messageWindow =
-		ui.getUIElement(
-		window,
-		({
-			{"AXSplitGroup", 1},
-			{"AXSplitGroup", 1},
-			{"AXScrollArea", 2}
-		})
-	) or ui.getUIElement(window, ({{"AXScrollArea", 1}})) -- when viewed in a standalone container
+	-- when viewed in the main app OR when viewed in a standalone container
+	local messageWindow = ui.getUIElement(window, ({{"AXSplitGroup", 1}, {"AXSplitGroup", 1}, {"AXScrollArea", 2}})) or ui.getUIElement(window, ({{"AXScrollArea", 1}}))
 	local webArea =
 		ui.getUIElement(
 		messageWindow,
@@ -116,7 +104,6 @@ local function mailGetLinks()
 	local links = webArea:attributeValue("AXLinkUIElements")
 	local choices = {}
 	if not next(links) then
-		-- TODO: replace with notification
 		table.insert(choices, {["text"] = "Message Contains No Links"})
 	else
 		for _, v in ipairs(links) do
@@ -128,9 +115,7 @@ local function mailGetLinks()
 					text = title or url,
 					subText = url,
 					url = url,
-					image = image.imageFromPath(
-						"/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/InternetLocation.icns"
-					)
+					image = image.imageFromPath("/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/InternetLocation.icns")
 				}
 			)
 		end
@@ -163,16 +148,14 @@ obj.modal:bind(
 	{"alt"},
 	"o",
 	function()
-		mailGetLinks()
+		getMessageLinks()
 	end
 )
 
 obj.appScripts = {
 	{
 		title = "Copy Sender Address",
-		func = function()
-			copySenderAddress()
-		end
+		func = copySenderAddress
 	}
 }
 

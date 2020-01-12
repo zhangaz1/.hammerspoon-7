@@ -1,9 +1,11 @@
-local hotkey = require('hs.hotkey')
-local osascript = require('hs.osascript')
-local ui = require("util.ui")
+local hotkey = require("hs.hotkey")
+local osascript = require("hs.osascript")
+
+local ui = require("rb.ui")
 
 local m = {}
-m.id = 'com.apple.iWork.Pages'
+
+m.id = "com.apple.iWork.Pages"
 m.thisApp = nil
 m.modal = hotkey.modal.new()
 
@@ -29,15 +31,24 @@ end
 
 local function pane1()
 	-- pane1 is either the main text area, or the sidebar, if open
-	ui.getUIElement(m.thisApp, {{'AXWindow', 1}, {'AXSplitGroup', 1}, {'AXScrollArea', 1}}):setAttributeValue('AXFocused', true)
+	ui.getUIElement(m.thisApp, {{"AXWindow", 1}, {"AXSplitGroup", 1}, {"AXScrollArea", 1}}):setAttributeValue("AXFocused", true)
 end
 
-
 m.appScripts = {
-	{ title = "Font Family", func = function() fontFamily() end },
-	{ title = "Paragraph Style", func = function() paragraphStyle() end }
+	{title = "Font Family", func = function()
+			fontFamily()
+		end},
+	{title = "Paragraph Style", func = function()
+			paragraphStyle()
+		end}
 }
 
-m.modal:bind({'alt'}, '1', function() pane1() end)
+m.modal:bind(
+	{"alt"},
+	"1",
+	function()
+		pane1()
+	end
+)
 
 return m

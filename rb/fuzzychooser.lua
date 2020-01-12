@@ -10,7 +10,9 @@ obj.sentCallback = nil
 
 local function tableCount(t)
     local n = 0
-    for _, _ in pairs(t) do n = n + 1 end
+    for _, _ in pairs(t) do
+        n = n + 1
+    end
     return n
 end
 
@@ -19,11 +21,15 @@ local function fuzzyQuery(s, m)
     local m_index = 1
     local match_start = nil
     while true do
-        if s_index > s:len() or m_index > m:len() then return -1 end
+        if s_index > s:len() or m_index > m:len() then
+            return -1
+        end
         local s_char = s:sub(s_index, s_index)
         local m_char = m:sub(m_index, m_index)
         if s_char == m_char then
-            if match_start == nil then match_start = s_index end
+            if match_start == nil then
+                match_start = s_index
+            end
             s_index = s_index + 1
             m_index = m_index + 1
             if m_index > m:len() then
@@ -44,14 +50,18 @@ local function fuzzyMatcher(query)
         -- yet initialized?
         return
     end
-    if query:len() == 0 then return obj.chooser:choices(obj.choices) end
+    if query:len() == 0 then
+        return obj.chooser:choices(obj.choices)
+    end
     local pickedChoices = {}
 
     for _, choice in pairs(obj.choices) do
         local searchTerm = ""
         for _, choiceField in ipairs(obj.searchBy) do
             local field = choice[choiceField]
-            if not field then field = "" end
+            if not field then
+                field = ""
+            end
             searchTerm = searchTerm .. field:lower()
         end
         local score = fuzzyQuery(searchTerm, query:lower())
@@ -60,22 +70,25 @@ local function fuzzyMatcher(query)
             table.insert(pickedChoices, choice)
         end
     end
-    local sort_func = function(a, b) return a["fzf_score"] > b["fzf_score"] end
+    local sort_func = function(a, b)
+        return a["fzf_score"] > b["fzf_score"]
+    end
     table.sort(pickedChoices, sort_func)
     return obj.chooser:choices(pickedChoices):rows((tableCount(pickedChoices)))
 end
 
 obj.defaultCallback = function(choice)
-    if not choice then return end
+    if not choice then
+        return
+    end
     obj.sentCallback(choice)
 end
 
 function obj:init()
-    self.chooser = Chooser.new(self.defaultCallback):searchSubText(false):width(
-                       33):queryChangedCallback(fuzzyMatcher)
+    self.chooser = Chooser.new(self.defaultCallback):searchSubText(false):width(33)
 end
 
-function obj:start(sentCallback, choices, searchBy)
+function obj:start(sentCallback, choices, searchBy, sentQueryChangedCallback)
     -- local consoleWindow = Console.hswindow()
     -- if consoleWindow then
     --     consoleWindow:close()
@@ -84,7 +97,15 @@ function obj:start(sentCallback, choices, searchBy)
     self.choices = choices
     self.sentCallback = sentCallback
     self.searchBy = searchBy
-    self.chooser:choices(choices):rows(tableCount(choices)):show()
+    self.chooser:choices(choices):rows(tableCount(choices))
+    local queryChangedCallback
+    if sentQueryChangedCallback then
+        queryChangedCallback = sentQueryChangedCallback
+    else
+        queryChangedCallback = fuzzyMatcher
+    end
+    self.chooser:queryChangedCallback(queryChangedCallback)
+    return self.chooser:show()
 end
 
 return obj

@@ -1,5 +1,5 @@
 local hotkey = require('hs.hotkey')
-local ui = require("util.ui")
+local ui = require("rb.ui")
 
 local m = {}
 

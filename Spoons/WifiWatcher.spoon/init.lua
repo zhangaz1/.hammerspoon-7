@@ -2,8 +2,6 @@ local audiodevice = require("hs.audiodevice")
 local wifi = require("hs.wifi")
 local timer = require("hs.timer")
 local fnutils = require("hs.fnutils")
-local env = require("env")
-local plist = require("hs.plist")
 local Settings = require("hs.settings")
 
 local obj = {}

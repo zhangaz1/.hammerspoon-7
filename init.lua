@@ -13,18 +13,15 @@ hs.hotkey.setLogLevel("error")
 -------------------
 -- PERSONAL MODULES
 -------------------
-require("modules.globalHotkeys")
--- require("modules.windowManager")
--- require("WindowManagerModal"):init()
-
-require("util.GlobalChooser"):init()
-require("modules.BrightnessControl"):init()
+require("rb.fuzzychooser"):init()
 
 local iterFn, dirObj = FS.dir("Spoons/")
 if iterFn then
-  for spoon in iterFn, dirObj do
-    if string.sub(spoon, -5) == "spoon" then
-      hs.loadSpoon(string.sub(spoon, 1, -7))
+  for file in iterFn, dirObj do
+    if string.sub(file, -5) == "spoon" then
+      hs.loadSpoon(string.sub(file, 1, -7))
+    elseif file:sub(-4) == ".lua" then
+      require("Spoons." .. file:sub(1, -5))
     end
   end
 end

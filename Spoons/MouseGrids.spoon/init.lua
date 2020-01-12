@@ -8,6 +8,11 @@ local EventTap = require("hs.eventtap")
 
 local obj = {}
 
+local function script_path()
+  local str = debug.getinfo(2, "S").source:sub(2)
+  return str:match("(.*/)")
+end
+
 obj.textStyle = {
   font = {
     name = "System Font",
@@ -19,23 +24,21 @@ obj.textStyle = {
   color = drawing.color.colorsFor("System")["labelColor"],
   backgroundColor = drawing.color.colorsFor("System")["windowBackgroundColor"]
 }
-obj.theGrid = {}
+
 obj.hyper = {"cmd", "alt", "ctrl", "shift"}
+
 obj.numberOfColumns = 8
 obj.numberOfRows = 8
 obj.boxWidth = nil
 obj.boxHeight = nil
-obj.keystrokesSent = ""
 obj.hintCharacters = "asdfgqwertzxcvb"
+obj.keystrokesSent = ""
 obj.hintCharactersTable = {}
-obj.mouseGridsModal = nil
-
-local function script_path()
-  local str = debug.getinfo(2, "S").source:sub(2)
-  return str:match("(.*/)")
-end
 obj.spoonPath = script_path()
 obj.hintsScript = obj.spoonPath .. "/hints.js"
+
+obj.theGrid = {}
+obj.mouseGridsModal = nil
 
 function obj:init()
   self.mouseGridsModal = Hotkey.modal.new()
@@ -77,20 +80,18 @@ function obj:init()
       end
     )
   end
-end
 
-function obj:start()
   local mainScreen = screen.mainScreen():fullFrame()
   self.boxWidth = mainScreen.w / self.numberOfColumns
   self.boxHeight = mainScreen.h / self.numberOfRows
-
   self:buildGrid()
+end
 
+function obj:start()
   for _, box in ipairs(self.theGrid) do
     box:show(0.2)
     box.assignedHint:show(0.2)
   end
-
   self.mouseGridsModal:enter()
 end
 
@@ -100,17 +101,17 @@ function obj:stop()
     box:hide(0.2)
     box.assignedHint:hide(0.2)
   end
-  hs.timer.doAfter(
-    0.3,
-    function()
-      for _, box in ipairs(self.theGrid) do
-        box:delete()
-        box.assignedHint:delete()
-      end
-      self.theGrid = {}
-      self.mouseGridsModal:exit()
-    end
-  )
+  -- hs.timer.doAfter(
+  --   0.3,
+  --   function()
+  --     for _, box in ipairs(self.theGrid) do
+  --       box:delete()
+  --       box.assignedHint:delete()
+  --     end
+  --     self.theGrid = {}
+  --   end
+  -- )
+  self.mouseGridsModal:exit()
 end
 
 function obj:buildGrid()
@@ -127,9 +128,13 @@ function obj:buildGrid()
           w = self.boxWidth,
           h = self.boxHeight
         }
-      ):setFill(false):setStroke(true):setStrokeColor(drawing.color.colorsFor("System")["systemBlueColor"]):setStrokeWidth(
-        3
-      ):bringToFront(true):setLevel(drawing.windowLevels._MaximumWindowLevelKey)
+      )
+      singleRect:setFill(false)
+      singleRect:setStroke(true)
+      singleRect:setStrokeColor(drawing.color.colorsFor("System")["systemBlueColor"])
+      singleRect:setStrokeWidth(3)
+      singleRect:bringToFront(true)
+      singleRect:setLevel(drawing.windowLevels._MaximumWindowLevelKey)
       table.insert(self.theGrid, singleRect)
       x = x + self.boxWidth
     end
@@ -151,10 +156,8 @@ function obj:buildGrid()
     local hintX = (singleRectangleFrame.x + ((singleRectangleFrame.w / 2) - (textFrame.w / 2)))
     local hintY = (singleRectangleFrame.y + ((singleRectangleFrame.h / 2) - (textFrame.h / 2)))
     local styledText = StyledText.new(string.upper(text), self.textStyle)
-    aSingleRect.assignedHint =
-      drawing.text({x = hintX, y = hintY, w = 50, h = 50}, styledText):setLevel(
-      drawing.windowLevels._MaximumWindowLevelKey
-    )
+    aSingleRect.assignedHint = drawing.text({x = hintX, y = hintY, w = 50, h = 50}, styledText)
+    aSingleRect.assignedHint:setLevel(drawing.windowLevels._MaximumWindowLevelKey)
     aSingleRect.hintAsString = text
     aSingleRect.assignedHint.position = {x = hintX, y = hintY}
   end

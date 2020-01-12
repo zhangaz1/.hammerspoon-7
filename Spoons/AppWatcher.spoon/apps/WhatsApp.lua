@@ -11,16 +11,29 @@ obj.thisApp = nil
 obj.modal = hotkey.modal.new()
 
 -- BEGIN HEBREW RELATED
+obj.returnKeyWatcher =
+  eventtap.new(
+  {eventtap.event.types.keyUp},
+  function(event)
+    if (keycodes.map[event:getKeyCode()] == "return" or keycodes.map[event:getKeyCode()] == "tab") and event:getFlags():containExactly({}) then
+      keycodes.setLayout("Hebrew")
+      print("stopping watcher")
+      obj.returnKeyWatcher:stop()
+    end
+  end
+)
+
 obj.searchAction =
   eventtap.new(
   {eventtap.event.types.keyUp},
   function(event)
-    local f = 3
-    if (event:getKeyCode() == f) and event:getFlags():containExactly({"cmd"}) then
-      -- print(keyName)
-      keycodes.setLayout("ABC")
+    if keycodes.currentLayout() == "ABC" then
+      return
     end
-    return
+    if (event:getKeyCode() == keycodes.map.f) and event:getFlags():containExactly({"cmd"}) then
+      keycodes.setLayout("ABC")
+      obj.returnKeyWatcher:start()
+    end
   end
 )
 -- END HEBREW RELATED
@@ -83,8 +96,7 @@ obj.appScripts = {
   }
 }
 
-obj.listeners = {
-  obj.searchAction
-}
+-- obj.searchAction
+obj.listeners = {}
 
 return obj

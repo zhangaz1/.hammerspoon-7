@@ -40,11 +40,11 @@ local function resize(resizeKind)
   local w = currentFrame._w
   local h = currentFrame._h
   if resizeKind == "growToTop" then
-    rect = {x = x, y = y, w = w, h = h + 30}
+    rect = {x = x, y = y - 30, w = w, h = h + 30}
   elseif resizeKind == "growToRight" then
     rect = {x = x, y = y, w = w + 30, h = h}
   elseif resizeKind == "growToBottom" then
-    rect = {x = x, y = y - 30, w = w, h = h + 30}
+    rect = {x = x, y = y, w = w, h = h + 30}
   elseif resizeKind == "growToLeft" then
     rect = {x = x - 30, y = y, w = w + 30, h = h}
   elseif resizeKind == "shrinkFromTop" then

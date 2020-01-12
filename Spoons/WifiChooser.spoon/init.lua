@@ -3,7 +3,7 @@ local Dialog = require("hs.dialog")
 local Image = require("hs.image")
 local FNutils = require("hs.fnutils")
 local Task = require("hs.task")
-local GlobalChooser = require("util.GlobalChooser")
+local GlobalChooser = require("rb.fuzzychooser")
 
 local obj = {}
 

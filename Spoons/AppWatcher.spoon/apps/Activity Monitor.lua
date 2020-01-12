@@ -1,17 +1,18 @@
 local hotkey = require("hs.hotkey")
-local strictShortcut = require("util.strictShortcut")
 local window = require("hs.window")
+
 local ax = require("hs._asm.axuielement")
-local ui = require("util.ui")
+local ui = require("rb.ui")
+local Util = require("rb.util")
 
-local m = {}
+local obj = {}
 
-m.id = "com.apple.ActivityMonitor"
-m.thisApp = nil
-m.modal = hotkey.modal.new()
+obj.id = "com.apple.ActivityMonitor"
+obj.thisApp = nil
+obj.modal = hotkey.modal.new()
 
 local function trulyFocusedApp()
-  if m.id == window.focusedWindow():application():bundleID() then
+  if obj.id == window.focusedWindow():application():bundleID() then
     return true
   else
     return false
@@ -20,7 +21,7 @@ end
 
 local function clickActivityMonitorRadioButton(aButton)
   ui.getUIElement(
-    ax.windowElement(m.thisApp:mainWindow()),
+    ax.windowElement(obj.thisApp:mainWindow()),
     {
       {"AXToolbar", 1},
       {"AXGroup", 2},
@@ -46,48 +47,48 @@ local function clickButton5()
   clickActivityMonitorRadioButton(5)
 end
 
-m.modal:bind(
+obj.modal:bind(
   {"cmd"},
   "1",
   function()
-    strictShortcut.perform({{"cmd"}, "1"}, m.thisApp, m.modal, nil, clickButton1)
+    Util.strictShortcut({{"cmd"}, "1"}, obj.thisApp, obj.modal, nil, clickButton1)
   end
 )
-m.modal:bind(
+obj.modal:bind(
   {"cmd"},
   "2",
   function()
-    strictShortcut.perform({{"cmd"}, "2"}, m.thisApp, m.modal, nil, clickButton2)
+    Util.strictShortcut({{"cmd"}, "2"}, obj.thisApp, obj.modal, nil, clickButton2)
   end
 )
-m.modal:bind(
+obj.modal:bind(
   {"cmd"},
   "3",
   function()
-    strictShortcut.perform({{"cmd"}, "3"}, m.thisApp, m.modal, nil, clickButton3)
+    Util.strictShortcut({{"cmd"}, "3"}, obj.thisApp, obj.modal, nil, clickButton3)
   end
 )
-m.modal:bind(
+obj.modal:bind(
   {"cmd"},
   "4",
   function()
-    strictShortcut.perform({{"cmd"}, "4"}, m.thisApp, m.modal, nil, clickButton4)
+    Util.strictShortcut({{"cmd"}, "4"}, obj.thisApp, obj.modal, nil, clickButton4)
   end
 )
-m.modal:bind(
+obj.modal:bind(
   {"cmd"},
   "5",
   function()
-    strictShortcut.perform({{"cmd"}, "5"}, m.thisApp, m.modal, nil, clickButton5)
+    Util.strictShortcut({{"cmd"}, "5"}, obj.thisApp, obj.modal, nil, clickButton5)
   end
 )
 
-m.modal:bind(
+obj.modal:bind(
   {"cmd"},
   "delete",
   function()
-    m.thisApp:selectMenuItem({"View", "Quit Process"})
+    obj.thisApp:selectMenuItem({"View", "Quit Process"})
   end
 )
 
-return m
+return obj

@@ -1,7 +1,9 @@
 local hotkey = require("hs.hotkey")
-local ui = require("util.ui")
+
+local ui = require("rb.ui")
 
 local obj = {}
+
 obj.id = "com.apple.reminders"
 obj.thisApp = nil
 obj.modal = hotkey.modal.new()

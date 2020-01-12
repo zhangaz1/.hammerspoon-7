@@ -1,6 +1,7 @@
-local ax = require("hs._asm.axuielement")
-local ui = require("util.ui")
 local hotkey = require('hs.hotkey')
+
+local ax = require("hs._asm.axuielement")
+local ui = require("rb.ui")
 
 local m = {}
 m.id = 'com.apple.AddressBook'

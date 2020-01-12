@@ -1,6 +1,6 @@
-local ui = require("util.ui")
-
 local hotkey = require('hs.hotkey')
+
+local ui = require("rb.ui")
 
 local m = {}
 m.id = 'com.apple.Dictionary'

@@ -1,33 +1,15 @@
 local hotkey = require("hs.hotkey")
 local osascript = require("hs.osascript")
 local eventtap = require("hs.eventtap")
-local ax = require("hs._asm.axuielement")
-local observer = require("hs._asm.axuielement").observer
-local strictShortcut = require("util.strictShortcut")
-local ui = require("util.ui")
 local keycodes = require("hs.keycodes")
-local timer = require("hs.timer")
-local pressAndHold = require("util.PressAndHold")
-local DoubleLeftClick = require("util.doubleLeftClick")
+
+local ax = require("hs._asm.axuielement")
+
+local Util = require("rb.util")
+local ui = require("rb.ui")
+local pressAndHold = require("rb.pressandhold")
 
 local keyboard = {["]"] = keycodes.map["]"], ["["] = keycodes.map["["]}
-
--- the statusbar overlay is AXWindow 1!
-local UIElementSidebar = {
-  {"AXWindow", "AXRoleDescription", "standard window"}, {"AXSplitGroup", 1}, {"AXGroup", 1}, {"AXScrollArea", 1},
-  {"AXOutline", 1}
-}
-local UIElementPane1StandardView = {
-  {"AXWindow", "AXRoleDescription", "standard window"}, {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXGroup", 1},
-  {"AXGroup", 1}, {"AXScrollArea", 1}, {"AXWebArea", 1}
-}
-local UIElementPane1BookmarksHistoryView = {
-  {"AXWindow", "AXRoleDescription", "standard window"}, {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXGroup", 1},
-  {"AXScrollArea", 1}, {"AXOutline", 1}
-}
-local UIElementNewBookmarksFolderButton = {
-  {"AXWindow", 1}, {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXGroup", 1}, {"AXButton", 1}
-}
 
 local obj = {}
 
@@ -35,96 +17,12 @@ obj.id = "com.apple.Safari"
 obj.thisApp = nil
 obj.modal = hotkey.modal.new()
 obj.safariPid = nil
+obj.safariAXObserver = nil
+obj.safariAXAppObj = nil
 
-local safariAXObject = nil
+---
 
-obj.addressBarWatcher = eventtap.new({eventtap.event.types.keyUp}, function(event)
-  -- https://github.com/Hammerspoon/hammerspoon/issues/2167
-  local keyChar = event:getCharacters()
-  if (keyChar == "l" or keyChar == "t") and event:getFlags():containExactly({"cmd"}) then
-    obj.safariAXObject = ax.applicationElement(obj.thisApp)
-    obj.safariPid = obj.thisApp:pid()
-    -- BEGIN HEBREW RELATED
-    keycodes.setLayout("ABC")
-    -- END HEBREW RELATED
-    obj.addressBarReturnKeyWatcher:start()
-    obj.addressBarAXObserver("start")
-  end
-end)
-
-obj.addressBarReturnKeyWatcher = eventtap.new({eventtap.event.types.keyDown}, function(event)
-  if keycodes.map[event:getKeyCode()] == "return" and event:getFlags():containExactly({}) then
-    timer.doAfter(0.5, function()
-      local currentUrl = obj.returnFrontTabURL()
-      local match = string.find(currentUrl, "https://.+google")
-      if match then obj.pane1(true) end
-      -- BEGIN HEBREW RELATED
-      keycodes.setLayout("ABC")
-      -- END HEBREW RELATED
-      print("stopping address bar watcher...")
-      obj.addressBarReturnKeyWatcher:stop()
-      obj.addressBarAXObserver("stop")
-    end)
-  end
-end)
-
-function obj.addressBarAXObserverCallback(_, _, notificationString, _)
-  if notificationString == "AXFocusedUIElementChanged" and obj.isAddressBarFocused(obj.safariAXObject) then return end
-  obj.addressBarReturnKeyWatcher:stop()
-  obj.addressBarAXObserver("stop")
-  print("stopping address bar watcher...")
-end
-
-function obj.addressBarAXObserver(mode)
-  if mode == "start" then
-    safariAXObject = observer.new(obj.safariPid):addWatcher(obj.safariAXObject, "AXFocusedUIElementChanged"):addWatcher(
-                       obj.safariAXObject, "AXApplicationDeactivated"):callback(obj.addressBarAXObserverCallback)
-                       :start()
-  elseif mode == "stop" then
-    safariAXObject:removeWatcher(obj.safariAXObject, "AXFocusedUIElementChanged"):removeWatcher(obj.safariAXObject,
-                                                                                                "AXApplicationDeactivated")
-      :stop()
-  end
-end
-
-function obj.isAddressBarFocused(axAppObj)
-  local addressBarObject = ui.getUIElement(axAppObj, {{"AXWindow", "AXMain", true}, {"AXToolbar", 1}}):attributeValue(
-                             "AXChildren")
-  for _, toolbarObject in ipairs(addressBarObject) do
-    local toolbarObjectsChilds = toolbarObject:attributeValue("AXChildren")
-    if toolbarObjectsChilds then
-      for _, toolbarObjectChild in ipairs(toolbarObjectsChilds) do
-        if toolbarObjectChild:attributeValue("AXRole") == "AXTextField" then
-          return (toolbarObjectChild:attributeValue("AXFocused") == true)
-        end
-      end
-    end
-  end
-end
-
-function obj.pane1(includeSidebar)
-  -- pane1 = is either the main web area, or the sidebar
-  local targetPane
-  local sideBar
-  local webArea = ui.getUIElement(obj.thisApp, UIElementPane1StandardView)
-  local bookmarksOrHistory = ui.getUIElement(obj.thisApp, UIElementPane1BookmarksHistoryView)
-  if includeSidebar then
-    sideBar = ui.getUIElement(obj.thisApp, UIElementSidebar)
-  else
-    sideBar = nil
-  end
-
-  if sideBar then
-    targetPane = sideBar
-  elseif webArea then
-    targetPane = webArea
-  elseif bookmarksOrHistory then
-    targetPane = bookmarksOrHistory
-  end
-  return targetPane:setAttributeValue("AXFocused", true)
-end
-
-function obj.closeTabs(arg)
+local function closeTabs(arg)
   osascript.applescript(string.format([[
     set arg to "%s"
     tell application "Safari"
@@ -149,7 +47,7 @@ function obj.closeTabs(arg)
     end tell]], arg))
 end
 
-function obj.translate()
+local function translate()
   osascript.applescript([[
   tell application "System Events"
     tell process "Safari"
@@ -173,7 +71,7 @@ function obj.translate()
   end tell]])
 end
 
-function obj.openTabInChrome()
+local function openTabInChrome()
   osascript.applescript([[
   tell application "Safari"
     tell its first window
@@ -192,7 +90,7 @@ function obj.openTabInChrome()
   end tell]])
 end
 
-function obj.savePageAsPDF()
+local function savePageAsPDF()
   osascript.applescript([[
     tell application "System Events"
       tell process "Safari"
@@ -220,11 +118,11 @@ function obj.savePageAsPDF()
     end tell]])
 end
 
-function obj.newBookmarksFolder()
+local function newBookmarksFolder()
   local title
   title = obj.thisApp:focusedWindow():title()
   if string.match(title, "Bookmarks") then
-    ui.getUIElement(obj.thisApp, UIElementNewBookmarksFolderButton):performAction("AXPress")
+    ui.getUIElement(obj.thisApp, {{"AXWindow", 1}, {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXGroup", 1}, {"AXButton", 1}}):performAction("AXPress")
   else
     obj.modal:exit()
     eventtap.keyStroke({"shift", "cmd"}, "n")
@@ -232,41 +130,47 @@ function obj.newBookmarksFolder()
   end
 end
 
-function obj.newInvoiceForCurrentIcountCustomer()
+local function newInvoiceForCurrentIcountCustomer()
   local _, url, _ = osascript.applescript('tell application "Safari" to tell window 1 to return URL of current tab')
-  url = string.match(url, "id=(%d+)")
+  url = url:match("id=(%d+)")
   osascript.applescript(string.format([[
-                            tell application "Safari"
-                              tell window 1
-                                tell current tab
-                                  set URL to "https://app.icount.co.il/hash/create_doc.php?doctype=invrec&client_id=%s"
-                                end tell
-                              end tell
-                            end tell
-                          ]], url))
-end
-
-function obj.rightSizeBookmarksOrHistoryColumn()
-  local bool, data, _ = osascript.applescript([[
-    tell application "System Events" to tell process "Safari" to tell window 1 to tell splitter group 1 to tell tab group 1 to tell group 1 to tell scroll area 1 to tell outline 1 to tell group 1 to tell button "Website"
-	    set thePosition to position
-	    set theSize to size
-	    return {x:item 1 of thePosition, y:item 2 of thePosition, w:item 1 of theSize, h:item 2 of theSize}
+  tell application "Safari"
+    tell window 1
+      tell current tab
+        set URL to "https://app.icount.co.il/hash/create_doc.php?doctype=invrec&client_id=%s"
+      end tell
     end tell
-  ]])
-  if not bool then return end
-  local x = data.x + data.w
-  local y = data.y + 5
-  DoubleLeftClick.start({x, y})
+  end tell
+  ]], url))
 end
 
-function obj.duplicateTab()
+local function rightSizeBookmarksOrHistoryColumn()
+  local firstColumn =
+    ui.getUIElement(
+    obj.thisApp,
+    {
+      {"AXWindow", 1},
+      {"AXSplitGroup", 1},
+      {"AXTabGroup", 1},
+      {"AXGroup", 1},
+      {"AXScrollArea", 1},
+      {"AXOutline", 1},
+      {"AXGroup", 1},
+      {"AXButton", "AXTitle", "Website"}
+    }
+  ):attributeValue("AXFrame")
+  local x = firstColumn.x + firstColumn.w
+  local y = firstColumn.y + 5
+  Util.doubleLeftClick({x, y})
+end
+
+local function duplicateTab()
   eventtap.keyStroke({"cmd"}, "l")
   eventtap.keyStroke({"cmd"}, "return")
   eventtap.keyStroke({"ctrl"}, "tab")
 end
 
-function obj.openAsPrivateTab()
+local function openAsPrivateTab()
   osascript.applescript([[
     tell application "Safari" to tell window 1 to set _url to URL of tab 1 whose visible of it = true
     tell application "System Events" to click menu item "New Private Window" of menu 1 of menu bar item "File" of menu bar 1 of application process "Safari"
@@ -274,14 +178,16 @@ function obj.openAsPrivateTab()
   ]])
 end
 
-function obj.firstSearchResult()
+local function firstSearchResult()
   -- moves focus to the bookmarks/history list
   local title = obj.thisApp:focusedWindow():title()
   -- if we're in the history or bookmarks windows
-  if string.match(title, "Bookmarks") or string.match(title, "History") then
+  if title:match("Bookmarks") or title:match("History") then
     local axApp = ax.applicationElement(obj.thisApp)
     -- if search field is focused
-    if axApp:focusedUIElement():attributeValue("AXSubrole") == "AXSearchField" then return obj.pane1(false) end
+    if axApp:focusedUIElement():attributeValue("AXSubrole") == "AXSearchField" then
+      return Util.moveFocusToSafariMainArea(obj.thisApp, false)
+    end
   end
   -- otherwise...
   obj.modal:exit()
@@ -289,72 +195,165 @@ function obj.firstSearchResult()
   obj.modal:enter()
 end
 
-function obj.switchTab(direction) obj.thisApp:selectMenuItem({"Window", direction}) end
-
-function obj.returnFrontTabURL()
-  local _, b, _ = osascript.applescript([[
-  tell application "Safari"
-    tell (window 1 whose visible of it = true)
-      tell (tab 1 whose visible of it = true)
-        return URL
-      end tell
-    end tell
-  end tell
-  ]])
-  return b
+local function switchTab(direction)
+  obj.thisApp:selectMenuItem({"Window", direction})
 end
 
-function obj.showNavMenus(backOrForward)
+local function showNavMenus(backOrForward)
   local button
   if backOrForward == "forward" then
     button = 2
   else
     button = 1
   end
-  ui.getUIElement(obj.thisApp:mainWindow(), {{"AXToolbar", 1}, {"AXGroup", 1}, {"AXButton", button}}):performAction(
-    "AXShowMenu")
+  ui.getUIElement(obj.thisApp:mainWindow(), {{"AXToolbar", 1}, {"AXGroup", 1}, {"AXButton", button}}):performAction("AXShowMenu")
 end
 
-function obj.showBackMenu() obj.showNavMenus("back") end
+local function showBackMenu()
+  showNavMenus("back")
+end
 
-function obj.showForwardMenu() obj.showNavMenus("forward") end
+local function showForwardMenu()
+  showNavMenus("forward")
+end
 
-function obj.frontWindowText()
+local function getText()
   osascript.applescript([[
     ignoring application responses
-      tell application "LaunchBar" to perform action "Safari: Get Window Text"
+      tell application "LaunchBar" to perform action "Safari: Get Text"
     end ignoring]])
 end
 
-obj.modal:bind({"alt"}, "r", obj.rightSizeBookmarksOrHistoryColumn)
-obj.modal:bind({"cmd", "shift"}, "n", obj.newBookmarksFolder)
-obj.modal:bind({"cmd"}, "f", function() pressAndHold.onKeyDown(0.2, obj.frontWindowText) end,
-               function() pressAndHold.onKeyUp(obj.modal, {{"cmd"}, "f"}) end)
-obj.modal:bind({"cmd"}, "[", function() pressAndHold.onKeyDown(0.2, obj.showBackMenu) end,
-               function() pressAndHold.onKeyUp(obj.modal, {{"cmd"}, keyboard["["]}) end)
-obj.modal:bind({"cmd"}, keyboard["]"], function() pressAndHold.onKeyDown(0.2, obj.showForwardMenu) end,
-               function() pressAndHold.onKeyUp(obj.modal, {{"cmd"}, keyboard["]"]}) end)
-obj.modal:bind({"alt"}, "1", function() obj.pane1(true) end)
-obj.modal:bind({"alt"}, "2", function() obj.pane1(false) end)
-obj.modal:bind({"cmd", "alt"}, "left", function() obj.switchTab("Show Previous Tab") end)
-obj.modal:bind({"cmd", "alt"}, "right", function() obj.switchTab("Show Next Tab") end)
-obj.modal:bind({"cmd"}, "down", function() obj.firstSearchResult() end, nil, nil)
-obj.modal:bind({"cmd"}, "n", nil, function()
-  strictShortcut.perform({{"cmd"}, "n"}, obj.thisApp, obj.modal, nil,
-                         function() eventtap.keyStroke({"cmd", "alt"}, "n") end)
-end, nil)
+obj.modal:bind({"ctrl"}, "n", function() spoon.SafariNavigatePages.nextPage() end)
+obj.modal:bind({"ctrl"}, "p", function() spoon.SafariNavigatePages.prevPage() end)
+obj.modal:bind({"ctrl"}, "i", function() spoon.SafariGoToFirstInputField:start() end)
+obj.modal:bind({"alt"}, "r", rightSizeBookmarksOrHistoryColumn)
+obj.modal:bind({"cmd", "shift"}, "n", newBookmarksFolder)
+obj.modal:bind({"alt"}, "f", getText)
+obj.modal:bind(
+  {"cmd"},
+  "[",
+  function()
+    pressAndHold.onHold(0.2, showBackMenu)
+  end,
+  function()
+    pressAndHold.onPress(
+      function()
+        obj.modal:exit()
+        eventtap.keyStroke({"cmd"}, keyboard["["])
+        obj.modal:enter()
+      end
+    )
+  end
+)
+obj.modal:bind(
+  {"cmd"},
+  keyboard["]"],
+  function()
+    pressAndHold.onHold(0.2, showForwardMenu)
+  end,
+  function()
+    pressAndHold.onPress(
+      function()
+        obj.modal:exit()
+        eventtap.keyStroke({"cmd"}, keyboard["]"])
+        obj.modal:enter()
+      end
+    )
+  end
+)
+
+obj.modal:bind(
+  {"alt"},
+  "1",
+  function()
+    Util.moveFocusToSafariMainArea(obj.thisApp, true)
+  end
+)
+
+obj.modal:bind(
+  {"alt"},
+  "2",
+  function()
+    Util.moveFocusToSafariMainArea(obj.thisApp, false)
+  end
+)
+
+obj.modal:bind(
+  {"cmd", "alt"},
+  "left",
+  function()
+    switchTab("Show Previous Tab")
+  end
+)
+
+obj.modal:bind(
+  {"cmd", "alt"},
+  "right",
+  function()
+    switchTab("Show Next Tab")
+  end
+)
+
+obj.modal:bind({"cmd"}, "down", firstSearchResult, nil, nil)
+
+obj.modal:bind(
+  {"cmd"},
+  "n",
+  nil,
+  function()
+    Util.strictShortcut(
+      {{"cmd"}, "n"},
+      obj.thisApp,
+      obj.modal,
+      nil,
+      function()
+        eventtap.keyStroke({"cmd", "alt"}, "n")
+      end
+    )
+  end,
+  nil
+)
 
 obj.appScripts = {
-  {title = "Close Tabs to the Left", func = function() obj.closeTabs("left") end},
-  {title = "Close Tabs to the Right", func = function() obj.closeTabs("right") end},
-  {title = "Duplicate Tab", func = function() obj.duplicateTab() end},
-  {title = "New Invoice for Current iCount Customer", func = function() obj.newInvoiceForCurrentIcountCustomer() end},
-  {title = "Open This Tab in Chrome", func = function() obj.openTabInChrome() end},
-  {title = "Save Page as PDF", func = function() obj.savePageAsPDF() end},
-  {title = "Translate", func = function() obj.translate() end},
-  {title = "Open as Private Tab", func = function() obj.openAsPrivateTab() end}
+  {
+    title = "Close Tabs to the Left",
+    func = function()
+      closeTabs("left")
+    end
+  },
+  {
+    title = "Close Tabs to the Right",
+    func = function()
+      closeTabs("right")
+    end
+  },
+  {
+    title = "Duplicate Tab",
+    func = duplicateTab
+  },
+  {
+    title = "New Invoice for Current iCount Customer",
+    func = newInvoiceForCurrentIcountCustomer
+  },
+  {
+    title = "Open This Tab in Chrome",
+    func = openTabInChrome
+  },
+  {
+    title = "Save Page as PDF",
+    func = savePageAsPDF
+  },
+  {
+    title = "Translate",
+    func = translate
+  },
+  {
+    title = "Open as Private Tab",
+    func = openAsPrivateTab
+  }
 }
 
-obj.listeners = {obj.addressBarWatcher}
+obj.listeners = {}
 
 return obj

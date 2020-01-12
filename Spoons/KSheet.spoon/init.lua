@@ -18,49 +18,51 @@ obj.license = "MIT - https://opensource.org/licenses/MIT"
 -- Workaround for "Dictation" menuitem
 Application.menuGlyphs[148] = "fn fn"
 
-obj.commandEnum = {cmd = '⌘', shift = '⇧', alt = '⌥', ctrl = '⌃'}
+obj.commandEnum = {cmd = "⌘", shift = "⇧", alt = "⌥", ctrl = "⌃"}
 
 local function processMenuItems(menustru)
-    local menu = ""
-    for pos, val in pairs(menustru) do
-        if type(val) == "table" then
-            -- TODO: Remove menubar items with no shortcuts in them
-            if val.AXRole == "AXMenuBarItem" and type(val.AXChildren) == "table" then
-                menu = menu .. "<ul class='col col" .. pos .. "'>"
-                menu = menu .. "<li class='title'><strong>" .. val.AXTitle ..
-                           "</strong></li>"
-                menu = menu .. processMenuItems(val.AXChildren[1])
-                menu = menu .. "</ul>"
-            elseif val.AXRole == "AXMenuItem" and not val.AXChildren then
-                if not (val.AXMenuItemCmdChar == '' and val.AXMenuItemCmdGlyph ==
-                    '') then
-                    local CmdModifiers = ''
-                    for _, value in pairs(val.AXMenuItemCmdModifiers) do
-                        CmdModifiers = CmdModifiers .. obj.commandEnum[value]
-                    end
-                    local CmdChar = val.AXMenuItemCmdChar
-                    local CmdGlyph =
-                        Application.menuGlyphs[val.AXMenuItemCmdGlyph] or ''
-                    local CmdKeys = CmdChar .. CmdGlyph
-                    menu = menu .. "<li><div class='cmdModifiers'>" ..
-                               CmdModifiers .. " " .. CmdKeys ..
-                               "</div><div class='cmdtext'>" .. " " ..
-                               val.AXTitle .. "</div></li>"
-                end
-            elseif val.AXRole == "AXMenuItem" and type(val.AXChildren) ==
-                "table" then
-                menu = menu .. processMenuItems(val.AXChildren[1])
-            end
+  local menu = ""
+  for pos, val in pairs(menustru) do
+    if type(val) == "table" then
+      -- TODO: Remove menubar items with no shortcuts in them
+      if val.AXRole == "AXMenuBarItem" and type(val.AXChildren) == "table" then
+        menu = menu .. "<ul class='col col" .. pos .. "'>"
+        menu = menu .. "<li class='title'><strong>" .. val.AXTitle .. "</strong></li>"
+        menu = menu .. processMenuItems(val.AXChildren[1])
+        menu = menu .. "</ul>"
+      elseif val.AXRole == "AXMenuItem" and not val.AXChildren then
+        if not (val.AXMenuItemCmdChar == "" and val.AXMenuItemCmdGlyph == "") then
+          local CmdModifiers = ""
+          for _, value in pairs(val.AXMenuItemCmdModifiers) do
+            CmdModifiers = CmdModifiers .. obj.commandEnum[value]
+          end
+          local CmdChar = val.AXMenuItemCmdChar
+          local CmdGlyph = Application.menuGlyphs[val.AXMenuItemCmdGlyph] or ""
+          local CmdKeys = CmdChar .. CmdGlyph
+          menu =
+            menu ..
+            string.format(
+              "<li><div class='cmdModifiers'>%s %s</div><div class='cmdtext'> %s</div></li>",
+              CmdModifiers,
+              CmdKeys,
+              val.AXTitle
+            )
         end
+      elseif val.AXRole == "AXMenuItem" and type(val.AXChildren) == "table" then
+        menu = menu .. processMenuItems(val.AXChildren[1])
+      end
     end
-    return menu
+  end
+  return menu
 end
 
 local function generateHtml(application)
-    local app_title = application:title()
-    local menuitems_tree = application:getMenuItems()
-    local allmenuitems = processMenuItems(menuitems_tree)
-    local html = string.format([[
+  local app_title = application:title()
+  local menuitems_tree = application:getMenuItems()
+  local allmenuitems = processMenuItems(menuitems_tree)
+  local html =
+    string.format(
+    [[
       <!DOCTYPE html>
       <html>
         <head>
@@ -158,49 +160,60 @@ local function generateHtml(application)
           </script>
         </body>
       </html>
-      ]], util.winBackgroundColor(), util.labelColor(), allmenuitems)
-    return html, app_title
+      ]],
+    util.winBackgroundColor(),
+    util.labelColor(),
+    allmenuitems
+  )
+  return html, app_title
 end
 
 function obj:show()
-    local capp = Application.frontmostApplication()
-    local cscreen = Screen.mainScreen()
-    local cres = cscreen:fullFrame()
-    self.sheetView:frame({
-        x = cres.x + cres.w * 0.15 / 2,
-        y = cres.y + cres.h * 0.25 / 2,
-        w = cres.w * 0.85,
-        h = cres.h * 0.75
-    })
-    local webcontent, app_title = generateHtml(capp)
-    self.sheetView:windowTitle(app_title)
-    self.sheetView:html(webcontent)
-    self.sheetView:show()
+  local capp = Application.frontmostApplication()
+  local cscreen = Screen.mainScreen()
+  local cres = cscreen:fullFrame()
+  self.sheetView:frame(
+    {
+      x = cres.x + cres.w * 0.15 / 2,
+      y = cres.y + cres.h * 0.25 / 2,
+      w = cres.w * 0.85,
+      h = cres.h * 0.75
+    }
+  )
+  local webcontent, app_title = generateHtml(capp)
+  self.sheetView:windowTitle(app_title)
+  self.sheetView:html(webcontent)
+  self.sheetView:show()
 end
 
-function obj:hide() self.sheetView:hide() end
+function obj:hide()
+  self.sheetView:hide()
+end
 
 function obj:toggle()
-    if self.sheetView and self.sheetView:hswindow() and
-        self.sheetView:hswindow():isVisible() then
-        self:hide()
-    else
-        self:show()
-    end
+  if self.sheetView and self.sheetView:hswindow() and self.sheetView:hswindow():isVisible() then
+    self:hide()
+  else
+    self:show()
+  end
 end
 
 function obj:bindHotkeys(mapping)
-    local actions = {
-        toggle = Fnutils.partial(self.toggle, self),
-        show = Fnutils.partial(self.show, self),
-        hide = Fnutils.partial(self.hide, self)
-    }
-    Spoons.bindHotkeysToSpec(actions, mapping)
+  local actions = {
+    toggle = Fnutils.partial(self.toggle, self),
+    show = Fnutils.partial(self.show, self),
+    hide = Fnutils.partial(self.hide, self)
+  }
+  Spoons.bindHotkeysToSpec(actions, mapping)
+end
+
+function obj:start()
 end
 
 function obj:init()
   self.sheetView = Webview.new({x = 0, y = 0, w = 0, h = 0})
   self.sheetView:windowStyle({"titled", "closable", "nonactivating"})
+  self.sheetView:closeOnEscape(true)
   self.sheetView:allowGestures(true)
   self.sheetView:allowNewWindows(false)
   self.sheetView:level(Drawing.windowLevels.modalPanel)

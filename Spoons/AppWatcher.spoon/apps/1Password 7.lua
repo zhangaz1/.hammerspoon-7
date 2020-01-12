@@ -1,6 +1,6 @@
 local hotkey = require("hs.hotkey")
 local osascript = require("hs.osascript")
-local ui = require("util.ui")
+local ui = require("rb.ui")
 
 local m = {}
 m.id = "com.agilebits.onepassword7"

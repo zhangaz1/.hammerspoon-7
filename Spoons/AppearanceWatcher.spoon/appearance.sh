@@ -11,9 +11,9 @@ fi
 ITERMSCRIPT="${HOME}/Library/Application Support/iTerm2/Scripts/AutoLaunch/changeColorPreset.py"
 if [[ -f "${ITERMSCRIPT}" ]]; then
 	if [[ "${MODE}" == "dark" ]]; then
-		ITERM="Solarized Dark"
+		ITERM="XCode-Dark"
 	elif [[ "${MODE}" == "light" ]]; then
-		ITERM="Solarized Light"
+		ITERM="XCode-Default-Light"
 	fi
 	ITERMDIR="${HOME}/Library/Application Support/iTerm2/iterm2env"
 	if [[ -d "${ITERMDIR}" ]]; then
@@ -32,7 +32,7 @@ elif [[ "${MODE}" == "light" ]]; then
 fi
 VSCODESETTINGSFILE="${HOME}/Library/Application Support/Code/User/settings.json"
 if ! grep --silent "\"workbench.colorTheme\": \"${VSCODE}\"" "${VSCODESETTINGSFILE}"; then
-	/usr/bin/sed -E -i .bak "s|(\"workbench.colorTheme\":).+$|\1 \"${VSCODE}\",|" "${VSCODESETTINGSFILE}" &
+	sed -E -i .bak "s|(\"workbench.colorTheme\":).+$|\1 \"${VSCODE}\",|" "${VSCODESETTINGSFILE}" &
 fi
 
 ### launchbar ###
@@ -60,9 +60,14 @@ fi
 if [[ "$(defaults read "com.contextsformac.Contexts" CTAppearanceTheme)" != "${CONTEXTS}" ]]; then
 	(
 		defaults write "com.contextsformac.Contexts" CTAppearanceTheme -string "${CONTEXTS}"
-		killall Contexts
-		sleep 1
-		open -j -g -a Contexts
+		/usr/bin/osascript <<-EOF
+			tell application "Contexts"
+				quit
+				delay 1
+				activate
+			end tell
+			tell application "System Events" to click button 1 of window 1 of application process "Contexts"
+		EOF
 	) &
 fi
 
@@ -72,4 +77,4 @@ if [[ "${MODE}" == "dark" ]]; then
 elif [[ "${MODE}" == "light" ]]; then
 	HS="false"
 fi
-/usr/bin/osascript -e "tell application \"Hammerspoon\" to execute lua code \"hs.console.darkMode(${HS})\"" &>/dev/null &
+osascript -e "tell application \"Hammerspoon\" to execute lua code \"hs.console.darkMode(${HS})\"" &>/dev/null &
