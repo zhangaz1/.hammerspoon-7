@@ -27,8 +27,12 @@ local function patchWatcherCallbackFn(files, flagTables)
   end
 end
 
+function obj:start( )
+  self.pathWatcher:start()
+end
+
 function obj:init()
-  self.pathWatcher = PathWatcher.new(".", patchWatcherCallbackFn):start()
+  self.pathWatcher = PathWatcher.new(".", patchWatcherCallbackFn)
 end
 
 return obj

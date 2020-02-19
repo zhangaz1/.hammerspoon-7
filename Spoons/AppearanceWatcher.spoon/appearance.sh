@@ -7,41 +7,33 @@ if [[ "${MODE}" != "light" ]] && [[ "${MODE}" != "dark" ]]; then
 	exit 0
 fi
 
-### iterm ###
-ITERMSCRIPT="${HOME}/Library/Application Support/iTerm2/Scripts/AutoLaunch/changeColorPreset.py"
-if [[ -f "${ITERMSCRIPT}" ]]; then
-	if [[ "${MODE}" == "dark" ]]; then
-		ITERM="XCode-Dark"
-	elif [[ "${MODE}" == "light" ]]; then
-		ITERM="XCode-Default-Light"
-	fi
-	ITERMDIR="${HOME}/Library/Application Support/iTerm2/iterm2env"
-	if [[ -d "${ITERMDIR}" ]]; then
-		for pythonVersion in "${ITERMDIR}/versions/"*"/bin/python3"; do
-			"${pythonVersion}" "${ITERMSCRIPT}" "${ITERM}" &
-			break
-		done
+### restart whatsapp when transitioning to dark mode ###
+if [[ "${MODE}" == "dark" ]]; then
+	if ps -A | grep -iE --silent "macos/whatsapp$"; then
+		killall -9 "WhatsApp"
+		sleep 1
+		open -jga "WhatsApp"
 	fi
 fi
 
 ### vscode ###
 if [[ "${MODE}" == "dark" ]]; then
-	VSCODE="Solarized Dark"
+	vscode_theme="Solarized Dark"
 elif [[ "${MODE}" == "light" ]]; then
-	VSCODE="Solarized Light"
+	vscode_theme="Solarized Light"
 fi
-VSCODESETTINGSFILE="${HOME}/Library/Application Support/Code/User/settings.json"
-if ! grep --silent "\"workbench.colorTheme\": \"${VSCODE}\"" "${VSCODESETTINGSFILE}"; then
-	sed -E -i .bak "s|(\"workbench.colorTheme\":).+$|\1 \"${VSCODE}\",|" "${VSCODESETTINGSFILE}" &
+vscode_settings_file="${HOME}/Library/Application Support/Code/User/settings.json"
+if ! grep --silent "\"workbench.colorTheme\": \"${vscode_theme}\"" "${vscode_settings_file}"; then
+	sed -E -i .bak "s|(\"workbench.colorTheme\":).+$|\1 \"${vscode_theme}\",|" "${vscode_settings_file}" &
 fi
 
 ### launchbar ###
 if [[ "${MODE}" == "dark" ]]; then
-	LAUNCHBAR="at.obdev.LaunchBar.theme.Dark"
+	launchbar_theme="at.obdev.LaunchBar.theme.Dark"
 elif [[ "${MODE}" == "light" ]]; then
-	LAUNCHBAR="at.obdev.LaunchBar.theme.Default"
+	launchbar_theme="at.obdev.LaunchBar.theme.Default"
 fi
-defaults write "at.obdev.LaunchBar" Theme -string "${LAUNCHBAR}" &
+defaults write "at.obdev.LaunchBar" Theme -string "${launchbar_theme}" &
 
 ### cardhop ###
 if [[ "${MODE}" == "dark" ]]; then
@@ -53,13 +45,13 @@ defaults write "com.flexibits.cardhop.mac" LightTheme -bool "${arg}" &
 
 ### contexts ###
 if [[ "${MODE}" == "dark" ]]; then
-	CONTEXTS="CTAppearanceNamedVibrantDark"
+	contexts_theme="CTAppearanceNamedVibrantDark"
 elif [[ "${MODE}" == "light" ]]; then
-	CONTEXTS="CTAppearanceNamedSubtle"
+	contexts_theme="CTAppearanceNamedSubtle"
 fi
-if [[ "$(defaults read "com.contextsformac.Contexts" CTAppearanceTheme)" != "${CONTEXTS}" ]]; then
+if [[ "$(defaults read "com.contextsformac.Contexts" CTAppearanceTheme)" != "${contexts_theme}" ]]; then
 	(
-		defaults write "com.contextsformac.Contexts" CTAppearanceTheme -string "${CONTEXTS}"
+		defaults write "com.contextsformac.Contexts" CTAppearanceTheme -string "${contexts_theme}"
 		/usr/bin/osascript <<-EOF
 			tell application "Contexts"
 				quit
@@ -68,7 +60,7 @@ if [[ "$(defaults read "com.contextsformac.Contexts" CTAppearanceTheme)" != "${C
 			end tell
 			tell application "System Events" to click button 1 of window 1 of application process "Contexts"
 		EOF
-	) &
+	) &>/dev/null &
 fi
 
 # hammerspoon's console
@@ -78,3 +70,6 @@ elif [[ "${MODE}" == "light" ]]; then
 	HS="false"
 fi
 osascript -e "tell application \"Hammerspoon\" to execute lua code \"hs.console.darkMode(${HS})\"" &>/dev/null &
+
+### iterm ###
+/usr/bin/osascript -e 'tell application "iTerm" to launch API script named "changeColorPreset.py"' &

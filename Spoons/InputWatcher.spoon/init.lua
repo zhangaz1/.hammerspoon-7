@@ -2,9 +2,6 @@ local EventTap = require("hs.eventtap")
 local KeyCodes = require("hs.keycodes")
 local Timer = require("hs.timer")
 
-local UI = require("rb.ui")
-local Util = require("rb.util")
-
 local obj = {}
 
 obj.__index = obj
@@ -14,89 +11,60 @@ obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
+obj.watcher = nil
+
 local function getFrontApp()
-  -- return hs.application.frontmostApplication()
   return spoon.AppWatcher.frontApp
 end
 
 local function getFrontAppID()
-  return getFrontApp():bundleID()
+  return spoon.AppWatcher.frontAppBundleID
 end
 
 local function watcherCallback(event)
   local keyCode = event:getKeyCode()
   local eventFlags = event:getFlags()
-  local currentLayout = KeyCodes.currentLayout()
+  -- local currentLayout = KeyCodes.currentLayout()
+
+  -- global
+  -- switch to english for Spotlight
+  -- switch to english for Emoji & Symbols
   if keyCode == KeyCodes.map.space then
     if eventFlags:containExactly({"ctrl", "cmd"}) or eventFlags:containExactly({"alt"}) then
-      if currentLayout == "ABC" then
-        return
-      end
+      -- if currentLayout == "ABC" then
+      --   return
+      -- end
       KeyCodes.setLayout("ABC")
     end
   end
 
+  -- whatsapp
   if getFrontAppID() == "desktop.WhatsApp" then
-    if (keyCode == KeyCodes.map.f) and eventFlags:containExactly({"cmd"}) then
-      if currentLayout == "ABC" then
-        return
-      end
+    -- keycode 3 ==> f/כ
+    if (keyCode == 3) and eventFlags:containExactly({"cmd"}) then
       KeyCodes.setLayout("ABC")
     end
     if (keyCode == KeyCodes.map["return"] or keyCode == KeyCodes.map.tab) and eventFlags:containExactly({}) then
-      if currentLayout == "Hebrew" then
-        return
-      end
       KeyCodes.setLayout("Hebrew")
     end
   end
 
   if getFrontAppID() == "com.apple.Safari" then
-    local safari = getFrontApp()
     if keyCode == KeyCodes.map["return"] and eventFlags:containExactly({}) then
-      Timer.doAfter(
-        0.5,
-        function()
-          if Util.isSafariAddressBarFocused(safari) then
-            Util.moveFocusToSafariMainArea(safari, true)
-          end
-        end
-      )
+      local safariSpoon = spoon.ApplicationScripts.appEnvs["com.apple.Safari"]
+      local safari = getFrontApp()
+      safariSpoon.moveFocusToMainAreaAfterOpeningLocation(safari)
+    end
+    -- t/l
+    if (keyCode == 17 or keyCode == 37) and eventFlags:containExactly({"cmd"}) then
+        KeyCodes.setLayout("ABC")
     end
   end
 
-  if getFrontAppID() == "com.apple.finder" then
-    -- focus of the files area must be checked first,
-    -- checking for selection count if a pop up is open causes a timeout!
-    if keyCode == KeyCodes.map["return"] and eventFlags:containExactly({}) then
-      local finder = getFrontApp()
-      if Util.isFilesAreaFocused(finder) then
-        if Util.selectionCount() > 1 then
-          local menuItems =
-            UI.getUIElement(
-            finder,
-            {
-              {"AXMenuBar", 1},
-              {"AXMenuBarItem", "AXTitle", "File"},
-              {"AXMenu", 1}
-            }
-          ):attributeValue("AXChildren")
-          for _, v in ipairs(menuItems) do
-            local title = v:attributeValue("AXTitle")
-            if string.find(title, "Rename") then
-              return v:performAction("AXPress")
-            end
-          end
-        end
-      end
-    end
-  end
 end
 
-obj.watcher = nil
-
 function obj:init()
-  self.watcher = EventTap.new({EventTap.event.types.keyUp}, watcherCallback):start()
+  self.watcher = EventTap.new({EventTap.event.types.keyUp}, watcherCallback)
 end
 
 function obj:stop()

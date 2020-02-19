@@ -27,8 +27,7 @@ function obj:init()
     function()
       obj:setStyle()
     end
-  ):start()
-  obj:setStyle()
+  )
 end
 
 function obj:setStyle()
@@ -47,10 +46,6 @@ function obj:setStyle()
       interfaceParameter = "light"
     end
     settings.set("HSAppearanceWatcherInterfaceStyle", currentSystemStyle)
-    print(
-      "cached system interface style change is now => " ..
-        (settings.get("HSAppearanceWatcherInterfaceStyle") or "NOT_CACHED")
-    )
     task.new(
       self.spoonPath .. "/appearance.sh",
       function(exitCode, stdOut, stdErr)
@@ -59,6 +54,11 @@ function obj:setStyle()
       {interfaceParameter}
     ):start()
   end
+end
+
+function obj:start()
+  obj:setStyle()
+  obj.pathwatcher:start()
 end
 
 return obj

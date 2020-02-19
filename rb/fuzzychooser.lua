@@ -85,10 +85,12 @@ obj.defaultCallback = function(choice)
 end
 
 function obj:init()
-    self.chooser = Chooser.new(self.defaultCallback):searchSubText(false):width(33)
 end
 
 function obj:start(sentCallback, choices, searchBy, sentQueryChangedCallback)
+    if not self.chooser then
+        self.chooser = Chooser.new(self.defaultCallback):searchSubText(false):width(33)
+    end
     -- local consoleWindow = Console.hswindow()
     -- if consoleWindow then
     --     consoleWindow:close()

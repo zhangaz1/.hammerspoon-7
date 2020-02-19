@@ -1,5 +1,5 @@
 local AX = require("hs._asm.axuielement")
-local tablecount = require("rb.tablecount")
+local Util = require("rb.util")
 
 local obj = {}
 
@@ -36,7 +36,7 @@ function obj.getUIElement(appOrWindowOrAx, uiPathTable)
 
     -- if 0 childs, return
     -- print(hs.inspect(childs))
-    if not childs or tablecount._(childs) == 0 then
+    if not childs or Util.tableCount(childs) == 0 then
       return nil
     end
 

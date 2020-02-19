@@ -3,7 +3,6 @@ local PathWatcher = require("hs.pathwatcher")
 local Battery = require("hs.battery")
 local Timer = require("hs.timer")
 
-local Chooser = require("rb.fuzzychooser")
 local util = require("rb.util")
 
 local obj = {}
@@ -15,35 +14,36 @@ obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
+local airPodsMacAddress = util.cloudSettings.get("airPodsMacAddress")
+
 local function script_path()
   local str = debug.getinfo(2, "S").source:sub(2)
   return str:match("(.*/)")
 end
-
 obj.spoonPath = script_path()
-obj.delayedTimer = nil
-obj.pathwatcher = nil
-obj.airPodsMenuBarItem = nil
-obj.magicMouseMenuBarItem = nil
 
-local airPodsMacAddress = util.cloudSettings.get("airPodsMacAddress")
+obj.delayedTimer = nil
+obj.pathWatcher = nil
+obj.magicMouseMenuBarItem = nil
+obj.RightAirPodIcon = nil
+obj.LeftAirPodIcon = nil
 
 local icons = {
-  bothBlack = obj.spoonPath .. "/AirPodsBothBlack.pdf",
+  bothBlack = obj.spoonPath .. "/AirPodsBothTemplate.pdf",
   bothRed = obj.spoonPath .. "/AirPodsBothRed.pdf",
-  RightBlack = obj.spoonPath .. "/AirPodsRightBlack.pdf",
-  LeftBlack = obj.spoonPath .. "/AirPodsLeftBlack.pdf",
-  magicMouseBlack = obj.spoonPath .. "/MagicMouseBlack.pdf",
+  RightBlack = obj.spoonPath .. "/AirPodsRightTemplate.pdf",
+  RightRed = obj.spoonPath .. "/AirPodsRightRed.pdf",
+  LeftBlack = obj.spoonPath .. "/AirPodsLeftTemplate.pdf",
+  LeftRed = obj.spoonPath .. "/AirPodsLeftRed.pdf",
+  magicMouseBlack = obj.spoonPath .. "/MagicMouseTemplate.pdf",
   magicMouseRed = obj.spoonPath .. "/MagicMouseRed.pdf"
 }
 
-local devices = {}
-
 local function getStatus()
-  local airPodsFound
-  local magicMouseFound
   local icon
   local template
+
+  local airPodsFound
   for _, device in ipairs(Battery.privateBluetoothBatteryInfo()) do
     if device.address == airPodsMacAddress then
       -- primary - the first airpod inserted?
@@ -64,23 +64,11 @@ local function getStatus()
       local secondaryBatteryPercent = tonumber(device["batteryPercent" .. secondaryBud])
 
       if primaryInEar or secondaryInEar then
-        table.insert(
-          devices,
-          {
-            text = device.name,
-            address = device.address
-          }
-        )
         airPodsFound = true
         if primaryInEar and secondaryInEar then
-          if (primaryBatteryPercent < 20) and (secondaryBatteryPercent < 20) then
+          if (primaryBatteryPercent < 20) or (secondaryBatteryPercent < 20) then
             icon = icons.bothRed
             template = false
-          elseif (primaryBatteryPercent > 20) and (secondaryBatteryPercent > 20) then
-            icon = icons.bothBlack
-            template = true
-          elseif (primaryBatteryPercent > 20) and (secondaryBatteryPercent < 20) then
-          elseif (primaryBatteryPercent < 20) and (secondaryBatteryPercent > 20) then
           else
             icon = icons.bothBlack
             template = true
@@ -111,16 +99,10 @@ local function getStatus()
     obj.airPodsMenuBarItem:removeFromMenuBar()
   end
 
+  local magicMouseFound
   for _, device in ipairs(Battery.otherBatteryInfo()) do
     local productName = device.Product
-    if productName:find("Magic Mouse") then
-      table.insert(
-        devices,
-        {
-          text = productName,
-          address = device.DeviceAddress
-        }
-      )
+    if productName and productName:find("Magic Mouse") then
       magicMouseFound = true
       if device.BatteryPercent < 20 then
         icon = icons.magicMouseRed
@@ -142,29 +124,23 @@ local function delayedTimerCallback()
   getStatus()
 end
 
-local function chooserCallback(choice)
-  if choice then
-    print(choice)
-  end
-end
-
-function obj.start()
-  Chooser:start(chooserCallback, devices, {"text"})
+function obj:start()
+  self.pathWatcher:start()
+  getStatus()
 end
 
 function obj:init()
-  self.airPodsMenuBarItem = Menubar.new()
   self.magicMouseMenuBarItem = Menubar.new()
-  self.delayedTimer = Timer.delayed.new(0.5, delayedTimerCallback)
-  self.pathwatcher =
+  self.airPodsMenuBarItem = Menubar.new()
+  -- self.delayedTimer = Timer.delayed.new(0.5, delayedTimerCallback)
+  self.pathWatcher =
     PathWatcher.new(
     "/Library/Preferences/com.apple.Bluetooth.plist",
     function()
-      self.delayedTimer:start()
-      -- getStatus()
+      -- self.delayedTimer:start()
+      getStatus()
     end
-  ):start()
-  getStatus()
+  )
 end
 
 return obj

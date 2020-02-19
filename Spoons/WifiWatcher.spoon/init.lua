@@ -47,9 +47,13 @@ end
 
 obj.wifiWatcher = nil
 
-function obj:init()
-  self.wifiWatcher = wifi.watcher.new(watcherCallback):start()
+function obj:start()
   watcherCallback()
+  self.wifiWatcher:start()
+end
+
+function obj:init()
+  self.wifiWatcher = wifi.watcher.new(watcherCallback)
 end
 
 return obj

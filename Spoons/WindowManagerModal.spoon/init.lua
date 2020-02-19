@@ -64,62 +64,14 @@ local modalHotkeys = {
   {shortcut = {modifiers = {}, key = "down"}, pressedfn = move, repeatfn = move, arg = "down", txt = "Move Down"},
   {shortcut = {modifiers = {}, key = "left"}, pressedfn = move, repeatfn = move, arg = "left", txt = "Move Left"},
   {shortcut = {modifiers = {}, key = "right"}, pressedfn = move, repeatfn = move, arg = "right", txt = "Move Right"},
-  {
-    shortcut = {modifiers = {"alt"}, key = "left"},
-    pressedfn = resize,
-    repeatfn = resize,
-    arg = "shrinkFromRight",
-    txt = "Shrink from Right"
-  },
-  {
-    shortcut = {modifiers = {"alt"}, key = "right"},
-    pressedfn = resize,
-    repeatfn = resize,
-    arg = "shrinkFromLeft",
-    txt = "Shrink from Left"
-  },
-  {
-    shortcut = {modifiers = {"alt"}, key = "up"},
-    pressedfn = resize,
-    repeatfn = resize,
-    arg = "shrinkFromBottom",
-    txt = "Shrink from Bottom"
-  },
-  {
-    shortcut = {modifiers = {"alt"}, key = "down"},
-    pressedfn = resize,
-    repeatfn = resize,
-    arg = "shrinkFromTop",
-    txt = "Shrink from Top"
-  },
-  {
-    shortcut = {modifiers = {"cmd"}, key = "right"},
-    pressedfn = resize,
-    repeatfn = resize,
-    arg = "growToRight",
-    txt = "Grow to Right"
-  },
-  {
-    shortcut = {modifiers = {"cmd"}, key = "left"},
-    pressedfn = resize,
-    repeatfn = resize,
-    arg = "growToLeft",
-    txt = "Grow to Left"
-  },
-  {
-    shortcut = {modifiers = {"cmd"}, key = "down"},
-    pressedfn = resize,
-    repeatfn = resize,
-    arg = "growToBottom",
-    txt = "Grow to Bottom"
-  },
-  {
-    shortcut = {modifiers = {"cmd"}, key = "up"},
-    pressedfn = resize,
-    repeatfn = resize,
-    arg = "growToTop",
-    txt = "Grow to Top"
-  }
+  {shortcut = {modifiers = {"alt"}, key = "left"}, pressedfn = resize, repeatfn = resize, arg = "shrinkFromRight", txt = "Shrink from Right"},
+  {shortcut = {modifiers = {"alt"}, key = "right"}, pressedfn = resize, repeatfn = resize, arg = "shrinkFromLeft", txt = "Shrink from Left"},
+  {shortcut = {modifiers = {"alt"}, key = "up"}, pressedfn = resize, repeatfn = resize, arg = "shrinkFromBottom", txt = "Shrink from Bottom"},
+  {shortcut = {modifiers = {"alt"}, key = "down"}, pressedfn = resize, repeatfn = resize, arg = "shrinkFromTop", txt = "Shrink from Top"},
+  {shortcut = {modifiers = {"cmd"}, key = "right"}, pressedfn = resize, repeatfn = resize, arg = "growToRight", txt = "Grow to Right"},
+  {shortcut = {modifiers = {"cmd"}, key = "left"}, pressedfn = resize, repeatfn = resize, arg = "growToLeft", txt = "Grow to Left"},
+  {shortcut = {modifiers = {"cmd"}, key = "down"}, pressedfn = resize, repeatfn = resize, arg = "growToBottom", txt = "Grow to Bottom"},
+  {shortcut = {modifiers = {"cmd"}, key = "up"}, pressedfn = resize, repeatfn = resize, arg = "growToTop", txt = "Grow to Top"}
 }
 
 local glyps = {alt = "⌥", ctrl = "⌃", cmd = "⌘", left = "←", right = "→", down = "↓", up = "↑"}
@@ -135,29 +87,16 @@ local function createCheatSheet()
     end
     shortcutString = shortcutString .. glyps[shortcut.key]
     local action = keyDescription.txt
-    local row =
-      string.format(
-      [[
+    local row = string.format([[
         <tr>
             <td class="glyphs">%s</td>
             <td class="description">%s</td>
         </tr>
-    ]],
-      shortcutString,
-      action
-    )
+    ]], shortcutString, action)
     cheatSheetContents = cheatSheetContents .. "\n" .. row
   end
   -- format the html
-  local function toRGBA(t)
-    return string.format([[rgba(%s, %s, %s, %s)]], t.red, t.green, t.blue, t.alpha)
-  end
-  local cheatSheetBackgroundColor = Drawing.color.lists()["System"]["windowBackgroundColor"]
-  local cheatSheetTextColor = Drawing.color.lists()["System"]["labelColor"]
-
-  local html =
-    string.format(
-    [[
+  local html = string.format([[
   <!DOCTYPE html>
   <html>
     <head>
@@ -191,38 +130,33 @@ local function createCheatSheet()
       <table>%s</table>
     </body>
   </html>
-  ]],
-    util.winBackgroundColor(),
-    util.labelColor(),
-    cheatSheetContents
-  )
+  ]], util.winBackgroundColor(), util.labelColor(), cheatSheetContents)
+  -- window settings
   local screenFrame = Screen.mainScreen():frame()
-  local screenWidth = screenFrame.w
-  local screenHeight = screenFrame.h
+  local screenCenterX = screenFrame.w / 2
+  local screenCenterY = screenFrame.h / 2
   local modalWidth = screenFrame.w / 7
   local modalHeight = screenFrame.h / 3
   obj.cheatSheet =
     Webview.new(
     {
-      x = (screenWidth - modalWidth) - 24,
-      y = (screenHeight - modalHeight) - 24,
+      x = (screenCenterX - modalWidth / 2),
+      y = (screenCenterY - modalHeight / 2),
       w = modalWidth,
       h = modalHeight
     }
   )
   obj.cheatSheet:windowStyle({"titled", "nonactivating", "utility"})
-  -- obj.cheatSheet:darkMode(true)
-  -- obj.cheatSheet:transparent(true)
   obj.cheatSheet:shadow(true)
   obj.cheatSheet:windowTitle("Window Manager")
   obj.cheatSheet:html(html)
   obj.cheatSheet:level(Drawing.windowLevels._MaximumWindowLevelKey)
-  obj.cheatSheet:show()
 end
 
 function obj:start()
   obj.windowManagerModal:enter()
   createCheatSheet()
+  obj.cheatSheet:show()
 end
 
 function obj:stop()

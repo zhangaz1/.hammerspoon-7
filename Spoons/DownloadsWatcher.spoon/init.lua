@@ -83,13 +83,17 @@ local function pathWatcherCallbackFn()
   obj.delayedTimer:start()
 end
 
-function obj:init()
+function obj:start()
   if not Settings.get("ProcessedDownloadsInodes") then
     Settings.set("ProcessedDownloadsInodes", {})
   end
   self.ProcessedDownloadsInodes = Settings.get("ProcessedDownloadsInodes")
+  self.pathWatcher:start()
+end
+
+function obj:init()
   self.delayedTimer = Timer.delayed.new(1, delayedTimerCallbackFn)
-  self.pathWatcher = PathWatcher.new(downloadsDir, pathWatcherCallbackFn):start()
+  self.pathWatcher = PathWatcher.new(downloadsDir, pathWatcherCallbackFn)
 end
 
 return obj
