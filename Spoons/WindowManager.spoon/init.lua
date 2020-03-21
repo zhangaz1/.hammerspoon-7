@@ -121,7 +121,6 @@ end
 
 local function compareTables(table1, table2)
   local function fn(x) return math.floor(math.abs(x)) end
-  -- print(hs.inspect(table1), hs.inspect(table2))
   table1 = FNUtils.map(table1, fn)
   table2 = FNUtils.map(table2, fn)
   if table1._x == table2.x and table1._y == table2.y and table1._w == table2.w and table1._h == table2.h then
@@ -162,7 +161,6 @@ obj.overlay = {
 function obj.pushToCell(direction)
   local frontWindow = Window.focusedWindow()
   local cellObject = getCellObjectByWindowSize(frontWindow)
-  -- print(cellObject.id)
   local targetCell
   if cellObject then
     targetCell = cellObject["on" .. direction]

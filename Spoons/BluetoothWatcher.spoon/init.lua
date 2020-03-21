@@ -124,11 +124,6 @@ local function delayedTimerCallback()
   getStatus()
 end
 
-function obj:start()
-  self.pathWatcher:start()
-  getStatus()
-end
-
 function obj:init()
   self.magicMouseMenuBarItem = Menubar.new()
   self.airPodsMenuBarItem = Menubar.new()
@@ -141,6 +136,8 @@ function obj:init()
       getStatus()
     end
   )
+  getStatus()
+  self.pathWatcher:start()
 end
 
 return obj

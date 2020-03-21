@@ -1,10 +1,10 @@
 local PathWatcher = require("hs.pathwatcher")
 local Task = require("hs.task")
 local FS = require("hs.fs")
-local Notify = require("hs.notify")
 local Fnutils = require("hs.fnutils")
 local Settings = require("hs.settings")
 local Timer = require("hs.timer")
+-- local Notify = require("hs.notify")
 
 local obj = {}
 
@@ -59,7 +59,7 @@ local function delayedTimerCallbackFn()
       end
     end
   else
-    print(string.format("The following error occurred: %s", dirObj))
+    print(string.format("DownloadsWatcher: the following error occurred: %s", dirObj))
   end
   local newPlistSetting
   if tableCount(iteratedFiles) == 0 then
@@ -72,7 +72,7 @@ local function delayedTimerCallbackFn()
     Task.new(
       shellScript,
       function(_, _, err)
-        print(err)
+        print("DownloadsWatcher", err)
       end,
       {path}
     ):start()
@@ -83,17 +83,14 @@ local function pathWatcherCallbackFn()
   obj.delayedTimer:start()
 end
 
-function obj:start()
+function obj:init()
+  self.delayedTimer = Timer.delayed.new(1, delayedTimerCallbackFn)
+  self.pathWatcher = PathWatcher.new(downloadsDir, pathWatcherCallbackFn)
   if not Settings.get("ProcessedDownloadsInodes") then
     Settings.set("ProcessedDownloadsInodes", {})
   end
   self.ProcessedDownloadsInodes = Settings.get("ProcessedDownloadsInodes")
   self.pathWatcher:start()
-end
-
-function obj:init()
-  self.delayedTimer = Timer.delayed.new(1, delayedTimerCallbackFn)
-  self.pathWatcher = PathWatcher.new(downloadsDir, pathWatcherCallbackFn)
 end
 
 return obj

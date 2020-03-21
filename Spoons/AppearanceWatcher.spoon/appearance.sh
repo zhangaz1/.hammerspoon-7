@@ -13,6 +13,7 @@ if [[ "${MODE}" == "dark" ]]; then
 		killall -9 "WhatsApp"
 		sleep 1
 		open -jga "WhatsApp"
+		osascript 'tell app "WhatsApp" to hide'
 	fi
 fi
 

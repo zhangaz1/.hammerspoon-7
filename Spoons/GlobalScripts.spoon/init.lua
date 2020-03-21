@@ -6,6 +6,22 @@ local Mouse = require("hs.mouse")
 local OSAScript = require("hs.osascript")
 local pasteboard = require("hs.pasteboard")
 local Timer = require("hs.timer")
+local Hotkey = require("hs.hotkey")
+local Window = require("hs.window")
+local GlobalChooser = require("rb.fuzzychooser")
+local Image = require("hs.image")
+
+local spoon = spoon
+
+local function getFrontAppBundleID()
+  return spoon.AppWatcher.frontAppBundleID
+end
+
+local function getAppActions()
+  return spoon.AppWatcher.appActions
+end
+
+-- local function getActionReference
 
 local ax = require("hs._asm.axuielement")
 local ui = require("rb.ui")
@@ -18,6 +34,8 @@ obj.version = "1.0"
 obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
+
+local hyper = {"shift", "cmd", "alt", "ctrl"}
 
 local function script_path()
   local str = debug.getinfo(2, "S").source:sub(2)
@@ -151,7 +169,55 @@ function obj.notificationCenterClickButton(theButton)
   end
 end
 
+local function appScriptLauncherChooserCallback(choice)
+  getAppActions()[choice.bundleID][choice.text]()
+end
+
+local function appScriptLauncher()
+  local choices = {}
+  local activeAppBundleID = getFrontAppBundleID()
+  for id, actionList in pairs(getAppActions()) do
+    if activeAppBundleID == id then
+      for actionName, _ in pairs(actionList) do
+            table.insert(
+              choices,
+              {
+                text = actionName,
+                subText = "Application Script",
+                image = Image.imageFromAppBundle(activeAppBundleID),
+                bundleID = activeAppBundleID,
+              }
+            )
+        end
+    end
+  end
+  GlobalChooser:start(appScriptLauncherChooserCallback, choices, {"text"})
+end
+
+local hotkeys = {
+  {"alt", "q", function() appScriptLauncher() end},
+  {"alt", "e", function() spoon.GlobalScripts.showHelpMenu() end},
+  {{"cmd", "shift"}, "1", function() spoon.GlobalScripts.moveFocusToMenuBar() end},
+  {hyper, "o", function() spoon.GlobalScripts.rightClick() end},
+  {hyper, "1", function() spoon.GlobalScripts.notificationCenterClickButton(1) end},
+  {hyper, "2", function() spoon.GlobalScripts.notificationCenterClickButton(2) end},
+  {hyper, "3", function() spoon.GlobalScripts.notificationCenterClickButton(3) end},
+  {hyper, "n", function() spoon.GlobalScripts.notificationCenterToggle() end},
+  {hyper, "c", function() Window.focusedWindow():centerOnScreen() end},
+  {hyper, "down", function() spoon.WindowManager.pushToCell("Down") end},
+  {hyper, "l", function() spoon.GlobalScripts.lookUpInDictionary() end},
+  {hyper, "left", function() spoon.WindowManager.pushToCell("Left") end},
+  {hyper, "return", function() spoon.WindowManager.maximize() end},
+  {hyper, "right", function() spoon.WindowManager.pushToCell("Right") end},
+  {hyper, "up", function() spoon.WindowManager.pushToCell("Up") end},
+  {hyper, "w", function() spoon.WindowManagerModal:start() end},
+}
+
+
 function obj:init()
+  for _, hotkey in ipairs(hotkeys) do
+    Hotkey.bind(table.unpack(hotkey))
+  end
 end
 
 return obj

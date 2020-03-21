@@ -13,47 +13,41 @@ obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
-local doNotMuteNetworks = {
+local knownNetworks = {
   "Biran",
   "Biran2",
   "BiranTLV",
-  "rbrt"
+  "rbrt",
+  "Shely_or"
 }
 
-local function watcherCallback()
+obj.wifiWatcher = nil
+
+local function wifiWatcherCallback()
   timer.doAfter(
     2,
     function()
+      local muteSoundUnknownWifiKey = "MuteSoundWhenJoiningUnknownNetworks"
+      local muteSoundUnknownWifi = Settings.get(muteSoundUnknownWifiKey)
+      if muteSoundUnknownWifi == nil then
+        Settings.set(muteSoundUnknownWifiKey, true)
+        muteSoundUnknownWifi = true
+      end
       local audioDevice = audiodevice.defaultOutputDevice()
       local currentWifi = wifi.currentNetwork()
-      if fnutils.contains(doNotMuteNetworks, currentWifi) then
+      if fnutils.contains(knownNetworks, currentWifi) or muteSoundUnknownWifi == false then
         audioDevice:setOutputMuted(false)
       else
-        local vacationModeKey = "muteSoundWhenJoiningUnknownNetworks"
-        local vacationMode = Settings.get(vacationModeKey)
-        if vacationMode == nil then
-          Settings.set(vacationModeKey, true)
-          vacationMode = false
-        end
-        if not vacationMode then
-          audioDevice:setOutputMuted(true)
-        else
-          print("VACATION MODE ON")
-        end
+        audioDevice:setOutputMuted(true)
       end
     end
   )
 end
 
-obj.wifiWatcher = nil
-
-function obj:start()
-  watcherCallback()
-  self.wifiWatcher:start()
-end
-
 function obj:init()
-  self.wifiWatcher = wifi.watcher.new(watcherCallback)
+  self.wifiWatcher = wifi.watcher.new(wifiWatcherCallback)
+  wifiWatcherCallback()
+  self.wifiWatcher:start()
 end
 
 return obj

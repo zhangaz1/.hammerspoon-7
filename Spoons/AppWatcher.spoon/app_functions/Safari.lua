@@ -10,6 +10,10 @@ local obj = {}
 
 obj.id = "com.apple.Safari"
 
+local function helpersPath()
+  return spoon.AppWatcher.helpers
+end
+
 -- the statusbar overlay is AXWindow 1!
 -- pane1 = is either the main web area, or the sidebar
 local UIElementSidebar = {{"AXWindow", "AXRoleDescription", "standard window"}, {"AXSplitGroup", 1}, {"AXGroup", 1}, {"AXScrollArea", 1}, {"AXOutline", 1}}
@@ -17,28 +21,37 @@ local UIElementPane1BookmarksHistoryView = {{"AXWindow", "AXRoleDescription", "s
 local UIElementPane1StandardView = {{"AXWindow", "AXRoleDescription", "standard window"}, {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXGroup", 1}, {"AXGroup", 1}, {"AXScrollArea", 1}, {"AXWebArea", 1}}
 local UIElementHomeScreenView = {{"AXWindow", "AXRoleDescription", "standard window"}, {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXScrollArea", 1}}
 
-function obj.moveFocusToMainAreaAfterOpeningLocation(appObj)
+function obj.moveFocusToMainAreaAfterOpeningLocation(modal, keystroke, appObj)
   if obj.isSafariAddressBarFocused(appObj) then
     KeyCodes.setLayout("ABC")
   end
-  for _ = 1, 5 do
-    Timer.doAfter(
-      0.5,
-      function()
-        if obj.isSafariAddressBarFocused(appObj) then
-          local homeScreen = UI.getUIElement(appObj, UIElementHomeScreenView)
-          if not homeScreen then
-            obj.moveFocusToSafariMainArea(appObj, true)
-            return
-          end
+  modal:exit()
+  EventTap.keyStroke(table.unpack(keystroke))
+  modal:enter()
+
+  Timer.doAfter(
+    0.2,
+    function()
+      if obj.isSafariAddressBarFocused(appObj) then
+        for _ = 1, 5 do
+          Timer.doAfter(
+            0.5,
+            function()
+              local safariStartPage = UI.getUIElement(appObj, UIElementHomeScreenView)
+              if not safariStartPage then
+                obj.moveFocusToSafariMainArea(appObj, true)
+                return
+              end
+            end
+          )
         end
       end
-    )
-  end
+    end
+  )
 end
 
 function obj.pageNavigation(direction)
-  local jsFile = spoon.ApplicationScripts.helpers .. "/navigatePages.js"
+  local jsFile = helpersPath() .. "/navigatePages.js"
   local script = [[
     set _arg to "%s"
     set theFile to (POSIX file "%s" as alias)
@@ -57,7 +70,7 @@ function obj.pageNavigation(direction)
 end
 
 function obj.goToFirstInputField()
-  local jsFile = spoon.ApplicationScripts.helpers .. "/goToFirstInputField.js"
+  local jsFile = helpersPath() .. "/goToFirstInputField.js"
   local script = [[
     set theFile to (POSIX file "%s" as alias)
     set theScript to read theFile as string
@@ -303,6 +316,31 @@ function obj.firstSearchResult(appObj, modal)
   modal:exit()
   EventTap.keyStroke({}, "tab")
   modal:enter()
+end
+
+function obj.moveTab(direction)
+  local args
+  if direction == "right" then
+    args = {"+", "1", "before", "after"}
+  else
+    args = {"-", "(index of last tab)", "after", "before"}
+  end
+  local script = [[
+    tell application "Safari"
+    tell window 1
+      set sourceIndex to index of current tab
+      set targetIndex to (sourceIndex %s 1)
+      if not (exists tab targetIndex) then
+        set targetIndex to %s
+        move tab sourceIndex to %s tab targetIndex
+      end if
+      move tab sourceIndex to %s tab targetIndex
+      set current tab to tab targetIndex
+    end tell
+  end tell
+  ]]
+  script = string.format(script, table.unpack(args))
+  AppleScript(script)
 end
 
 return obj

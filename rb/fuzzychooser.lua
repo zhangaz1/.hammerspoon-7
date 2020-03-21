@@ -1,5 +1,6 @@
 local Chooser = require("hs.chooser")
 local Console = require("hs.console")
+local Keycodes = require("hs.keycodes")
 
 local obj = {}
 
@@ -7,6 +8,7 @@ obj.choices = {}
 obj.searchBy = nil
 obj.chooser = nil
 obj.sentCallback = nil
+obj.prevLayout = nil
 
 local function tableCount(t)
     local n = 0
@@ -78,6 +80,7 @@ local function fuzzyMatcher(query)
 end
 
 obj.defaultCallback = function(choice)
+    Keycodes.setLayout(obj.prevLayout)
     if not choice then
         return
     end
@@ -88,18 +91,18 @@ function obj:init()
 end
 
 function obj:start(sentCallback, choices, searchBy, sentQueryChangedCallback)
+
+    self.prevLayout = Keycodes.currentLayout()
+    Keycodes.setLayout("ABC")
+
     if not self.chooser then
         self.chooser = Chooser.new(self.defaultCallback):searchSubText(false):width(33)
     end
-    -- local consoleWindow = Console.hswindow()
-    -- if consoleWindow then
-    --     consoleWindow:close()
-    -- end
-    -- ):rows(tableCount(choices))
     self.choices = choices
     self.sentCallback = sentCallback
     self.searchBy = searchBy
     self.chooser:choices(choices):rows(tableCount(choices))
+
     local queryChangedCallback
     if sentQueryChangedCallback then
         queryChangedCallback = sentQueryChangedCallback
@@ -107,6 +110,7 @@ function obj:start(sentCallback, choices, searchBy, sentQueryChangedCallback)
         queryChangedCallback = fuzzyMatcher
     end
     self.chooser:queryChangedCallback(queryChangedCallback)
+    self.chooser:query("")
     return self.chooser:show()
 end
 

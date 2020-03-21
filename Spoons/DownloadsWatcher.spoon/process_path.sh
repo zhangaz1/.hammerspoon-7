@@ -26,6 +26,10 @@ case "${path}" in
 	/usr/bin/ditto -xk "${path}" "${target}"
 	/bin/mv -f "${path}" ~/.Trash/
 	;;
+*".tgz"|*".gz")
+	/usr/bin/tar -xvf "${path}" -C ~/Downloads
+	/bin/mv -f "${path}" ~/.Trash/
+	;;
 *".dmg")
 	mounted_path=$(/usr/bin/yes | /usr/bin/hdiutil attach -nobrowse "${path}" | /usr/bin/tail -n 1 | /usr/bin/grep -E -o "/Volumes/.+$")
 	/bin/cp -R "${mounted_path}" ~/Downloads

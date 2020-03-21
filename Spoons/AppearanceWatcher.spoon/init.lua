@@ -17,20 +17,16 @@ local function script_path()
   return str:match("(.*/)")
 end
 
-obj.spoonPath = script_path()
 obj.pathwatcher = nil
 
-function obj:init()
-  self.pathwatcher =
-    pathwatcher.new(
-    os.getenv("HOME") .. "/Library/Preferences/.GlobalPreferences.plist",
-    function()
-      obj:setStyle()
-    end
-  )
-end
-
-function obj:setStyle()
+local function setStyle()
+  local key = "WatchForAppearanceChange"
+  if settings.get(key) == nil then
+    settings.set(key, true)
+  end
+  if settings.get(key) == false then
+    return
+  end
   local currentSystemStyle = Host.interfaceStyle()
   if not currentSystemStyle then
     currentSystemStyle = "Light"
@@ -47,7 +43,7 @@ function obj:setStyle()
     end
     settings.set("HSAppearanceWatcherInterfaceStyle", currentSystemStyle)
     task.new(
-      self.spoonPath .. "/appearance.sh",
+      script_path() .. "/appearance.sh",
       function(exitCode, stdOut, stdErr)
         print(exitCode, stdOut, stdErr)
       end,
@@ -56,8 +52,15 @@ function obj:setStyle()
   end
 end
 
-function obj:start()
-  obj:setStyle()
+function obj:init()
+  self.pathwatcher =
+    pathwatcher.new(
+    os.getenv("HOME") .. "/Library/Preferences/.GlobalPreferences.plist",
+    function()
+      setStyle()
+    end
+  )
+  setStyle()
   obj.pathwatcher:start()
 end
 

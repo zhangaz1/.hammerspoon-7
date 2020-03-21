@@ -15,4 +15,8 @@ function obj.pane2(appObj)
   ui.getUIElement(appObj, pane2):setAttributeValue("AXFocused", true)
 end
 
+function obj.clickOnHistoryMenuItem(appObj)
+  appObj:selectMenuItem({"History"})
+end
+
 return obj

@@ -14,6 +14,37 @@ local obj = {}
 
 obj.id = "com.apple.finder"
 
+function obj.browseInLaunchBar()
+  osascript.applescript([[
+  ignoring application responses
+    tell application "LaunchBar" to perform action "Browse Current Folder"
+  end ignoring]])
+end
+
+function obj.traverseUp()
+  osascript.applescript([[
+    ignoring application responses
+    tell application "LaunchBar" to perform action "Traverse Up"
+    end ignoring
+  ]])
+end
+
+function obj.traverseDown()
+  osascript.applescript([[
+    ignoring application responses
+    tell application "LaunchBar" to perform action "Traverse Down"
+    end ignoring
+  ]])
+end
+
+function obj.browseFolderContents()
+  osascript.applescript([[
+    ignoring application responses
+    tell application "LaunchBar" to perform action "Browse Folder Contents"
+    end ignoring
+  ]])
+end
+
 function obj.getFinderSelection()
   local _, selection, _ = osascript.applescript([[
     set theSelectionPOSIX to {}
@@ -162,13 +193,6 @@ function obj.rightSizeColumn(appObj, arg)
     modifiers = {alt = true}
   end
   Util.doubleLeftClick(point, modifiers, true)
-end
-
-function obj.browseInLaunchBar()
-  osascript.applescript([[
-  ignoring application responses
-    tell application "LaunchBar" to perform action "Browse Current Folder"
-  end ignoring]])
 end
 
 function obj.duplicateTab()
@@ -350,30 +374,6 @@ function obj.clickHistoryToolbarItem(appObj, backOrForward)
   ):performAction("AXShowMenu")
 end
 
-function obj.traverseUp()
-  osascript.applescript([[
-    ignoring application responses
-    tell application "LaunchBar" to perform action "Traverse Up"
-    end ignoring
-  ]])
-end
-
-function obj.traverseDown()
-  osascript.applescript([[
-    ignoring application responses
-    tell application "LaunchBar" to perform action "Traverse Down"
-    end ignoring
-  ]])
-end
-
-function obj.browseFolderContents()
-  osascript.applescript([[
-    ignoring application responses
-    tell application "LaunchBar" to perform action "Browse Folder Contents"
-    end ignoring
-  ]])
-end
-
 function obj.isSearchModeActive(appObj)
   local title = appObj:focusedWindow():title()
   if string.match(title, "^Searching “.+”$") then
@@ -390,7 +390,7 @@ function obj.moveFocusToFilesAreaIfInSearchMode(appObj, modal)
     obj.focusMainArea(appObj)
   else
     modal:exit()
-    hs.eventtap.keyStroke({}, "tab")
+    eventtap.keyStroke({}, "tab")
     modal:enter()
   end
 end
