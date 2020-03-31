@@ -28,6 +28,8 @@ local obj = {
     ["Toggle Columns"] = function() getAppEnv("com.apple.finder").toggleColumns() end,
     ["Toggle Sort Direction"] = function() getAppEnv("com.apple.finder").toggleSortingDirection() end,
     ["Traverse Up"] = function() getAppEnv("com.apple.finder").traverseUp() end,
+    ["History: Back"] = function() getAppEnv("com.apple.finder").clickHistoryToolbarItem(getFrontApp(), "back") end,
+    ["History: Forward"] = function() getAppEnv("com.apple.finder").clickHistoryToolbarItem(getFrontApp(), "forward") end
   },
   ["com.adobe.illustrator"] = {
     ["Export Artboards as PDFs to Desktop"] = function() getAppEnv("com.adobe.illustrator").exportAs("pdf") end,

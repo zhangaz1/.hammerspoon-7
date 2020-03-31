@@ -4,9 +4,10 @@ local FS = require("hs.fs")
 local Fnutils = require("hs.fnutils")
 local Settings = require("hs.settings")
 local Timer = require("hs.timer")
--- local Notify = require("hs.notify")
 
 local obj = {}
+
+local processedDownloadsInodesKey = settingKeys.processedDownloadsInodes
 
 obj.__index = obj
 obj.name = "DownloadsWatcher"
@@ -40,6 +41,8 @@ obj.lastFlagTables = {}
 obj.ProcessedDownloadsInodes = {}
 obj.delayedTimer = nil
 
+local dirIsEmpty
+
 local function delayedTimerCallbackFn()
   local iteratedFiles = {}
   local pathsToProcess = {}
@@ -59,20 +62,20 @@ local function delayedTimerCallbackFn()
       end
     end
   else
-    print(string.format("DownloadsWatcher: the following error occurred: %s", dirObj))
+    print(string.format("DownloadsWatcher enumerator error: %s", dirObj))
   end
-  local newPlistSetting
+  local newPlistSetting = obj.ProcessedDownloadsInodes
   if tableCount(iteratedFiles) == 0 then
+    -- dirIsEmpty = true
+    print("DownloadsWatcher: ~/Downloads emptied, clearing inodes list")
     newPlistSetting = {}
-  else
-    newPlistSetting = obj.ProcessedDownloadsInodes
   end
-  Settings.set("ProcessedDownloadsInodes", newPlistSetting)
+  Settings.set(processedDownloadsInodesKey, newPlistSetting)
   for _, path in ipairs(pathsToProcess) do
     Task.new(
       shellScript,
       function(_, _, err)
-        print("DownloadsWatcher", err)
+        print("DownloadsWatcher error: ", err)
       end,
       {path}
     ):start()
@@ -86,10 +89,7 @@ end
 function obj:init()
   self.delayedTimer = Timer.delayed.new(1, delayedTimerCallbackFn)
   self.pathWatcher = PathWatcher.new(downloadsDir, pathWatcherCallbackFn)
-  if not Settings.get("ProcessedDownloadsInodes") then
-    Settings.set("ProcessedDownloadsInodes", {})
-  end
-  self.ProcessedDownloadsInodes = Settings.get("ProcessedDownloadsInodes")
+  self.ProcessedDownloadsInodes = Settings.get(processedDownloadsInodesKey)
   self.pathWatcher:start()
 end
 

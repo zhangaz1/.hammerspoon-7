@@ -46,13 +46,14 @@ local obj = {
   },
   ["com.apple.Dictionary"] = {
     ["Pane 1"] = {'alt', '1', function() getAppEnv("com.apple.Dictionary").pane1(getFrontApp()) end},
-    ["Pane 2"] = {'alt', '2', function() getAppEnv("com.apple.Dictionary").pane2(getFrontApp()) end}
+    ["Pane 2"] = {'alt', '2', function() getAppEnv("com.apple.Dictionary").pane2(getFrontApp()) end},
+    ["New Window"] = {'cmd', 'n', function() getAppEnv("com.apple.Dictionary").newWindow(getActiveModal()) end}
   },
   ["com.apple.finder"] = {
     ["Browse in LaunchBar"] = {"alt", "f", function() getAppEnv("com.apple.finder").browseInLaunchBar() end},
     ["Deselct All"] = {{"alt", "cmd"}, "a", function() getAppEnv("com.apple.finder").deselectAll() end},
     ["Move Focus to Files Area"] = {"alt", "2", function() getAppEnv("com.apple.finder").focusMainArea(getFrontApp()) end},
-    ["New Window"] = {"cmd", "n", function() EventTap.keyStroke({"cmd", "alt"}, "n") end},
+    ["New Window"] = {"cmd", "n", function() getAppEnv("com.apple.finder").newWindow(getActiveModal()) end},
     ["Open Folder in New Tab"] = {{"shift", "cmd"}, "down", function() getFrontApp():selectMenuItem({"File", "Open in New Tab"}) end},
     ["Open Package"] = {"alt", "o", function() getAppEnv("com.apple.finder").openPackage() end},
     ["Rename"] = {"cmd", "r", function() getAppEnv("com.apple.finder").clickOnRenameMenuItem(getFrontApp()) end},
@@ -153,7 +154,7 @@ local obj = {
     ["Previous Tab"] = {{"cmd ", "alt"}, "left", function() getAppEnv("com.apple.Safari").switchTab(getFrontApp(), "Show Previous Tab") end},
     ["New Bookmarks Folder"] = {{"cmd", "shift"}, "n", function() getAppEnv("com.apple.Safari").newBookmarksFolder(getFrontApp()) end},
     ["Focus First Bookmark/History Item"] = {{}, "tab", function() getAppEnv("com.apple.Safari").firstSearchResult(getFrontApp(), getActiveModal()) end},
-    ["Move Focus to Main Area After Opening Location"] = {{}, "return", function() getAppEnv("com.apple.Safari").moveFocusToMainAreaAfterOpeningLocation(getActiveModal(), {{}, "return"}, getFrontApp()) end}
+    -- ["Move Focus to Main Area After Opening Location"] = {{}, "return", function() getAppEnv("com.apple.Safari").moveFocusToMainAreaAfterOpeningLocation(getActiveModal(), {{}, "return"}, getFrontApp()) end}
   }
 }
 

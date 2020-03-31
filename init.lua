@@ -6,7 +6,6 @@ local alert = require("hs.alert")
 local screen = require("hs.screen")
 local ipc = require("hs.ipc")
 local application = require("hs.application")
-local settings = require("hs.settings")
 
 ----------------------------------
 -- HAMMERSPOON SETTINGS, VARIABLES
@@ -22,15 +21,41 @@ ipc.cliUninstall()
 ipc.cliInstall()
 window.animationDuration = 0
 
--------------------
--- PERSONAL MODULES
--------------------
+settingKeys = {
+  appearanceWatcherActive = "RBAppearanceWatcherIsActive",
+  cachedInterfaceStyle = "RBAppearanceWatcherCachedInterfaceStyle",
+  muteSoundForUnknownNetworks = "RBMuteSoundWhenJoiningUnknownNetworks",
+  configWatcherActive = "RBConfigWatcherActive",
+  processedDownloadsInodes = "RBDownloadsWatcherProcessedDownloadsInodes",
+  appQuitterUnterminatedTimers = "RBAppQuitterUnterminatedTimers",
+  appsLastActiveKeyboardLayouts = "RBAppsLastActiveKeyboardLayouts",
+  safariTabsKeyboardLayouts = "RBSafariTabsKeyboardLayouts"
+}
+
+local settingKeysDefault = {
+  appearanceWatcherActive = true,
+  cachedInterfaceStyle = hs.host.interfaceStyle() or "Light",
+  muteSoundForUnknownNetworks = true,
+  configWatcherActive = true,
+  processedDownloadsInodes = {},
+  appQuitterUnterminatedTimers = {},
+  appsLastActiveKeyboardLayouts = {},
+  safariTabsKeyboardLayouts = {}
+}
+
+for i, v in pairs(settingKeys) do
+  if hs.settings.get(v) == nil then
+    hs.settings.set(v, settingKeysDefault[i])
+  end
+end
+
+-- load spoons
 local iterFn, dirObj = FS.dir("Spoons/")
 if iterFn then
   for file in iterFn, dirObj do
     if string.sub(file, -5) == "spoon" then
       local spoonName = string.sub(file, 1, -7)
-        hs.loadSpoon(spoonName)
+      hs.loadSpoon(spoonName)
     end
   end
 end

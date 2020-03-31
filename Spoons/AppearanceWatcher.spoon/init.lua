@@ -5,6 +5,9 @@ local Host = require("hs.host")
 
 local obj = {}
 
+local appearanceWatcherActiveKey = settingKeys.appearanceWatcherActive
+local cachedInterfaceStyleKey = settingKeys.cachedInterfaceStyle
+
 obj.__index = obj
 obj.name = "AppearanceWatcher"
 obj.version = "1.0"
@@ -20,34 +23,24 @@ end
 obj.pathwatcher = nil
 
 local function setStyle()
-  local key = "WatchForAppearanceChange"
-  if settings.get(key) == nil then
-    settings.set(key, true)
-  end
-  if settings.get(key) == false then
-    return
-  end
-  local currentSystemStyle = Host.interfaceStyle()
-  if not currentSystemStyle then
-    currentSystemStyle = "Light"
-  end
-  local cachedStyle = settings.get("HSAppearanceWatcherInterfaceStyle")
+  local currentSystemStyle = Host.interfaceStyle() or "Light"
+  local cachedStyle = settings.get(cachedInterfaceStyleKey)
   if currentSystemStyle ~= cachedStyle then
-    print("detected system interface style change, to => " .. currentSystemStyle)
-    print("cached system interface style is currently => " .. (cachedStyle or "NOT_CACHED"))
-    local interfaceParameter
-    if currentSystemStyle == "Dark" then
-      interfaceParameter = "dark"
-    elseif currentSystemStyle == "Light" then
-      interfaceParameter = "light"
+    local msg = string.format("AppearanceWatcher: detected a system style change, from %s to %s", cachedStyle, currentSystemStyle)
+    print(msg)
+    if settings.get(appearanceWatcherActiveKey) == false then
+      return
     end
-    settings.set("HSAppearanceWatcherInterfaceStyle", currentSystemStyle)
+    settings.set(cachedInterfaceStyleKey, currentSystemStyle)
     task.new(
       script_path() .. "/appearance.sh",
       function(exitCode, stdOut, stdErr)
-        print(exitCode, stdOut, stdErr)
+        if exitCode > 0 then
+          msg = string.format([[AppearanceWatcher: appearance.sh exited with non-zero exit code (%s). stdout: %s, stderr: %s]], exitCode, stdOut, stdErr)
+          print(msg)
+        end
       end,
-      {interfaceParameter}
+      {currentSystemStyle:lower()}
     ):start()
   end
 end

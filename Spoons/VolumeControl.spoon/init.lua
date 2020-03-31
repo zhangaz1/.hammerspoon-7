@@ -1,6 +1,7 @@
 local Application = require("hs.application")
 local Hotkey = require("hs.hotkey")
 local EventTap = require("hs.eventtap")
+local AudioDevice = require("hs.audiodevice")
 
 local AX = require("hs._asm.axuielement")
 local Observer = require("hs._asm.axuielement").observer
@@ -108,14 +109,14 @@ function obj:init()
       {"alt"},
       "right",
       function()
-        hs.audiodevice.defaultOutputDevice():setVolume(100)
+        AudioDevice.defaultOutputDevice():setVolume(100)
       end
     },
     {
       {"alt"},
       "left",
       function()
-        hs.audiodevice.defaultOutputDevice():setVolume(0)
+        AudioDevice.defaultOutputDevice():setVolume(0)
       end
     },
     {

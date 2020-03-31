@@ -6,6 +6,8 @@ local Settings = require("hs.settings")
 
 local obj = {}
 
+local settingKeys = settingKeys
+
 obj.__index = obj
 obj.name = "WifiWatcher"
 obj.version = "1.0"
@@ -27,12 +29,7 @@ local function wifiWatcherCallback()
   timer.doAfter(
     2,
     function()
-      local muteSoundUnknownWifiKey = "MuteSoundWhenJoiningUnknownNetworks"
-      local muteSoundUnknownWifi = Settings.get(muteSoundUnknownWifiKey)
-      if muteSoundUnknownWifi == nil then
-        Settings.set(muteSoundUnknownWifiKey, true)
-        muteSoundUnknownWifi = true
-      end
+      local muteSoundUnknownWifi = Settings.get(settingKeys.muteSoundForUnknownNetworks)
       local audioDevice = audiodevice.defaultOutputDevice()
       local currentWifi = wifi.currentNetwork()
       if fnutils.contains(knownNetworks, currentWifi) or muteSoundUnknownWifi == false then

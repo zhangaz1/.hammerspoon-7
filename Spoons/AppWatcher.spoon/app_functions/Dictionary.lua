@@ -1,3 +1,4 @@
+local EventTap = require("hs.eventtap")
 local ui = require("rb.ui")
 
 local obj = {}
@@ -16,6 +17,12 @@ end
 function obj.pane2(appObj)
     local pane2 = {{'AXWindow', 1}, {'AXSplitGroup', 1}, {'AXScrollArea', 2}, {'AXScrollArea', 1}, {'AXWebArea', 1}}
     ui.getUIElement(appObj, pane2):setAttributeValue('AXFocused', true)
+end
+
+function obj.newWindow(modal)
+    modal:exit()
+    EventTap.keyStroke({"cmd", "alt"}, "n")
+    modal:enter()
 end
 
 return obj

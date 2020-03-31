@@ -1,10 +1,6 @@
 local MenuBar = require("hs.menubar")
+local Application = require("hs.application")
 local Settings = require("hs.settings")
--- https://www.google.com/search?client=safari&rls=en&q=pyobjc+nsstatusbar&ie=UTF-8&oe=UTF-8
--- https://github.com/jaredks/rumps
--- :start(title, input, total)
--- :update(current)
--- :finish(checkmark icon, output)
 
 local obj = {}
 
@@ -15,23 +11,31 @@ obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
+local spoon = spoon
+local appearanceWatcherIsActiveKey = settingKeys.appearanceWatcherActive
+local muteSoundForUnknownNetworksKey = settingKeys.muteSoundForUnknownNetworks
+local configWatcherIsActiveKey = settingKeys.configWatcherActive
+
+obj.menuBarItem = nil
+
 local function script_path()
   local str = debug.getinfo(2, "S").source:sub(2)
   return str:match("(.*/)")
 end
 obj.spoonPath = script_path()
 
-local function toggleAppearanceWatcher(_, menuItem)
-  local key = "WatchForAppearanceChange"
-  if menuItem.checked then
-    Settings.set(key, false)
-  else
-    Settings.set(key, true)
-  end
+local regularIconPath = obj.spoonPath .. "/statusicon.pdf"
+local fadedIconPath = obj.spoonPath .. "/statusicon_faded.pdf"
+
+local function quitHammerspoon()
+  Application("Hammerspoon"):kill()
 end
 
-local function toggleVacationMode(_, menuItem)
-  local key = "MuteSoundWhenJoiningUnknownNetworks"
+local function toggleInputWatcher()
+  spoon.InputWatcher:toggle()
+end
+
+local function toggleGenericSetting(menuItem, key)
   if menuItem.checked then
     Settings.set(key, false)
   else
@@ -40,23 +44,64 @@ local function toggleVacationMode(_, menuItem)
 end
 
 local function menuTable()
-  local watchForAppearanceChangeKey = Settings.get("WatchForAppearanceChange")
-  local muteSoundForUnknownNetworksKey = Settings.get("MuteSoundWhenJoiningUnknownNetworks")
-  local menuTable = {
-    { title = "Watch for appearance changes", fn = toggleAppearanceWatcher, checked = watchForAppearanceChangeKey},
-    { title = "Mute on unknown networks", fn = toggleVacationMode, checked = muteSoundForUnknownNetworksKey},
+  local dropdownMenuTable = {
+    {
+      title = "Watch for input events",
+      fn = toggleInputWatcher,
+      checked = spoon.InputWatcher.watcher:isEnabled()
+    },
+    {
+      title = "Watch for config changes",
+      fn = function(_, menuItem)
+        toggleGenericSetting(menuItem, configWatcherIsActiveKey)
+      end,
+      checked = Settings.get(configWatcherIsActiveKey)
+    },
+    {
+      title = "Watch for appearance changes",
+      fn = function(_, menuItem)
+        toggleGenericSetting(menuItem, appearanceWatcherIsActiveKey)
+      end,
+      checked = Settings.get(appearanceWatcherIsActiveKey)
+    },
+    {
+      title = "Mute on unknown networks",
+      fn = function(_, menuItem)
+        toggleGenericSetting(menuItem, muteSoundForUnknownNetworksKey)
+      end,
+      checked = Settings.get(muteSoundForUnknownNetworksKey)
+    },
+    {title = "-"},
+    {title = "Quit Hammerspoon", fn = quitHammerspoon}
   }
-  return menuTable
+  return dropdownMenuTable
 end
 
-local iconPath = obj.spoonPath .. "/statusicon.pdf"
+local current = "regular"
 
-obj.menuBarItem = nil
+function obj.beginIconFlashing()
+  obj.flashingIconTimer:start()
+end
+
+function obj.endIconFlashing()
+  obj.flashingIconTimer:stop()
+  obj.menuBarItem:setIcon(regularIconPath)
+end
 
 function obj:init()
-  self.menuBarItem = MenuBar.new()
-  :setIcon(iconPath)
-  :setMenu(menuTable)
+  self.menuBarItem = MenuBar.new():setIcon(regularIconPath):setMenu(menuTable)
+  obj.flashingIconTimer = hs.timer.new(
+    0.2,
+    function()
+      if current == "regular" then
+        obj.menuBarItem:setIcon(regularIconPath)
+        current = "faded"
+      else
+        obj.menuBarItem:setIcon(fadedIconPath)
+        current = "regular"
+      end
+    end
+  )
 end
 
 return obj

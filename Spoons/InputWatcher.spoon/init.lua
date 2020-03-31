@@ -15,11 +15,13 @@ obj.license = "MIT - https://opensource.org/licenses/MIT"
 obj.watcher = nil
 
 local function getFrontApp()
+  -- return hs.application.frontmostApplication()
   return spoon.AppWatcher.frontApp
 end
 
 local function getFrontAppID()
   return spoon.AppWatcher.frontAppBundleID
+  -- return getFrontApp():bundleID()
 end
 
 local function getAppEnv(app)
@@ -38,31 +40,49 @@ local function watcherCallback(event)
   end
 
   -- whatsapp
-  if getFrontAppID() == "desktop.WhatsApp" then
-    -- keycode 3 ==> f/כ
-    if (keyCode == 3) and eventFlags:containExactly({"cmd"}) then
+  -- keycode 3 ==> f/כ
+  if (keyCode == 3) and eventFlags:containExactly({"cmd"}) then
+    if getFrontAppID() == "desktop.WhatsApp" then
       KeyCodes.setLayout("ABC")
     end
-    if (keyCode == KeyCodes.map["return"] or keyCode == KeyCodes.map.tab) and eventFlags:containExactly({}) then
+  end
+
+  if keyCode == KeyCodes.map.tab and eventFlags:containExactly({}) then
+    if getFrontAppID() == "desktop.WhatsApp" then
       KeyCodes.setLayout("Hebrew")
     end
   end
 
-  if getFrontAppID() == "com.apple.Safari" then
-    if keyCode == KeyCodes.map["return"] and eventFlags:containExactly({}) then
+  if keyCode == KeyCodes.map["return"] and eventFlags:containExactly({}) then
+    if getFrontAppID() == "com.apple.Safari" then
       local safariEnv = getAppEnv("com.apple.Safari")
       local safariAppObj = getFrontApp()
-      safariEnv.moveFocusToMainAreaAfterOpeningLocation(safariAppObj)
+      safariEnv.moveFocusToMainAreaAfterOpeningLocation(nil, nil, safariAppObj)
     end
-    -- t/l
-    if (keyCode == 17 or keyCode == 37) and eventFlags:containExactly({"cmd"}) then
+  end
+  -- t/l
+  if (keyCode == 17 or keyCode == 37) and eventFlags:containExactly({"cmd"}) then
+    if getFrontAppID() == "com.apple.Safari" then
       KeyCodes.setLayout("ABC")
     end
   end
+  -- local shouldDeleteEvent = false
+  -- local eventsToPost = {EventTap.event.types.keyUp}
+  -- return shouldDeleteEvent, eventsToPost
 end
 
 function obj:init()
-  -- self.watcher = EventTap.new({EventTap.event.types.keyDown}, watcherCallback):start()
+  self.watcher = EventTap.new({EventTap.event.types.keyDown}, watcherCallback)
+end
+
+function obj:toggle()
+  if obj.watcher then
+    if obj.watcher:isEnabled() then
+      obj.watcher:stop()
+    else
+      obj.watcher:start()
+    end
+  end
 end
 
 function obj:stop()

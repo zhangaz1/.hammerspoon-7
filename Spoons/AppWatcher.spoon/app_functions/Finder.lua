@@ -45,6 +45,12 @@ function obj.browseFolderContents()
   ]])
 end
 
+function obj.newWindow(modal)
+  modal:exit()
+  eventtap.keyStroke({"cmd", "alt"}, "n")
+  modal:enter()
+end
+
 function obj.getFinderSelection()
   local _, selection, _ = osascript.applescript([[
     set theSelectionPOSIX to {}

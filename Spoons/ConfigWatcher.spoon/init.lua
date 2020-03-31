@@ -1,5 +1,7 @@
-local hs = hs
 local PathWatcher = require("hs.pathwatcher")
+local Settings = require("hs.settings")
+
+local hs = hs
 
 local obj = {}
 
@@ -12,6 +14,8 @@ obj.license = "MIT - https://opensource.org/licenses/MIT"
 
 obj.pathWatcher = nil
 
+local configWatcherActiveKey = settingKeys.configWatcherActive
+
 local function patchWatcherCallbackFn(files, flagTables)
   local doReload = false
   for i, file in pairs(files) do
@@ -23,7 +27,9 @@ local function patchWatcherCallbackFn(files, flagTables)
     end
   end
   if doReload then
-    hs.reload()
+    if Settings.get(configWatcherActiveKey) then
+      hs.reload()
+    end
   end
 end
 

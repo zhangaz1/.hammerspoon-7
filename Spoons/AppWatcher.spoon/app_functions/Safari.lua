@@ -25,10 +25,9 @@ function obj.moveFocusToMainAreaAfterOpeningLocation(modal, keystroke, appObj)
   if obj.isSafariAddressBarFocused(appObj) then
     KeyCodes.setLayout("ABC")
   end
-  modal:exit()
-  EventTap.keyStroke(table.unpack(keystroke))
-  modal:enter()
-
+  -- modal:exit()
+  -- EventTap.keyStroke(table.unpack(keystroke))
+  -- modal:enter()
   Timer.doAfter(
     0.2,
     function()
@@ -49,6 +48,22 @@ function obj.moveFocusToMainAreaAfterOpeningLocation(modal, keystroke, appObj)
     end
   )
 end
+
+function obj.isSafariAddressBarFocused(appObj)
+  local axAppObj = AX.applicationElement(appObj)
+  local addressBarObject = UI.getUIElement(axAppObj, {{"AXWindow", "AXMain", true}, {"AXToolbar", 1}}):attributeValue("AXChildren")
+  for _, toolbarObject in ipairs(addressBarObject) do
+    local toolbarObjectsChilds = toolbarObject:attributeValue("AXChildren")
+    if toolbarObjectsChilds then
+      for _, toolbarObjectChild in ipairs(toolbarObjectsChilds) do
+        if toolbarObjectChild:attributeValue("AXRole") == "AXTextField" then
+          return (toolbarObjectChild:attributeValue("AXFocused") == true)
+        end
+      end
+    end
+  end
+end
+
 
 function obj.pageNavigation(direction)
   local jsFile = helpersPath() .. "/navigatePages.js"
@@ -84,21 +99,6 @@ function obj.goToFirstInputField()
   ]]
   script = string.format(script, jsFile)
   AppleScript(script)
-end
-
-function obj.isSafariAddressBarFocused(appObj)
-  local axAppObj = AX.applicationElement(appObj)
-  local addressBarObject = UI.getUIElement(axAppObj, {{"AXWindow", "AXMain", true}, {"AXToolbar", 1}}):attributeValue("AXChildren")
-  for _, toolbarObject in ipairs(addressBarObject) do
-    local toolbarObjectsChilds = toolbarObject:attributeValue("AXChildren")
-    if toolbarObjectsChilds then
-      for _, toolbarObjectChild in ipairs(toolbarObjectsChilds) do
-        if toolbarObjectChild:attributeValue("AXRole") == "AXTextField" then
-          return (toolbarObjectChild:attributeValue("AXFocused") == true)
-        end
-      end
-    end
-  end
 end
 
 function obj.moveFocusToSafariMainArea(appObj, includeSidebar)
