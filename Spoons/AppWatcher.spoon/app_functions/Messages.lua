@@ -1,3 +1,4 @@
+local Pasteboard = require("hs.pasteboard")
 local UI = require("rb.ui")
 local fuzzyChooser = require("rb.fuzzychooser")
 
@@ -6,13 +7,14 @@ local obj = {}
 obj.id = "com.apple.iChat"
 
 local function chooserCallback(choice)
+  Pasteboard.setContents(choice.text)
   os.execute(string.format([["/usr/bin/open" "%s"]], choice.text))
 end
 
-function obj.getLinks()
+function obj.getLinks(appObj)
   local linkElements =
     UI.getUIElement(
-    obj.thisApp:mainWindow(),
+    appObj:mainWindow(),
     {
       {"AXSplitGroup", 1},
       {"AXScrollArea", 2},

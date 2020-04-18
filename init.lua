@@ -1,12 +1,9 @@
-local hs = hs
-
 local FS = require("hs.fs")
 local window = require("hs.window")
-local alert = require("hs.alert")
-local screen = require("hs.screen")
 local ipc = require("hs.ipc")
 local application = require("hs.application")
 
+local hs = hs
 ----------------------------------
 -- HAMMERSPOON SETTINGS, VARIABLES
 ----------------------------------
@@ -59,5 +56,3 @@ if iterFn then
     end
   end
 end
-
-alert.show("Config Loaded", {atScreenEdge = 1}, screen.mainScreen(), 0.5)

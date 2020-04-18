@@ -1,5 +1,6 @@
 local EventTap = require("hs.eventtap")
 local KeyCodes = require("hs.keycodes")
+local Settings = require("hs.settings")
 
 local obj = {}
 
@@ -57,7 +58,7 @@ local function watcherCallback(event)
     if getFrontAppID() == "com.apple.Safari" then
       local safariEnv = getAppEnv("com.apple.Safari")
       local safariAppObj = getFrontApp()
-      safariEnv.moveFocusToMainAreaAfterOpeningLocation(nil, nil, safariAppObj)
+      safariEnv.inputWatcherInvokedMoveFocusToMainAreaAfterOpeningLocation(safariAppObj)
     end
   end
   -- t/l
@@ -73,24 +74,21 @@ end
 
 function obj:init()
   self.watcher = EventTap.new({EventTap.event.types.keyDown}, watcherCallback)
+  if Settings.get("InputWatcherWasActive") then
+    self.watcher:start()
+  end
 end
 
 function obj:toggle()
   if obj.watcher then
     if obj.watcher:isEnabled() then
       obj.watcher:stop()
+      Settings.set("InputWatcherWasActive", false)
     else
       obj.watcher:start()
+      Settings.set("InputWatcherWasActive", true)
     end
   end
-end
-
-function obj:stop()
-  self.watcher:stop()
-end
-
-function obj:start()
-  self.watcher:start()
 end
 
 return obj

@@ -10,6 +10,7 @@ local Hotkey = require("hs.hotkey")
 local AX = require("hs._asm.axuielement")
 local UI = require("rb.ui")
 
+local settingKeys = settingKeys
 local spoon = spoon
 
 local function script_path()
@@ -19,11 +20,11 @@ end
 
 local obj = {}
 
-local appQuitterUnterminatedTimersKey = settingKeys.appQuitterUnterminatedTimers
 local appsLastActiveKeyboardLayoutsKey = settingKeys.appsLastActiveKeyboardLayouts
-local safariTabsKeyboardLayoutsKey = settingKeys.safariTabsKeyboardLayouts
+-- local safariTabsKeyboardLayoutsKey = settingKeys.safariTabsKeyboardLayouts
 
 obj.helpers = script_path() .. "/helpers"
+obj.appquitter = dofile(script_path() .. "/appquitter.lua")
 
 obj.__index = obj
 obj.name = "AppWatcher"
@@ -41,9 +42,9 @@ obj.frontAppBundleID = nil
 obj.activeModal = nil
 
 obj.appFunctions = {}
-local modals = {}
 obj.appActions = {}
 
+local modals = {}
 obj.modals = modals -- cheatsheet?
 
 obj.runningApplications = {}
@@ -75,88 +76,10 @@ local allowedWindowFilterEvents = {
   -- Window.filter.windowUnhidden,
 }
 
-local minute = 60
-local hour = 60 * minute
-
-obj.appQuitterTimers = {}
-
-local appQuitterRulesTable = {
-  ["at.obdev.LaunchBar.ActionEditor"] = {
-    shouldHideAfter = minute,
-    shouldQuitAfter = minute
-  },
-  ["com.kapeli.dashdoc"] = {
-    shouldHideAfter = minute,
-    shouldQuitAfter = minute
-  }
-}
-
-local function quitAppAfterTime(id)
-  print("should quit", id)
-  -- Application(id):kill()
-end
-
-local function hideAppAfterTime(id)
-  print("should hide", id)
-end
-
-local function initAppQuitter()
-  -- Application.runningApplications()
-  local settingsTable = Settings.get(appQuitterUnterminatedTimersKey)
-  -- for k, v in pairs(settingsTable) do
-  --   if FNUtils.contains(obj.runningApplications, k) then
-  --     if os.time() > v["ShouldQuitAtTimestamp"] then
-  --       print(k, " ===> should quit...")
-  --     end
-  --   end
-  -- end
-  for bundleid, appRules in pairs(appQuitterRulesTable) do
-    obj.appQuitterTimers[bundleid] = {}
-    local appDict = obj.appQuitterTimers[bundleid]
-    if appRules.shouldQuitAfter then
-      appDict.quitTimer =
-        hs.timer.new(
-        0,
-        function()
-          quitAppAfterTime(bundleid, appDict.quitTimer)
-        end
-      )
-    end
-    if appRules.shouldHideAfter then
-      appDict.hideTimer =
-        hs.timer.new(
-        0,
-        function()
-          hideAppAfterTime(bundleid, appDict.quitTimer)
-        end
-      )
-    end
-  end
-end
-
-local function updateAppQuitterTimers(bundleID)
-  local settingsTable = Settings.get(appQuitterUnterminatedTimersKey)
-  for k, v in pairs(appQuitterRulesTable) do
-    if k == bundleID then
-      local deactivationTime = os.time()
-      local shouldQuitIn = v.shouldQuitAfter
-      local shouldQuitAtTimestamp = deactivationTime + v.shouldQuitAfter
-      settingsTable[bundleID] = {
-        ["ShouldQuitAtTimestamp"] = shouldQuitAtTimestamp
-      }
-      for _, a in pairs(obj.appQuitterTimers[bundleID]) do
-        a:setNextTrigger(shouldQuitIn)
-      end
-      Settings.set(appQuitterUnterminatedTimersKey, settingsTable)
-      break
-    end
-  end
-end
-
 ---
 
 local function getCurrentSafariTabInstance()
-  local safariMainWindow = AX.applicationElement(obj.frontApp):attributeValue("AXMainWindow")
+  -- local safariMainWindow = AX.applicationElement(obj.frontApp):attributeValue("AXMainWindow")
   -- local tabBar = UI.getUIElement(safariMainWindow, {{"AXGroup", 1}})
   -- for _, tab in ipairs(tabBar) do
   --   if tab:attributeValue("AXValue") then
@@ -231,9 +154,7 @@ local function appWatcherCallback(_, event, appObj)
     print("active app  ==> ", bundleID)
   end
 
-  if (event == Application.watcher.deactivated) then
-    updateAppQuitterTimers(bundleID)
-  end
+  -- obj.appquitter:update(event, bundleID)
 end
 
 ---
@@ -320,10 +241,12 @@ function obj:init()
   URLEvent.bind("toggleInputSource", toggleInputSource)
   self.appWatcher = Application.watcher.new(appWatcherCallback)
   self.windowFilter = Window.filter.new(windowFilterPredicate)
-  initAppQuitter()
   loadAppFunctions()
   loadAppHotkeys()
   loadAppActions()
+
+  -- obj.appquitter:init()
+
   -- on reload, enter modal (if any) for the front app (saves an redundant cmd+tab)
   appWatcherCallback(nil, Application.watcher.activated, Application.frontmostApplication())
   self.appWatcher:start()

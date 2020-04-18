@@ -402,17 +402,27 @@ function obj.moveFocusToFilesAreaIfInSearchMode(appObj, modal)
 end
 
 function obj.openPackage()
-  osascript.applescript(string.format([[
-        set f to "%s"
-        tell application "Finder"
-          if f does not end with "/" then set f to f & "/"
-          try
-            set target of Finder window 1 to POSIX file (f & "Contents/")
-          on error
-            set target of Finder window 1 to POSIX file f
-          end try
-        end tell
-      ]], obj.getFinderSelection()[1]))
+  osascript.applescript([[
+    tell application "Finder"
+    set theSelection to selection
+    set thePaths to {}
+    repeat with i from 1 to count theSelection
+      set theSelected to item i of theSelection
+      try
+        set theTarget to folder "Contents" of theSelected
+      on error
+        set theTarget to theSelected
+      end try
+      set end of thePaths to theTarget
+    end repeat
+    if (count of thePaths) is 1 then
+      set target of Finder window 1 to (item 1 of thePaths)
+      return
+    end if
+    if (count of thePaths) > 1 then
+      open thePaths as alias list
+    end if
+  end tell]])
 end
 
 return obj

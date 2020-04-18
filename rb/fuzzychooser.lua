@@ -1,6 +1,7 @@
 local Chooser = require("hs.chooser")
 local Console = require("hs.console")
 local Keycodes = require("hs.keycodes")
+local Timer = require("hs.timer")
 
 local obj = {}
 
@@ -9,6 +10,7 @@ obj.searchBy = nil
 obj.chooser = nil
 obj.sentCallback = nil
 obj.prevLayout = nil
+obj.delayedTimer = nil
 
 local function tableCount(t)
     local n = 0
@@ -89,9 +91,14 @@ end
 
 function obj:init()
 end
-
+--[[
+    sentCallback: a callback to call after dismissing the chooser
+    choices: a table of choices
+    searchBy: an array of strings, each corresponding to key of a chooser item.
+        Each key specified with have its VALUE taken into account when performing the fuzzy search
+    sentQueryChangedCallback: an optional function to perform when the query changes. defaults to the fuzzy matcher.
+]]
 function obj:start(sentCallback, choices, searchBy, sentQueryChangedCallback)
-
     self.prevLayout = Keycodes.currentLayout()
     Keycodes.setLayout("ABC")
 
@@ -111,7 +118,8 @@ function obj:start(sentCallback, choices, searchBy, sentQueryChangedCallback)
     end
     self.chooser:queryChangedCallback(queryChangedCallback)
     self.chooser:query("")
-    return self.chooser:show()
+    self.chooser:show()
+    return self.chooser
 end
 
 return obj

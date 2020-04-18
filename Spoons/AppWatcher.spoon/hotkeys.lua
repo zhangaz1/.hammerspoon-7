@@ -93,13 +93,14 @@ local obj = {
     ["Pane 2"] = {'alt', '2', function() getAppEnv("com.apple.iWork.Keynote").pane2(getFrontApp()) end}
   },
   ["com.apple.mail"] = {
+    ["Get Message Text"] =  {"alt", "f", function() getAppEnv("com.apple.mail").getText() end},
     ["Pane 1"] = {"alt", "1", function() getAppEnv("com.apple.mail").pane1(getFrontApp()) end},
     ["Pane 2"] = {"alt", "2", function() getAppEnv("com.apple.mail").pane2(getFrontApp()) end},
     ["Pane 3"] = {"alt", "3", function() getAppEnv("com.apple.mail").pane3(getFrontApp()) end},
     ["Show Links in Message"] = {"alt", "o", function() getAppEnv("com.apple.mail").getMessageLinks(getFrontApp()) end},
   },
   ["com.apple.iChat"] = {
-    ["Show Links in Message"] = {"alt", "o", function() getAppEnv("com.apple.iChat").getLinks() end}
+    ["Show Links in Message"] = {"alt", "o", function() getAppEnv("com.apple.iChat").getLinks(getFrontApp()) end}
   },
   ["com.apple.Music"] = {
     ["Pane 1"] = {"alt", "1", function() getAppEnv("com.apple.Music").pane1(getFrontApp()) end},
@@ -154,7 +155,7 @@ local obj = {
     ["Previous Tab"] = {{"cmd ", "alt"}, "left", function() getAppEnv("com.apple.Safari").switchTab(getFrontApp(), "Show Previous Tab") end},
     ["New Bookmarks Folder"] = {{"cmd", "shift"}, "n", function() getAppEnv("com.apple.Safari").newBookmarksFolder(getFrontApp()) end},
     ["Focus First Bookmark/History Item"] = {{}, "tab", function() getAppEnv("com.apple.Safari").firstSearchResult(getFrontApp(), getActiveModal()) end},
-    -- ["Move Focus to Main Area After Opening Location"] = {{}, "return", function() getAppEnv("com.apple.Safari").moveFocusToMainAreaAfterOpeningLocation(getActiveModal(), {{}, "return"}, getFrontApp()) end}
+    ["Move Focus to Main Area After Opening Location"] = {{}, "return", function() getAppEnv("com.apple.Safari").moveFocusToMainAreaAfterOpeningLocation(getActiveModal(), {{}, "return"}, getFrontApp()) end}
   }
 }
 

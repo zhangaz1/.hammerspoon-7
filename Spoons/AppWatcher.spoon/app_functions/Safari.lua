@@ -21,13 +21,38 @@ local UIElementPane1BookmarksHistoryView = {{"AXWindow", "AXRoleDescription", "s
 local UIElementPane1StandardView = {{"AXWindow", "AXRoleDescription", "standard window"}, {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXGroup", 1}, {"AXGroup", 1}, {"AXScrollArea", 1}, {"AXWebArea", 1}}
 local UIElementHomeScreenView = {{"AXWindow", "AXRoleDescription", "standard window"}, {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXScrollArea", 1}}
 
+function obj.inputWatcherInvokedMoveFocusToMainAreaAfterOpeningLocation(appObj)
+  if obj.isSafariAddressBarFocused(appObj) then
+    KeyCodes.setLayout("ABC")
+  end
+  Timer.doAfter(
+    0.2,
+    function()
+      if obj.isSafariAddressBarFocused(appObj) then
+        for _ = 1, 5 do
+          Timer.doAfter(
+            0.5,
+            function()
+              local safariStartPage = UI.getUIElement(appObj, UIElementHomeScreenView)
+              if not safariStartPage then
+                obj.moveFocusToSafariMainArea(appObj, true)
+                return
+              end
+            end
+          )
+        end
+      end
+    end
+  )
+end
+
 function obj.moveFocusToMainAreaAfterOpeningLocation(modal, keystroke, appObj)
   if obj.isSafariAddressBarFocused(appObj) then
     KeyCodes.setLayout("ABC")
   end
-  -- modal:exit()
-  -- EventTap.keyStroke(table.unpack(keystroke))
-  -- modal:enter()
+  modal:exit()
+  EventTap.keyStroke(table.unpack(keystroke))
+  modal:enter()
   Timer.doAfter(
     0.2,
     function()

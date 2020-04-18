@@ -33,6 +33,10 @@ local function getSelectedMessages()
 	end
 end
 
+function obj.getText()
+	osascript.applescript([[tell app "LaunchBar" to perform action "Mail: Get Text"]])
+end
+
 function obj.pane1(appObj)
 	-- focus on mailbox list
 	local e = ui.getUIElement(appObj, {{"AXWindow", 1}, {"AXSplitGroup", 1}, {"AXScrollArea", 1}, {"AXOutline", 1}})

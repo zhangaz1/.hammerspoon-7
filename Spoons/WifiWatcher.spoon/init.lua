@@ -20,7 +20,8 @@ local knownNetworks = {
   "Biran2",
   "BiranTLV",
   "rbrt",
-  "Shely_or"
+  "Shely_or",
+  "Harelzabari"
 }
 
 obj.wifiWatcher = nil
