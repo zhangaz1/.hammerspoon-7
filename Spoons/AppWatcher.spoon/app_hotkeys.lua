@@ -51,7 +51,7 @@ local obj = {
   },
   ["com.apple.finder"] = {
     ["Browse in LaunchBar"] = {"alt", "f", function() getAppEnv("com.apple.finder").browseInLaunchBar() end},
-    ["Deselct All"] = {{"alt", "cmd"}, "a", function() getAppEnv("com.apple.finder").deselectAll() end},
+    ["Deselct All"] = {{"alt", "cmd"}, "a", function() getAppEnv("com.apple.finder").deselectAll(getFrontApp()) end},
     ["Move Focus to Files Area"] = {"alt", "2", function() getAppEnv("com.apple.finder").focusMainArea(getFrontApp()) end},
     ["New Window"] = {"cmd", "n", function() getAppEnv("com.apple.finder").newWindow(getActiveModal()) end},
     ["Open Folder in New Tab"] = {{"shift", "cmd"}, "down", function() getFrontApp():selectMenuItem({"File", "Open in New Tab"}) end},
@@ -104,7 +104,8 @@ local obj = {
   },
   ["com.apple.Music"] = {
     ["Pane 1"] = {"alt", "1", function() getAppEnv("com.apple.Music").pane1(getFrontApp()) end},
-    ["Pane 2"] = {"alt", "2", function() getAppEnv("com.apple.Music").pane2(getFrontApp()) end}
+    ["Pane 2"] = {"alt", "2", function() getAppEnv("com.apple.Music").pane2(getFrontApp()) end},
+    ["Show Filter Field"] = {"cmd", "l", function() getAppEnv("com.apple.Music").focusFilterField(getFrontApp()) end},
   },
   ["com.mrrsoftware.NameChanger"] = {
     ["Change Rename Type"] = {"cmd", "down", function() getAppEnv("com.mrrsoftware.NameChanger").changeRenameType() end}
@@ -156,6 +157,9 @@ local obj = {
     ["New Bookmarks Folder"] = {{"cmd", "shift"}, "n", function() getAppEnv("com.apple.Safari").newBookmarksFolder(getFrontApp()) end},
     ["Focus First Bookmark/History Item"] = {{}, "tab", function() getAppEnv("com.apple.Safari").firstSearchResult(getFrontApp(), getActiveModal()) end},
     ["Move Focus to Main Area After Opening Location"] = {{}, "return", function() getAppEnv("com.apple.Safari").moveFocusToMainAreaAfterOpeningLocation(getActiveModal(), {{}, "return"}, getFrontApp()) end}
+  },
+  ["desktop.WhatsApp"] = {
+    ["Switch to ABC on Search"] = {"cmd", "f", function() getAppEnv("desktop.WhatsApp").switchToABCOnSearch(getFrontApp()) end}
   }
 }
 

@@ -25,8 +25,6 @@ obj.textStyle = {
   backgroundColor = drawing.color.colorsFor("System")["windowBackgroundColor"]
 }
 
-obj.hyper = {"cmd", "alt", "ctrl", "shift"}
-
 obj.numberOfColumns = 8
 obj.numberOfRows = 8
 obj.boxWidth = nil
@@ -56,17 +54,8 @@ function obj:init()
     )
   end
 
-  Hotkey.bind(
-    self.hyper,
-    "m",
-    function()
-      obj:start()
-    end
-  )
-
   for _, hotkey in ipairs(
     {
-      {self.hyper, "m"},
       {{}, "escape"},
       {{}, "return"}
     }
@@ -88,6 +77,7 @@ function obj:init()
 end
 
 function obj:start()
+  print("Activating MouseGrids")
   for _, box in ipairs(self.theGrid) do
     box:show(0.2)
     box.assignedHint:show(0.2)
@@ -101,16 +91,6 @@ function obj:stop()
     box:hide(0.2)
     box.assignedHint:hide(0.2)
   end
-  -- hs.timer.doAfter(
-  --   0.3,
-  --   function()
-  --     for _, box in ipairs(self.theGrid) do
-  --       box:delete()
-  --       box.assignedHint:delete()
-  --     end
-  --     self.theGrid = {}
-  --   end
-  -- )
   self.mouseGridsModal:exit()
 end
 

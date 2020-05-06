@@ -1,6 +1,5 @@
 local Application = require("hs.application")
 local Hotkey = require("hs.hotkey")
-local EventTap = require("hs.eventtap")
 local AudioDevice = require("hs.audiodevice")
 
 local AX = require("hs._asm.axuielement")
@@ -117,13 +116,6 @@ function obj:init()
       "left",
       function()
         AudioDevice.defaultOutputDevice():setVolume(0)
-      end
-    },
-    {
-      {},
-      "return",
-      function()
-        EventTap.keyStroke({}, "escape")
       end
     }
   }

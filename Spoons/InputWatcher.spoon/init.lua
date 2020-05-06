@@ -32,13 +32,14 @@ end
 local function watcherCallback(event)
   local keyCode = event:getKeyCode()
   local eventFlags = event:getFlags()
+
   -- global
   -- switch to english for Spotlight, Emoji & Symbols
-  if keyCode == KeyCodes.map.space then
-    if eventFlags:containExactly({"ctrl", "cmd"}) or eventFlags:containExactly({"alt"}) then
-      KeyCodes.setLayout("ABC")
-    end
-  end
+  -- if keyCode == KeyCodes.map.space then
+  --   if eventFlags:containExactly({"ctrl", "cmd"}) or eventFlags:containExactly({"alt"}) then
+  --     KeyCodes.setLayout("ABC")
+  --   end
+  -- end
 
   -- whatsapp
   -- keycode 3 ==> f/כ

@@ -2,11 +2,7 @@
 -- https://apple.stackexchange.com/questions/29056/launchctl-difference-between-load-and-start-unload-and-stop/308421
 
 local Application = require("hs.application")
-local Timer = require("hs.timer")
-local Settings = require("hs.settings")
 local Plist = require("hs.plist")
-local URLEvent = require("hs.urlevent")
-
 local hs = hs
 local spoon = spoon
 
@@ -17,29 +13,22 @@ end
 
 local obj = {}
 
-local appQuitterSupportedOperations = {"Quit", "Hide"}
-local LAUNCHD_DIR = os.getenv("HOME") .. "/Library/LaunchAgents/"
-local LABEL_PREFIX = "com.rb.appquitter"
-
-obj.runningApplications = {}
-obj.delayedTimer = nil
-
 local minute = 60
 local hour = 60 * minute
-
-local appQuitterRulesTable = {
+local RULES = {
   ["at.obdev.LaunchBar.ActionEditor"] = {
-    hide = 2 * minute
-    -- quit = 2 * minute,
+    hide = 2 * minute,
+    quit = 6 * hour
   },
   ["com.kapeli.dashdoc"] = {
-    hide = 2 * minute
+    hide = 2 * minute,
+    quit = 6 * hour
   },
   ["com.apple.iMovieApp"] = {
     quit = 6 * hour
   },
   ["com.latenightsw.ScriptDebugger7"] = {
-    quit = 30 * minute
+    quit = 6 * hour
   }
   -- ["com.adobe.acc.AdobeCreativeCloud"] = {
   --   hide = minute
@@ -49,12 +38,27 @@ local appQuitterRulesTable = {
   -- }
 }
 
-local function createLabel(id, operation)
-  return string.format("%s.%s.%s", LABEL_PREFIX, id, operation)
-end
+local RUN_INTERVAL = 10 * minute
+local LAUNCHD_LABEL = "com.rb.hs.appquitter.daemon"
+local LAUNCHD_PLIST = os.getenv("HOME") .. "/Library/LaunchAgents/" .. LAUNCHD_LABEL .. ".plist"
+local TRACKER_PLIST = os.getenv("HOME") .. "/Library/Preferences/com.rb.hs.appquitter.tracker.plist"
+local PYTHON_SCRIPT = script_path() .. "/appquitter.py"
 
-local function createFile(label)
-  return string.format("%s%s.plist", LAUNCHD_DIR, label)
+local plistObj = {
+  Label = LAUNCHD_LABEL,
+  StartInterval = tonumber(RUN_INTERVAL),
+  ProgramArguments = {
+    "/usr/local/bin/appquitter"
+  },
+  StandardErrorPath = "/Users/roey/Desktop/err.txt",
+  StandardOutPath = "/Users/roey/Desktop/out.txt"
+}
+
+obj.runningApplications = {}
+obj.TRACKER = {}
+
+local function updateSettings()
+  hs.plist.write(TRACKER_PLIST, obj.TRACKER)
 end
 
 local function isJobLoaded(label)
@@ -62,116 +66,75 @@ local function isJobLoaded(label)
   if string.match(stdout, label) then
     return true
   end
-  return false
 end
 
-local function unloadJob(id, operation)
-  local label = createLabel(id, operation)
-  local file = createFile(label)
-  local s = string.format([[/bin/launchctl unload "%s"]], file)
-  os.execute(s)
-end
-
-local function loadJob(id, operation)
-  local label = createLabel(id, operation)
-  local file = createFile(label)
-  local s = string.format([[/bin/launchctl load "%s"]], file)
-  os.execute(s)
-end
-
-local function invalidatePlist(id, operation)
-  local label = createLabel(id, operation)
-  local file = createFile(label)
-  local plist = {
-    Label = label
-  }
-  Plist.write(file, plist)
-end
-
-local function createLaunchdPlist(bundleid, operation, minutes, hours, day, month)
-  local label = createLabel(bundleid, operation)
-  local file = createFile(label)
-  local plist = {
-    Label = label,
-    StartCalendarInterval = {
-      Minute = tonumber(minutes),
-      Hour = tonumber(hours),
-      Day = tonumber(day),
-      Month = tonumber(month)
-    },
-    ProgramArguments = {
-      "/usr/bin/open",
-      "-g",
-      string.format("hammerspoon://appQuitterCallback?id=%s&operation=%s", bundleid, operation)
-    }
-  }
-  Plist.write(file, plist)
-end
-
-function obj:stopTimersForActivatedOrTerminatedApp(id)
-  if not appQuitterRulesTable[id] then
+function obj:stopTimersForActivatedOrTerminatedApp(bundleID)
+  local appRules = RULES[bundleID]
+  if not appRules then
     return
   end
-  local appRules = appQuitterRulesTable[id]
-  for operationName, _ in pairs(appRules) do
-    local label = createLabel(id, operationName)
-    if isJobLoaded(label) then
-      print("Stopping timer for", id, operationName, label)
-      unloadJob(id, operationName)
-      invalidatePlist(id, operationName)
-    -- local file = createFile(label)
-    -- os.remove(file)
-    end
-  end
-end
-
-function obj:startTimerForLaunchedOrDeactivatedApp(id)
-  if not appQuitterRulesTable[id] then
+  if not obj.TRACKER[bundleID] then
     return
   end
-  local appRules = appQuitterRulesTable[id]
-  for operationName, timeInterval in pairs(appRules) do
-    local label = createLabel(id, operationName)
-    if isJobLoaded(label) then
-      return
-    end
-    print("Starting timer for", label, id, operationName)
-    -- if true then
-    --   return
-    -- end
-    local nextTrigger = os.time() + timeInterval
-    local minutes = os.date("%M", nextTrigger)
-    local hours = os.date("%H", nextTrigger)
-    local day = os.date("%d", nextTrigger)
-    local month = os.date("%m", nextTrigger)
-    unloadJob(id, operationName) -- discard?
-    createLaunchdPlist(id, operationName, minutes, hours, day, month)
-    loadJob(id, operationName)
+  for k, _ in pairs(obj.TRACKER[bundleID]) do
+    obj.TRACKER[bundleID][k] = 0
   end
+  updateSettings()
 end
 
-obj.delayedTimerEvent = nil
-obj.delayedTimerBundleID = nil
-local function delayedTimerCallback()
-  local event = obj.delayedTimerEvent
-  local id = obj.delayedTimerBundleID
-  print(event, id)
-  -- if (event == Application.watcher.deactivated) or (event == Application.watcher.launched) then
-  --   obj.appquitter:startTimerForLaunchedOrDeactivatedApp(id)
-  -- end
-  -- if (event == Application.watcher.activated) or (event == Application.watcher.terminated) then
-  --   obj.appquitter:stopTimersForActivatedOrTerminatedApp(id)
-  -- end
+function obj:startTimerForLaunchedOrDeactivatedApp(bundleID)
+  local appRules = RULES[bundleID]
+  if not appRules then
+    return
+  end
+
+  if not obj.TRACKER[bundleID] then
+    obj.TRACKER[bundleID] = {}
+  end
+  for k, v in pairs(appRules) do
+    local now = os.time()
+    obj.TRACKER[bundleID]["should_" .. k .. "_at"] = now + v
+    local date = os.date("*t", now + v)
+    date = string.format("%s/%s/%s %s:%s", date.hour, date.min, date.year, date.month, date.day)
+    obj.TRACKER[bundleID]["should_" .. k .. "_at_human_readable"] = date
+  end
+  updateSettings()
 end
 
 function obj:update(event, id)
-  obj.delayedTimerEvent = event
-  obj.delayedTimerBundleID = id
-  obj.delayedTimer:start()
+  if (event == Application.watcher.deactivated) or (event == Application.watcher.launched) then
+    obj:startTimerForLaunchedOrDeactivatedApp(id)
+  end
+  if (event == Application.watcher.activated) or (event == Application.watcher.terminated) then
+    obj:stopTimersForActivatedOrTerminatedApp(id)
+  end
 end
 
 function obj:init()
-  obj.delayedTimer = Timer.delayed.new(1, delayedTimerCallback)
+  if not hs.fs.displayName(LAUNCHD_PLIST) then
+    Plist.write(LAUNCHD_PLIST, plistObj)
+  end
+
+  local launchAgent = hs.plist.read(LAUNCHD_PLIST)
+  if hs.inspect(plistObj) ~= hs.inspect(launchAgent) then
+    local unload = string.format([[/bin/launchctl unload "%s"]], LAUNCHD_PLIST)
+    os.execute(unload)
+    Plist.write(LAUNCHD_PLIST, plistObj)
+  end
+
+  if not isJobLoaded(LAUNCHD_LABEL) then
+    local load = string.format([[/bin/launchctl load "%s"]], LAUNCHD_PLIST)
+    os.execute(load)
+  end
+
+  if not hs.fs.displayName(TRACKER_PLIST) then
+    hs.plist.write(TRACKER_PLIST, {})
+  end
+  obj.TRACKER = hs.plist.read(TRACKER_PLIST) or {}
+
+  if not hs.fs.displayName("/usr/local/bin/appquitter") then
+    hs.fs.link(PYTHON_SCRIPT, "/usr/local/bin/appquitter", true)
+  end
 
   local runningApplicationsBundleIDs =
     hs.fnutils.imap(
@@ -181,25 +144,12 @@ function obj:init()
     end
   )
   for _, v in ipairs(runningApplicationsBundleIDs) do
-    obj:startTimerForLaunchedOrDeactivatedApp(v)
-  end
-end
-
-local function appQuitterCallback(_, params)
-  local op = params.operation
-  local id = params.id
-  -- hs.alert(id .. " " .. op, 1)
-  -- print("AppQuitterCallback", op, id)
-  if Application(id) then
-    if op == "quit" then
-      Application(id):kill()
-    else
-      Application(id):hide()
+    if not obj.TRACKER[v] then
+      obj:startTimerForLaunchedOrDeactivatedApp(v)
     end
   end
-  unloadJob(id, op)
 end
 
-URLEvent.bind("appQuitterCallback", appQuitterCallback)
-
 return obj
+
+-- print(hs.inspect(spoon.AppWatcher.appquitter.TRACKER))

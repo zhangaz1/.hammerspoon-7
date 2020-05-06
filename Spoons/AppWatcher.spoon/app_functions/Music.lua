@@ -13,4 +13,14 @@ function obj.pane2(appObj)
     return ui.getUIElement(appObj, pane2):attributeValue("AXChildren")[1]:setAttributeValue("AXFocused", true)
 end
 
+function obj.focusFilterField(appObj)
+    local filterField = ui.getUIElement(appObj, {{"AXWindow", 1}, {"AXSplitGroup", 1}, {"AXTextField", 1}})
+    if not filterField then
+        appObj:selectMenuItem({"View", "Show Filter Field"})
+    else
+        filterField:setAttributeValue("AXFocused", true)
+    end
+
+end
+
 return obj

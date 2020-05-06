@@ -10,8 +10,23 @@ local Hotkey = require("hs.hotkey")
 local Window = require("hs.window")
 local GlobalChooser = require("rb.fuzzychooser")
 local Image = require("hs.image")
+local Task = require("hs.task")
+
+local ax = require("hs._asm.axuielement")
+local ui = require("rb.ui")
 
 local spoon = spoon
+
+local obj = {}
+
+obj.__index = obj
+obj.name = "GlobalScriptsAndHotkeys"
+obj.version = "1.0"
+obj.author = "roeybiran <roeybiran@icloud.com>"
+obj.homepage = "https://github.com/Hammerspoon/Spoons"
+obj.license = "MIT - https://opensource.org/licenses/MIT"
+
+local hyper = {"shift", "cmd", "alt", "ctrl"}
 
 local function getFrontAppBundleID()
   return spoon.AppWatcher.frontAppBundleID
@@ -20,22 +35,6 @@ end
 local function getAppActions()
   return spoon.AppWatcher.appActions
 end
-
--- local function getActionReference
-
-local ax = require("hs._asm.axuielement")
-local ui = require("rb.ui")
-
-local obj = {}
-
-obj.__index = obj
-obj.name = "GlobalScripts"
-obj.version = "1.0"
-obj.author = "roeybiran <roeybiran@icloud.com>"
-obj.homepage = "https://github.com/Hammerspoon/Spoons"
-obj.license = "MIT - https://opensource.org/licenses/MIT"
-
-local hyper = {"shift", "cmd", "alt", "ctrl"}
 
 local function script_path()
   local str = debug.getinfo(2, "S").source:sub(2)
@@ -56,13 +55,17 @@ end
 
 obj.spoonPath = script_path()
 
+function obj.moveFocusToTheDock()
+  ui.getUIElement(application("Dock"), {{"AXList", 1}}):setAttributeValue("AXFocused", true)
+end
+
 function obj.lookUpInDictionary()
   eventtap.keyStroke({"cmd"}, "c")
   Timer.doAfter(
     0.4,
     function()
       local arg = "dict://" .. pasteboard.getContents()
-      hs.task.new("/usr/bin/open", nil, {arg}):start()
+      Task.new("/usr/bin/open", nil, {arg}):start()
     end
   )
 end
@@ -194,28 +197,31 @@ local function appScriptLauncher()
   GlobalChooser:start(appScriptLauncherChooserCallback, choices, {"text"})
 end
 
-local hotkeys = {
+local globalHotkeys = {
   {"alt", "q", function() appScriptLauncher() end},
-  {"alt", "e", function() spoon.GlobalScripts.showHelpMenu() end},
-  {{"cmd", "shift"}, "1", function() spoon.GlobalScripts.moveFocusToMenuBar() end},
-  {hyper, "o", function() spoon.GlobalScripts.rightClick() end},
-  {hyper, "1", function() spoon.GlobalScripts.notificationCenterClickButton(1) end},
-  {hyper, "2", function() spoon.GlobalScripts.notificationCenterClickButton(2) end},
-  {hyper, "3", function() spoon.GlobalScripts.notificationCenterClickButton(3) end},
-  {hyper, "n", function() spoon.GlobalScripts.notificationCenterToggle() end},
+  -- {"alt", "e", function() obj.showHelpMenu() end},
+  {{"cmd", "shift"}, "1", function() obj.moveFocusToMenuBar() end},
+  {hyper, "o", function() obj.rightClick() end},
+  {hyper, "1", function() obj.notificationCenterClickButton(1) end},
+  {hyper, "2", function() obj.notificationCenterClickButton(2) end},
+  {hyper, "3", function() obj.notificationCenterClickButton(3) end},
+  {hyper, "n", function() obj.notificationCenterToggle() end},
+  {hyper, "l", function() obj.lookUpInDictionary() end},
+  -- window manager
   {hyper, "c", function() Window.focusedWindow():centerOnScreen() end},
   {hyper, "down", function() spoon.WindowManager.pushToCell("Down") end},
-  {hyper, "l", function() spoon.GlobalScripts.lookUpInDictionary() end},
   {hyper, "left", function() spoon.WindowManager.pushToCell("Left") end},
   {hyper, "return", function() spoon.WindowManager.maximize() end},
   {hyper, "right", function() spoon.WindowManager.pushToCell("Right") end},
   {hyper, "up", function() spoon.WindowManager.pushToCell("Up") end},
   {hyper, "w", function() spoon.WindowManagerModal:start() end},
+  {hyper, "m", function() spoon.MouseGrids:start() end},
+  {{}, 10, function() spoon.AppWatcher.toggleInputSource() end, nil, nil}
 }
 
 
 function obj:init()
-  for _, hotkey in ipairs(hotkeys) do
+  for _, hotkey in ipairs(globalHotkeys) do
     Hotkey.bind(table.unpack(hotkey))
   end
 end

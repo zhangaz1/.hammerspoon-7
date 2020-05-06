@@ -4,17 +4,10 @@ local FS = require("hs.fs")
 local Fnutils = require("hs.fnutils")
 local Settings = require("hs.settings")
 local Timer = require("hs.timer")
+local Pasteboard = require("hs.pasteboard")
 
-local obj = {}
-
+local spoon = spoon
 local processedDownloadsInodesKey = settingKeys.processedDownloadsInodes
-
-obj.__index = obj
-obj.name = "DownloadsWatcher"
-obj.version = "1.0"
-obj.author = "roeybiran <roeybiran@icloud.com>"
-obj.homepage = "https://github.com/Hammerspoon/Spoons"
-obj.license = "MIT - https://opensource.org/licenses/MIT"
 
 local function tableCount(t)
   local n = 0
@@ -28,12 +21,20 @@ local function script_path()
   local str = debug.getinfo(2, "S").source:sub(2)
   return str:match("(.*/)")
 end
+
+local obj = {}
+
+obj.__index = obj
+obj.name = "DownloadsWatcher"
+obj.version = "1.0"
+obj.author = "roeybiran <roeybiran@icloud.com>"
+obj.homepage = "https://github.com/Hammerspoon/Spoons"
+obj.license = "MIT - https://opensource.org/licenses/MIT"
 obj.spoonPath = script_path()
 
 local home = os.getenv("HOME")
 local downloadsDir = home .. "/Downloads"
 local shellScript = obj.spoonPath .. "/process_path.sh"
-local filesToIgnore = {".DS_Store", ".localized", ".", ".."}
 
 obj.pathWatcher = nil
 obj.lastPathsDetected = {}
@@ -41,41 +42,47 @@ obj.lastFlagTables = {}
 obj.ProcessedDownloadsInodes = {}
 obj.delayedTimer = nil
 
-local dirIsEmpty
+local filesToIgnore = {".DS_Store", ".localized", ".", ".."}
 
 local function delayedTimerCallbackFn()
   local iteratedFiles = {}
   local pathsToProcess = {}
   local iterFn, dirObj = FS.dir(downloadsDir)
-  if iterFn then
-    for file in iterFn, dirObj do
-      if not Fnutils.contains(filesToIgnore, file) then
-        if not file:match("%.download/?$") then
-          local fullPath = downloadsDir .. "/" .. file
-          local inode = FS.attributes(fullPath, "ino")
-          if not Fnutils.contains(obj.ProcessedDownloadsInodes, inode) then
-            table.insert(obj.ProcessedDownloadsInodes, inode)
-            table.insert(pathsToProcess, fullPath)
-          end
-          table.insert(iteratedFiles, file)
+  if not iterFn then
+    print(string.format("DownloadsWatcher FS.dir enumerator error: %s", dirObj))
+    return
+  end
+  for file in iterFn, dirObj do
+    if not Fnutils.contains(filesToIgnore, file) then
+      if not file:match("%.download/?$") then
+        local fullPath = downloadsDir .. "/" .. file
+        local inode = FS.attributes(fullPath, "ino")
+        if not Fnutils.contains(obj.ProcessedDownloadsInodes, inode) then
+          table.insert(obj.ProcessedDownloadsInodes, inode)
+          table.insert(pathsToProcess, fullPath)
         end
+        table.insert(iteratedFiles, file)
       end
     end
-  else
-    print(string.format("DownloadsWatcher enumerator error: %s", dirObj))
   end
   local newPlistSetting = obj.ProcessedDownloadsInodes
   if tableCount(iteratedFiles) == 0 then
-    -- dirIsEmpty = true
     print("DownloadsWatcher: ~/Downloads emptied, clearing inodes list")
     newPlistSetting = {}
   end
   Settings.set(processedDownloadsInodesKey, newPlistSetting)
+  -- local collectedPaths = {}
   for _, path in ipairs(pathsToProcess) do
+    spoon.StatusBar.progress.start()
     Task.new(
       shellScript,
-      function(_, _, err)
-        print("DownloadsWatcher error: ", err)
+      function(_, stdout, stderr)
+        if string.match(stderr, "%s+") then
+          print("DownloadsWatcher shell script stderr: ", stderr)
+        end
+        Pasteboard.setContents(stdout)
+        -- table.insert(collectedPaths, stdout)
+        spoon.StatusBar.progress.stop()
       end,
       {path}
     ):start()

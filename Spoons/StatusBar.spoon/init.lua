@@ -18,6 +18,9 @@ local configWatcherIsActiveKey = settingKeys.configWatcherActive
 
 obj.menuBarItem = nil
 
+local tasksStarted
+local tasksCompleted
+
 local function script_path()
   local str = debug.getinfo(2, "S").source:sub(2)
   return str:match("(.*/)")
@@ -79,11 +82,13 @@ end
 
 local current = "regular"
 
-function obj.beginIconFlashing()
+obj.progress = {}
+
+function obj.progress.start()
   obj.flashingIconTimer:start()
 end
 
-function obj.endIconFlashing()
+function obj.progress.stop()
   obj.flashingIconTimer:stop()
   obj.menuBarItem:setIcon(regularIconPath)
 end

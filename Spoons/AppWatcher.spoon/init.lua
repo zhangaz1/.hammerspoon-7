@@ -10,8 +10,8 @@ local Hotkey = require("hs.hotkey")
 local AX = require("hs._asm.axuielement")
 local UI = require("rb.ui")
 
-local settingKeys = settingKeys
 local spoon = spoon
+local settingKeys = settingKeys
 
 local function script_path()
   local str = debug.getinfo(2, "S").source:sub(2)
@@ -20,18 +20,18 @@ end
 
 local obj = {}
 
-local appsLastActiveKeyboardLayoutsKey = settingKeys.appsLastActiveKeyboardLayouts
--- local safariTabsKeyboardLayoutsKey = settingKeys.safariTabsKeyboardLayouts
-
-obj.helpers = script_path() .. "/helpers"
-obj.appquitter = dofile(script_path() .. "/appquitter.lua")
-
 obj.__index = obj
 obj.name = "AppWatcher"
 obj.version = "1.0"
 obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
+
+obj.helpers = script_path() .. "/helpers"
+obj.appquitter = dofile(script_path() .. "/appquitter.lua")
+
+local appsLastActiveKeyboardLayoutsKey = settingKeys.appsLastActiveKeyboardLayouts
+local safariKeyboardLayoutsPerTabKey = settingKeys.safariKeyboardLayoutsPerTab
 
 obj.appWatcher = nil
 obj.windowFilter = nil
@@ -45,24 +45,24 @@ obj.appFunctions = {}
 obj.appActions = {}
 
 local modals = {}
-obj.modals = modals -- cheatsheet?
+obj.modals = modals -- for a cheatsheet?
 
 obj.runningApplications = {}
 obj.timer = nil
 
-local transientApps = {
+local windowFilterAllowedApps = {
   "LaunchBar",
   "1Password 7",
   "Contexts",
   "Emoji & Symbols",
   "Spotlight",
-  "Safari"
+  "Safari",
+  -- "Notification Center"
   -- "Hammerspoon"
 }
 
 local keyboardLayoutSwitcherExcludedApps = {
-  "at.obdev.LaunchBar",
-  "com.apple.Safari"
+  "at.obdev.LaunchBar"
 }
 
 local allowedWindowFilterEvents = {
@@ -76,48 +76,18 @@ local allowedWindowFilterEvents = {
   -- Window.filter.windowUnhidden,
 }
 
----
-
 local function getCurrentSafariTabInstance()
-  -- local safariMainWindow = AX.applicationElement(obj.frontApp):attributeValue("AXMainWindow")
-  -- local tabBar = UI.getUIElement(safariMainWindow, {{"AXGroup", 1}})
-  -- for _, tab in ipairs(tabBar) do
-  --   if tab:attributeValue("AXValue") then
-  --     return tab:attributeValue("AXIdentifier")
-  --   end
-  -- end
-end
-
----
-
-local function toggleInputSource()
-  local currentLayout = Keycodes.currentLayout()
-  local otherInputSource
-  if currentLayout == "ABC" then
-    otherInputSource = "Hebrew"
-  else
-    otherInputSource = "ABC"
+  local safariMainWindow = AX.applicationElement(obj.frontApp):attributeValue("AXMainWindow")
+  local tabBar = UI.getUIElement(safariMainWindow, {{"AXGroup", 1}})
+  for _, tab in ipairs(tabBar) do
+    if tab:attributeValue("AXValue") then
+      return tab:attributeValue("AXIdentifier")
+    end
   end
-  Keycodes.setLayout(otherInputSource)
-
-  -- if obj.frontAppBundleID == "com.apple.Safari" then
-  --   local t = Settings.get("RBSafariTabsKeyboardLayouts")
-  --   t[getCurrentSafariTabInstance()] = otherInputSource
-  --   Settings.set("RBSafariTabsKeyboardLayouts", t)
-  -- end
-
-  if FNUtils.contains(keyboardLayoutSwitcherExcludedApps, obj.frontAppBundleID) then
-    return
-  end
-  local settingsTable = Settings.get(appsLastActiveKeyboardLayoutsKey)
-  settingsTable[obj.frontAppBundleID] = {
-    ["LastActiveKeyboardLayout"] = otherInputSource,
-    ["LastActiveKeyboardLayoutTimestamp"] = os.time()
-  }
-  Settings.set(appsLastActiveKeyboardLayoutsKey, settingsTable)
 end
 
 local function setInputSource(bundleid)
+  -- need safari override
   local settingsTable = Settings.get(appsLastActiveKeyboardLayoutsKey)
   local appSetting = settingsTable[bundleid]
   local newLayout = "ABC"
@@ -139,8 +109,6 @@ local function enterModalForActiveApp()
   end
 end
 
----
-
 local function appWatcherCallback(_, event, appObj)
   local bundleID = appObj:bundleID()
   if (event == Application.watcher.activated) then
@@ -151,31 +119,33 @@ local function appWatcherCallback(_, event, appObj)
     obj.frontAppBundleID = bundleID
     setInputSource(bundleID)
     enterModalForActiveApp()
-    print("active app  ==> ", bundleID)
+    -- print("active app  ==> ", bundleID)
   end
-
-  -- obj.appquitter:update(event, bundleID)
+  obj.appquitter:update(event, bundleID)
 end
 
----
-
-local function windowFilterCallback(hsWindow, appNameString, eventName)
+local function safariWindowCallback(hsWindow, eventName)
   -- safari override for tab switching
   if hsWindow:application():name() == "Safari" then
     if eventName == "windowTitleChanged" then
-      --   local prefsTable = Settings.get("RBSafariTabsKeyboardLayouts")
+      print("Safari Window Title Changed")
+      local prefsTable = Settings.get(safariKeyboardLayoutsPerTabKey)
       local currentTab = getCurrentSafariTabInstance()
-    --   local savedKeyboardLayout = prefsTable[currentTab]
-    --   local layoutToSet
-    --   if savedKeyboardLayout then
-    --     layoutToSet = savedKeyboardLayout
-    --   else
-    --     layoutToSet = "ABC"
-    --   end
-    --   Keycodes.setLayout(layoutToSet)
+      local savedKeyboardLayout = prefsTable[currentTab]
+      local layoutToSet
+      if savedKeyboardLayout then
+        layoutToSet = savedKeyboardLayout
+      else
+        layoutToSet = "ABC"
+      end
+      Keycodes.setLayout(layoutToSet)
     end
     return
   end
+end
+
+local function windowFilterCallback(hsWindow, appNameString, eventName)
+  -- safariWindowCallback(hsWindow, eventName)
   if eventName == "windowCreated" then
     appWatcherCallback(nil, Application.watcher.activated, hsWindow:application())
   elseif eventName == "windowDestroyed" then
@@ -187,8 +157,6 @@ local function windowFilterCallback(hsWindow, appNameString, eventName)
     )
   end
 end
-
----
 
 local function loadAppFunctions()
   local scriptsFolder = script_path() .. "/app_functions"
@@ -204,10 +172,8 @@ local function loadAppFunctions()
   end
 end
 
----
-
 local function loadAppHotkeys()
-  local hotkeysTable = dofile(script_path() .. "/hotkeys.lua")
+  local hotkeysTable = dofile(script_path() .. "/app_hotkeys.lua")
   for bundleID, hotkeyList in pairs(hotkeysTable) do
     modals[bundleID] = Hotkey.modal.new()
     for _, action in pairs(hotkeyList) do
@@ -216,36 +182,59 @@ local function loadAppHotkeys()
   end
 end
 
----
-
-local function loadAppActions()
-  local actionsTable = dofile(script_path() .. "/actions.lua")
+local function loadAppScripts()
+  local actionsTable = dofile(script_path() .. "/app_scripts.lua")
   for bundleID, actionList in pairs(actionsTable) do
     obj.appActions[bundleID] = actionList
   end
 end
 
----
-
 local function windowFilterPredicate(windowObj)
   local app = windowObj:application():name()
-  if FNUtils.contains(transientApps, app) then
+  if FNUtils.contains(windowFilterAllowedApps, app) then
     return true
   end
   return false
 end
 
----
+function obj.toggleInputSource()
+  local currentLayout = Keycodes.currentLayout()
+  local otherInputSource
+  if currentLayout == "ABC" then
+    otherInputSource = "Hebrew"
+  else
+    otherInputSource = "ABC"
+  end
+  Keycodes.setLayout(otherInputSource)
+
+  if FNUtils.contains(keyboardLayoutSwitcherExcludedApps, obj.frontAppBundleID) then
+    return
+  end
+  local settingsTable = Settings.get(appsLastActiveKeyboardLayoutsKey)
+  settingsTable[obj.frontAppBundleID] = {
+    ["LastActiveKeyboardLayout"] = otherInputSource,
+    ["LastActiveKeyboardLayoutTimestamp"] = os.time()
+  }
+  Settings.set(appsLastActiveKeyboardLayoutsKey, settingsTable)
+  ---
+  if obj.frontAppBundleID == "com.apple.Safari" then
+    local t = Settings.get(safariKeyboardLayoutsPerTabKey)
+    t[getCurrentSafariTabInstance()] = otherInputSource
+    Settings.set(safariKeyboardLayoutsPerTabKey, t)
+  end
+end
 
 function obj:init()
-  URLEvent.bind("toggleInputSource", toggleInputSource)
+  -- appquitter
+  obj.appquitter:init()
+
+  URLEvent.bind("toggleInputSource", obj.toggleInputSource)
   self.appWatcher = Application.watcher.new(appWatcherCallback)
   self.windowFilter = Window.filter.new(windowFilterPredicate)
   loadAppFunctions()
   loadAppHotkeys()
-  loadAppActions()
+  loadAppScripts()
 
-  -- obj.appquitter:init()
 
   -- on reload, enter modal (if any) for the front app (saves an redundant cmd+tab)
   appWatcherCallback(nil, Application.watcher.activated, Application.frontmostApplication())
