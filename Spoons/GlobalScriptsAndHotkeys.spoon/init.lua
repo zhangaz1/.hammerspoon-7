@@ -198,7 +198,7 @@ local function appScriptLauncher()
 end
 
 local globalHotkeys = {
-  {"alt", "q", function() appScriptLauncher() end},
+  -- {"alt", "q", function() appScriptLauncher() end},
   -- {"alt", "e", function() obj.showHelpMenu() end},
   {{"cmd", "shift"}, "1", function() obj.moveFocusToMenuBar() end},
   {hyper, "o", function() obj.rightClick() end},

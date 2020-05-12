@@ -5,13 +5,14 @@ local AX = require("hs._asm.axuielement")
 local Util = require("rb.util")
 local KeyCodes = require("hs.keycodes")
 local Timer = require("hs.timer")
+local spoon = spoon
 
 local obj = {}
 
 obj.id = "com.apple.Safari"
 
 local function helpersPath()
-  return spoon.AppWatcher.helpers
+  return spoon.AppScripts.helpers
 end
 
 -- the statusbar overlay is AXWindow 1!
@@ -144,74 +145,6 @@ function obj.moveFocusToSafariMainArea(appObj, includeSidebar)
   targetPane:setAttributeValue("AXFocused", true)
 end
 
-function obj.closeTabsToDirection(direction)
-  AppleScript(string.format([[
-      set arg to "%s"
-      tell application "Safari"
-        tell window 1
-          --	get visible tab
-          set visibleTab to index of first tab whose visible is true
-          -- assign tabToClose to the tab that's on the immediate right
-          if arg = "right" then
-            set tabToClose to first tab whose index = visibleTab + 1
-            repeat while tabToClose exists
-              close tabToClose
-            end repeat
-            -- close the visible  tab until i becomes 1:
-            -- in practice making that visible tab, the first tab
-          else if arg = "left" then
-            repeat until visibleTab = 1
-              close tab index 1
-              set visibleTab to visibleTab - 1
-            end repeat
-          end if
-        end tell
-      end tell]], direction))
-end
-
-function obj.clickOnTranslateMeMenuButton()
-  AppleScript([[
-    tell application "System Events"
-      tell process "Safari"
-        tell window 1
-          tell toolbar 1
-            set groupList to (description of every button of every UI element of every group)
-            repeat with g from 1 to (count groupList)
-              set UIElementList to item g of groupList
-                repeat with u from 1 to (count UIElementList)
-                  set buttonDescriptionList to item u of UIElementList
-                  repeat with b from 1 to (count buttonDescriptionList)
-                    if (item b of buttonDescriptionList is "TranslateMe") then
-                      return perform action "AXPress" of button b of UI element u of group g
-                    end if
-                  end repeat
-                end repeat
-              end repeat
-            end tell
-          end tell
-        end tell
-    end tell]])
-end
-
-function obj.openThisTabInChrome()
-  AppleScript([[
-    tell application "Safari"
-      tell its first window
-        set _url to URL of its first tab where it is visible
-        set _url to _url as text
-      end tell
-    end tell
-    tell application "Google Chrome"
-      activate
-      repeat until its first window exists
-      end repeat
-      tell its first window
-        set _tab to make new tab
-        set URL of _tab to _url
-      end tell
-    end tell]])
-end
-
 function obj.savePageAsPDF()
   AppleScript([[
     tell application "System Events"
@@ -249,20 +182,6 @@ function obj.newBookmarksFolder(appObj)
   end
 end
 
-function obj.newInvoiceForCurrentIcountCustomer()
-  local _, url, _ = AppleScript('tell application "Safari" to tell window 1 to return URL of current tab')
-  url = url:match("id=(%d+)")
-  AppleScript(string.format([[
-  tell application "Safari"
-    tell window 1
-      tell current tab
-        set URL to "https://app.icount.co.il/hash/create_doc.php?doctype=invrec&client_id=%s"
-      end tell
-    end tell
-  end tell
-  ]], url))
-end
-
 function obj.rightSizeBookmarksOrHistoryColumn(appObj)
   local firstColumn =
     UI.getUIElement(
@@ -295,14 +214,6 @@ function obj.duplicateTab()
       set URL of newTab to _u
     end tell
   end tell
-  ]])
-end
-
-function obj.openAsPrivateTab()
-  AppleScript([[
-    tell application "Safari" to tell window 1 to set _url to URL of tab 1 whose visible of it = true
-    tell application "System Events" to click menu item "New Private Window" of menu 1 of menu bar item "File" of menu bar 1 of application process "Safari"
-    tell application "Safari" to tell window 1 to set URL of (tab 1 whose visible of it = true) to _url
   ]])
 end
 

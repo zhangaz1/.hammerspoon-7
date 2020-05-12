@@ -35,15 +35,6 @@ function obj.sortBy(appObj)
     ui.getUIElement(appObj, sortByButton):performAction("AXPress")
 end
 
-function obj.convertToLogin()
-    osascript.applescript([[
-    tell application "System Events"
-        tell application process "1Password 7"
-            click button "Convert to Login" of group 1 of group 2 of splitter group 1 of splitter group 1 of window 1
-        end tell
-    end tell]])
-end
-
 function obj.pane1(appObj)
     local pane1 = {{"AXWindow", 1}, {"AXSplitGroup", 1}, {"AXScrollArea", 1}}
     ui.getUIElement(appObj, pane1):setAttributeValue("AXFocused", true)

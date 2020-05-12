@@ -21,30 +21,6 @@ function obj.browseInLaunchBar()
   end ignoring]])
 end
 
-function obj.traverseUp()
-  osascript.applescript([[
-    ignoring application responses
-    tell application "LaunchBar" to perform action "Traverse Up"
-    end ignoring
-  ]])
-end
-
-function obj.traverseDown()
-  osascript.applescript([[
-    ignoring application responses
-    tell application "LaunchBar" to perform action "Traverse Down"
-    end ignoring
-  ]])
-end
-
-function obj.browseFolderContents()
-  osascript.applescript([[
-    ignoring application responses
-    tell application "LaunchBar" to perform action "Browse Folder Contents"
-    end ignoring
-  ]])
-end
-
 function obj.newWindow(modal)
   modal:exit()
   eventtap.keyStroke({"cmd", "alt"}, "n")
@@ -127,33 +103,6 @@ function obj.deselectAll(appObj)
   end
 end
 
-function obj.dropboxSmartSyncToggle(syncState)
-  local script = [[
-    tell application "System Events"
-    tell process "Finder"
-      tell window 1
-        tell toolbar 1
-          tell (first group where help contains "Dropbox")
-            click menu button 1 -- Dropbox
-            delay 0.2
-            tell menu 1
-              set btn to click menu item "Smart Sync"
-              tell btn
-                tell menu 1
-                  delay 0.1
-                  click menu item "%s"
-                end tell
-              end tell
-            end tell
-          end tell
-        end tell
-      end tell
-    end tell
-  end tell
-  ]]
-  osascript.applescript(string.format(script, syncState))
-end
-
 function obj.rightSizeColumn(appObj, arg)
   -- right-size the first column in list view, or the 'active' column in columns view
   -- for columns view: if arg is "all", right sizes all columns indivdually; if arg is "this", right sizes just the 'focused' column
@@ -199,24 +148,6 @@ function obj.rightSizeColumn(appObj, arg)
     modifiers = {alt = true}
   end
   Util.doubleLeftClick(point, modifiers, true)
-end
-
-function obj.duplicateTab()
-  -- behaves weirdly with a 0.2 (or shorter) delay
-  timer.doAfter(
-    0.3,
-    function()
-      osascript.applescript([[
-      tell application "Finder" to set _t to target of Finder window 1
-      tell application "System Events"
-        tell application process "Finder"
-          click menu item "New Tab" of menu 1 of menu bar item "File" of menu bar 1
-        end tell
-      end tell
-      tell application "Finder" to set target of Finder window 1 to _t
-    ]])
-    end
-  )
 end
 
 function obj.selectColumnChooserCallback(choice)
@@ -283,48 +214,6 @@ function obj.nextSearchScope(appObj)
     {"AXRadioGroup", 1}
   }
   return ui.cycleUIElements(appObj, searchScopesBar, "AXRadioButton", "next")
-end
-
-function obj.toggleSortingDirection()
-  -- this approach is buggy, returns "name column" even when "date added" is the sort column:
-  -- tell application "Finder"
-  --	tell list view options of Finder window visible
-  --		return name of sort column
-  --	end tell
-  -- end tell
-  osascript.applescript([[
-  tell application "System Events"
-    tell process "Finder"
-      tell menu bar 1 to tell menu bar item "View" to tell menu 1 to tell menu item "Sort By" to tell menu 1
-        set theList to value of attribute "AXMenuItemMarkChar" of every menu item
-        repeat with i from 1 to count of theList
-          if item i of theList = "✓" then
-            set theCol to name of menu item i
-            exit repeat
-          end if
-        end repeat
-      end tell
-      click button theCol of group 1 of outline 1 of scroll area 1 of splitter group 1 of splitter group 1 of window 1
-      end tell
-    end tell
-  end run
-  ]])
-end
-
-function obj.invertSelection()
-  osascript.applescript([[
-    tell application "Finder"
-    set inverted to {}
-    set fitems to items of window 1 as alias list
-    set selectedItems to the selection as alias list
-    repeat with i in fitems
-      if i is not in selectedItems then
-        set end of inverted to i
-      end if
-    end repeat
-    select inverted
-  end tell
-  ]])
 end
 
 function obj.undoCloseTab()

@@ -27,7 +27,6 @@ obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
-obj.helpers = script_path() .. "/helpers"
 obj.appquitter = dofile(script_path() .. "/appquitter.lua")
 
 local appsLastActiveKeyboardLayoutsKey = settingKeys.appsLastActiveKeyboardLayouts
@@ -119,7 +118,6 @@ local function appWatcherCallback(_, event, appObj)
     obj.frontAppBundleID = bundleID
     setInputSource(bundleID)
     enterModalForActiveApp()
-    -- print("active app  ==> ", bundleID)
   end
   obj.appquitter:update(event, bundleID)
 end
@@ -158,20 +156,6 @@ local function windowFilterCallback(hsWindow, appNameString, eventName)
   end
 end
 
-local function loadAppFunctions()
-  local scriptsFolder = script_path() .. "/app_functions"
-  local iterFn, dirObj = FS.dir(scriptsFolder)
-  if iterFn then
-    for file in iterFn, dirObj do
-      if file:sub(-4) == ".lua" then
-        local appFile = dofile(scriptsFolder .. "/" .. file)
-        local id = appFile.id
-        obj.appFunctions[id] = appFile
-      end
-    end
-  end
-end
-
 local function loadAppHotkeys()
   local hotkeysTable = dofile(script_path() .. "/app_hotkeys.lua")
   for bundleID, hotkeyList in pairs(hotkeysTable) do
@@ -179,13 +163,6 @@ local function loadAppHotkeys()
     for _, action in pairs(hotkeyList) do
       modals[bundleID]:bind(table.unpack(action))
     end
-  end
-end
-
-local function loadAppScripts()
-  local actionsTable = dofile(script_path() .. "/app_scripts.lua")
-  for bundleID, actionList in pairs(actionsTable) do
-    obj.appActions[bundleID] = actionList
   end
 end
 
@@ -231,10 +208,7 @@ function obj:init()
   URLEvent.bind("toggleInputSource", obj.toggleInputSource)
   self.appWatcher = Application.watcher.new(appWatcherCallback)
   self.windowFilter = Window.filter.new(windowFilterPredicate)
-  loadAppFunctions()
   loadAppHotkeys()
-  loadAppScripts()
-
 
   -- on reload, enter modal (if any) for the front app (saves an redundant cmd+tab)
   appWatcherCallback(nil, Application.watcher.activated, Application.frontmostApplication())

@@ -74,18 +74,6 @@ function obj.pane3(appObj)
 	eventtap.leftClick(point)
 end
 
-function obj.copySenderAddress()
-	local _, b, _ = osascript.applescript([[tell application "Mail"
-		set sendersList to {}
-		set theMessages to the selected messages of message viewer 0
-		repeat with aMessage in theMessages
-			set end of sendersList to extract address from (sender of aMessage)
-		end repeat
-		end tell
-		return sendersList]])
-	pasteboard.setContents(table.concat(b, "\n"))
-end
-
 function obj.getMessageLinks(appObj)
 	local window = ax.windowElement(appObj:focusedWindow())
 	-- when viewed in the main app OR when viewed in a standalone container

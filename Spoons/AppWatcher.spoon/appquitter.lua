@@ -13,53 +13,25 @@ end
 
 local obj = {}
 
-local minute = 60
-local hour = 60 * minute
-local RULES = {
-  ["at.obdev.LaunchBar.ActionEditor"] = {
-    hide = 2 * minute,
-    quit = 6 * hour
-  },
-  ["com.kapeli.dashdoc"] = {
-    hide = 2 * minute,
-    quit = 6 * hour
-  },
-  ["com.apple.iMovieApp"] = {
-    quit = 6 * hour
-  },
-  ["com.latenightsw.ScriptDebugger7"] = {
-    quit = 6 * hour
-  }
-  -- ["com.adobe.acc.AdobeCreativeCloud"] = {
-  --   hide = minute
-  -- },
-  -- ["org.processing.app"] = {
-  --   quit = 10*minute
-  -- }
-}
+obj.RULES = nil
 
-local RUN_INTERVAL = 10 * minute
+local minute = 60
+-- local hour = 60 * minute
+local LAUNCHD_RUN_INTERVAL = 10 * minute
 local LAUNCHD_LABEL = "com.rb.hs.appquitter.daemon"
 local LAUNCHD_PLIST = os.getenv("HOME") .. "/Library/LaunchAgents/" .. LAUNCHD_LABEL .. ".plist"
-local TRACKER_PLIST = os.getenv("HOME") .. "/Library/Preferences/com.rb.hs.appquitter.tracker.plist"
+local PREFS_PLIST_PATH = os.getenv("HOME") .. "/Library/Preferences/com.rb.hs.appquitter.tracker.plist"
 local PYTHON_SCRIPT = script_path() .. "/appquitter.py"
 
 local plistObj = {
   Label = LAUNCHD_LABEL,
-  StartInterval = tonumber(RUN_INTERVAL),
+  StartInterval = tonumber(LAUNCHD_RUN_INTERVAL),
   ProgramArguments = {
     "/usr/local/bin/appquitter"
   },
   StandardErrorPath = "/Users/roey/Desktop/err.txt",
   StandardOutPath = "/Users/roey/Desktop/out.txt"
 }
-
-obj.runningApplications = {}
-obj.TRACKER = {}
-
-local function updateSettings()
-  hs.plist.write(TRACKER_PLIST, obj.TRACKER)
-end
 
 local function isJobLoaded(label)
   local stdout, _, _, _ = hs.execute("/bin/launchctl list")
@@ -69,36 +41,49 @@ local function isJobLoaded(label)
 end
 
 function obj:stopTimersForActivatedOrTerminatedApp(bundleID)
-  local appRules = RULES[bundleID]
-  if not appRules then
+  if not obj.RULES[bundleID] then
     return
   end
-  if not obj.TRACKER[bundleID] then
+  local plistTable = hs.plist.read(PREFS_PLIST_PATH)
+  if not plistTable[bundleID] then
     return
   end
-  for k, _ in pairs(obj.TRACKER[bundleID]) do
-    obj.TRACKER[bundleID][k] = 0
+  for k, v in pairs(plistTable[bundleID]) do
+    local val
+    if k == "id" then
+      val = v
+    elseif string.match(k, "_DEBUG") then
+      val = ""
+    else
+      val = 0
+    end
+    plistTable[bundleID][k] = val
   end
-  updateSettings()
+  hs.plist.write(PREFS_PLIST_PATH, plistTable)
 end
 
 function obj:startTimerForLaunchedOrDeactivatedApp(bundleID)
-  local appRules = RULES[bundleID]
-  if not appRules then
+  if not obj.RULES[bundleID] then
     return
   end
-
-  if not obj.TRACKER[bundleID] then
-    obj.TRACKER[bundleID] = {}
+  local plistTable = hs.plist.read(PREFS_PLIST_PATH) or {}
+  -- init with zeroes
+  if not plistTable[bundleID] then
+    plistTable[bundleID] = {}
   end
-  for k, v in pairs(appRules) do
-    local now = os.time()
-    obj.TRACKER[bundleID]["should_" .. k .. "_at"] = now + v
-    local date = os.date("*t", now + v)
-    date = string.format("%s/%s/%s %s:%s", date.hour, date.min, date.year, date.month, date.day)
-    obj.TRACKER[bundleID]["should_" .. k .. "_at_human_readable"] = date
+  for action, interval in pairs(obj.RULES[bundleID]) do
+    local currentIntervalValue = plistTable[bundleID][action]
+    -- only update zeroed timers, to not override running ones
+    if currentIntervalValue == nil or currentIntervalValue == 0 then
+      local now = os.time()
+      plistTable[bundleID][action] = now + interval
+      plistTable[bundleID].id = bundleID
+      local date = os.date("*t", now + interval)
+      date = string.format("%s:%s %s-%s-%s", date.hour, date.min, date.year, date.month, date.day)
+      plistTable[bundleID][action .. "_DEBUG"] = date
+    end
   end
-  updateSettings()
+  hs.plist.write(PREFS_PLIST_PATH, plistTable)
 end
 
 function obj:update(event, id)
@@ -111,6 +96,8 @@ function obj:update(event, id)
 end
 
 function obj:init()
+  obj.RULES = dofile(script_path() .. "/appquitter_rules.lua")
+  -- launchd plist
   if not hs.fs.displayName(LAUNCHD_PLIST) then
     Plist.write(LAUNCHD_PLIST, plistObj)
   end
@@ -127,29 +114,26 @@ function obj:init()
     os.execute(load)
   end
 
-  if not hs.fs.displayName(TRACKER_PLIST) then
-    hs.plist.write(TRACKER_PLIST, {})
+  -- tracker plist
+  if not hs.fs.displayName(PREFS_PLIST_PATH) then
+    hs.plist.write(PREFS_PLIST_PATH, {})
   end
-  obj.TRACKER = hs.plist.read(TRACKER_PLIST) or {}
 
   if not hs.fs.displayName("/usr/local/bin/appquitter") then
     hs.fs.link(PYTHON_SCRIPT, "/usr/local/bin/appquitter", true)
   end
 
-  local runningApplicationsBundleIDs =
-    hs.fnutils.imap(
-    Application.runningApplications(),
-    function(x)
-      return x:bundleID()
-    end
-  )
-  for _, v in ipairs(runningApplicationsBundleIDs) do
-    if not obj.TRACKER[v] then
-      obj:startTimerForLaunchedOrDeactivatedApp(v)
+  local runningApps = hs.application.runningApplications()
+  for _, v in ipairs(runningApps) do
+    if not v:isFrontmost() then
+      for id, _ in pairs(obj.RULES) do
+        if v:bundleID() == id then
+          obj:startTimerForLaunchedOrDeactivatedApp(id)
+          break
+        end
+      end
     end
   end
 end
 
 return obj
-
--- print(hs.inspect(spoon.AppWatcher.appquitter.TRACKER))

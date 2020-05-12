@@ -1,6 +1,5 @@
-local MenuBar = require("hs.menubar")
-local Application = require("hs.application")
-local Settings = require("hs.settings")
+local hs = hs
+local spoon = spoon
 
 local obj = {}
 
@@ -11,16 +10,6 @@ obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
-local spoon = spoon
-local appearanceWatcherIsActiveKey = settingKeys.appearanceWatcherActive
-local muteSoundForUnknownNetworksKey = settingKeys.muteSoundForUnknownNetworks
-local configWatcherIsActiveKey = settingKeys.configWatcherActive
-
-obj.menuBarItem = nil
-
-local tasksStarted
-local tasksCompleted
-
 local function script_path()
   local str = debug.getinfo(2, "S").source:sub(2)
   return str:match("(.*/)")
@@ -30,8 +19,16 @@ obj.spoonPath = script_path()
 local regularIconPath = obj.spoonPath .. "/statusicon.pdf"
 local fadedIconPath = obj.spoonPath .. "/statusicon_faded.pdf"
 
+local appearanceWatcherIsActiveKey = settingKeys.appearanceWatcherActive
+local muteSoundForUnknownNetworksKey = settingKeys.muteSoundForUnknownNetworks
+local configWatcherIsActiveKey = settingKeys.configWatcherActive
+
+obj.menuBarItem = nil
+obj.flashingIconTimer = nil
+obj.taskQueue = 0
+
 local function quitHammerspoon()
-  Application("Hammerspoon"):kill()
+  hs.application("Hammerspoon"):kill()
 end
 
 local function toggleInputWatcher()
@@ -40,9 +37,9 @@ end
 
 local function toggleGenericSetting(menuItem, key)
   if menuItem.checked then
-    Settings.set(key, false)
+    hs.settings.set(key, false)
   else
-    Settings.set(key, true)
+    hs.settings.set(key, true)
   end
 end
 
@@ -58,21 +55,21 @@ local function menuTable()
       fn = function(_, menuItem)
         toggleGenericSetting(menuItem, configWatcherIsActiveKey)
       end,
-      checked = Settings.get(configWatcherIsActiveKey)
+      checked = hs.settings.get(configWatcherIsActiveKey)
     },
     {
       title = "Watch for appearance changes",
       fn = function(_, menuItem)
         toggleGenericSetting(menuItem, appearanceWatcherIsActiveKey)
       end,
-      checked = Settings.get(appearanceWatcherIsActiveKey)
+      checked = hs.settings.get(appearanceWatcherIsActiveKey)
     },
     {
       title = "Mute on unknown networks",
       fn = function(_, menuItem)
         toggleGenericSetting(menuItem, muteSoundForUnknownNetworksKey)
       end,
-      checked = Settings.get(muteSoundForUnknownNetworksKey)
+      checked = hs.settings.get(muteSoundForUnknownNetworksKey)
     },
     {title = "-"},
     {title = "Quit Hammerspoon", fn = quitHammerspoon}
@@ -85,16 +82,22 @@ local current = "regular"
 obj.progress = {}
 
 function obj.progress.start()
-  obj.flashingIconTimer:start()
+  if not obj.flashingIconTimer:running() then
+    obj.flashingIconTimer:start()
+  end
+  obj.taskQueue = obj.taskQueue + 1
 end
 
 function obj.progress.stop()
-  obj.flashingIconTimer:stop()
-  obj.menuBarItem:setIcon(regularIconPath)
+  obj.taskQueue = obj.taskQueue - 1
+  if obj.taskQueue < 1 then
+    obj.menuBarItem:setIcon(regularIconPath)
+    obj.flashingIconTimer:stop()
+  end
 end
 
 function obj:init()
-  self.menuBarItem = MenuBar.new():setIcon(regularIconPath):setMenu(menuTable)
+  obj.menuBarItem = hs.menubar.new():setIcon(regularIconPath):setMenu(menuTable)
   obj.flashingIconTimer = hs.timer.new(
     0.2,
     function()
@@ -107,6 +110,7 @@ function obj:init()
       end
     end
   )
+  -- hs.urlevent
 end
 
 return obj
