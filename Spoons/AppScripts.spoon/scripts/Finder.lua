@@ -61,25 +61,6 @@ function obj.getFinderSelectionCount()
   return n
 end
 
-function obj.clickOnRenameMenuItem(appObj)
-  local menuItems =
-    ui.getUIElement(
-    appObj,
-    {
-      {"AXMenuBar", 1},
-      {"AXMenuBarItem", "AXTitle", "File"},
-      {"AXMenu", 1}
-    }
-  ):attributeValue("AXChildren")
-  for _, v in ipairs(menuItems) do
-    local title = v:attributeValue("AXTitle")
-    if string.find(title, "Rename") then
-      v:performAction("AXPress")
-      return
-    end
-  end
-end
-
 function obj.getMainArea(appObj)
   -- the last common ancestors to all finder views
   local mainArea =

@@ -1,10 +1,10 @@
 local EventTap = require("hs.eventtap")
 local AppleScript = require("hs.osascript").applescript
-local UI = require("rb.ui")
-local AX = require("hs._asm.axuielement")
-local Util = require("rb.util")
 local KeyCodes = require("hs.keycodes")
 local Timer = require("hs.timer")
+local AX = require("hs._asm.axuielement")
+local UI = require("rb.ui")
+local Util = require("rb.util")
 local spoon = spoon
 
 local obj = {}
@@ -22,29 +22,13 @@ local UIElementPane1BookmarksHistoryView = {{"AXWindow", "AXRoleDescription", "s
 local UIElementPane1StandardView = {{"AXWindow", "AXRoleDescription", "standard window"}, {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXGroup", 1}, {"AXGroup", 1}, {"AXScrollArea", 1}, {"AXWebArea", 1}}
 local UIElementHomeScreenView = {{"AXWindow", "AXRoleDescription", "standard window"}, {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXScrollArea", 1}}
 
-function obj.inputWatcherInvokedMoveFocusToMainAreaAfterOpeningLocation(appObj)
-  if obj.isSafariAddressBarFocused(appObj) then
+function obj.changeToABCAfterFocusingAddressBar(modal, keystroke)
+  if KeyCodes.currentLayout() == "Hebrew" then
     KeyCodes.setLayout("ABC")
   end
-  Timer.doAfter(
-    0.2,
-    function()
-      if obj.isSafariAddressBarFocused(appObj) then
-        for _ = 1, 5 do
-          Timer.doAfter(
-            0.5,
-            function()
-              local safariStartPage = UI.getUIElement(appObj, UIElementHomeScreenView)
-              if not safariStartPage then
-                obj.moveFocusToSafariMainArea(appObj, true)
-                return
-              end
-            end
-          )
-        end
-      end
-    end
-  )
+  modal:exit()
+  EventTap.keyStroke(table.unpack(keystroke))
+  modal:enter()
 end
 
 function obj.moveFocusToMainAreaAfterOpeningLocation(modal, keystroke, appObj)
@@ -89,7 +73,6 @@ function obj.isSafariAddressBarFocused(appObj)
     end
   end
 end
-
 
 function obj.pageNavigation(direction)
   local jsFile = helpersPath() .. "/navigatePages.js"
@@ -229,13 +212,6 @@ function obj.showNavMenus(appObj, direction)
     button = 1
   end
   UI.getUIElement(appObj:mainWindow(), {{"AXToolbar", 1}, {"AXGroup", 1}, {"AXButton", button}}):performAction("AXShowMenu")
-end
-
-function obj.getText()
-  AppleScript([[
-    ignoring application responses
-      tell application "LaunchBar" to perform action "Safari: Get Text"
-    end ignoring]])
 end
 
 function obj.firstSearchResult(appObj, modal)

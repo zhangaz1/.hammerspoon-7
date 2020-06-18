@@ -53,14 +53,14 @@ local obj = {
     ["Browse in LaunchBar"] = {"alt", "f", function() getAppEnv("com.apple.finder").browseInLaunchBar() end},
     ["Move Focus to Files Area"] = {"alt", "2", function() getAppEnv("com.apple.finder").focusMainArea(getFrontApp()) end},
     ["New Window"] = {"cmd", "n", function() getAppEnv("com.apple.finder").newWindow(getActiveModal()) end},
+    ["Undo Close Tab"] = {{"shift", "cmd"}, "t", function() getAppEnv("com.apple.finder").undoCloseTab() end},
+    ["Move Focus to Files Area in the Search Window"] = {{}, "tab", function() getAppEnv("com.apple.finder").moveFocusToFilesAreaIfInSearchMode(getFrontApp(), getActiveModal()) end},
+    -- TODO: remove?
+    ["Show Original"] = {{"shift", "cmd"}, "up", function() getFrontApp():selectMenuItem({"File", "Show Original"}) end},
     ["Open Folder in New Tab"] = {{"shift", "cmd"}, "down", function() getFrontApp():selectMenuItem({"File", "Open in New Tab"}) end},
     ["Open Package"] = {"alt", "o", function() getAppEnv("com.apple.finder").openPackage() end},
     ["Right Size All Columns"] = {{"alt", "shift"}, "r", function() getAppEnv("com.apple.finder").rightSizeColumn(getFrontApp(), "all") end},
-    ["Right Size This Column"] = {"alt", "r", function() getAppEnv("com.apple.finder").rightSizeColumn(getFrontApp(), "this") end},
-    ["Undo Close Tab"] = {{"shift", "cmd"}, "t", function() getAppEnv("com.apple.finder").undoCloseTab() end},
-    ["Move Focus to Files Area in the Search Window"] = {{}, "tab", function() getAppEnv("com.apple.finder").moveFocusToFilesAreaIfInSearchMode(getFrontApp(), getActiveModal()) end},
-    ["Rename"] = {"cmd", "r", function() getAppEnv("com.apple.finder").clickOnRenameMenuItem(getFrontApp()) end},
-    ["Show Original"] = {{"shift", "cmd"}, "up", function() getFrontApp():selectMenuItem({"File", "Show Original"}) end},
+    ["Right Size This Column"] = {"alt", "r", function() getAppEnv("com.apple.finder").rightSizeColumn(getFrontApp(), "this") end}
   },
   ["com.apple.FontBook"] = {
     ["Pane 1"] = {'alt', '1', function() getAppEnv("com.apple.FontBook").pane1(getFrontApp()) end},
@@ -83,6 +83,7 @@ local obj = {
     ["Previous Tab"] = {{"shift", "ctrl"}, "tab", function() EventTap.keyStroke({"shift", "cmd"}, "`") end},
   },
   ["com.googlecode.iterm2"] = {
+    -- TODO: remove?
     ["Get Session Text"] = {"alt", "f", function() getAppEnv("com.googlecode.iterm2").getText() end}
   },
   ["com.apple.iWork.Keynote"] = {
@@ -90,13 +91,15 @@ local obj = {
     ["Pane 2"] = {'alt', '2', function() getAppEnv("com.apple.iWork.Keynote").pane2(getFrontApp()) end}
   },
   ["com.apple.mail"] = {
-    ["Get Message Text"] =  {"alt", "f", function() getAppEnv("com.apple.mail").getText() end},
     ["Pane 1"] = {"alt", "1", function() getAppEnv("com.apple.mail").pane1(getFrontApp()) end},
     ["Pane 2"] = {"alt", "2", function() getAppEnv("com.apple.mail").pane2(getFrontApp()) end},
     ["Pane 3"] = {"alt", "3", function() getAppEnv("com.apple.mail").pane3(getFrontApp()) end},
+    -- TODO: remove?
+    ["Get Message Text"] =  {"alt", "f", function() getAppEnv("com.apple.mail").getText() end},
     ["Show Links in Message"] = {"alt", "o", function() getAppEnv("com.apple.mail").getMessageLinks(getFrontApp()) end},
   },
   ["com.apple.iChat"] = {
+    -- TODO: remove?
     ["Show Links in Message"] = {"alt", "o", function() getAppEnv("com.apple.iChat").getLinks(getFrontApp()) end}
   },
   ["com.apple.Music"] = {
@@ -111,7 +114,7 @@ local obj = {
     ["Pane 1"] = {"alt", "1", function() getAppEnv("com.apple.Notes").pane1(getFrontApp()) end},
     ["Pane 2"] = {"alt", "2", function() getAppEnv("com.apple.Notes").pane2(getFrontApp()) end},
     ["Pane 3"] = {"alt", "3", function() getAppEnv("com.apple.Notes").pane3(getFrontApp()) end},
-    ["Search Notes with LaunchBar"] = {"alt", "f", function() getAppEnv("com.apple.Notes").searchNotesWithLaunchBar() end},
+    ["Search Notes with LaunchBar"] = {{"shift", "cmd"}, "o", function() getAppEnv("com.apple.Notes").searchNotesWithLaunchBar() end},
   },
   ["com.apple.iWork.Pages"] = {
     ["Pane 1"] = {"alt", "1", function() getAppEnv("com.apple.iWork.Pages").pane1(getFrontApp()) end},
@@ -146,14 +149,12 @@ local obj = {
     ["Next Page"] = {"ctrl", "n", function() getAppEnv("com.apple.Safari").pageNavigation("next") end},
     ["Previous Page"] = {"ctrl", "p", function() getAppEnv("com.apple.Safari").pageNavigation("previous") end},
     ["Move Focus to Main Area After Opening Location"] = {{}, "return", function() getAppEnv("com.apple.Safari").moveFocusToMainAreaAfterOpeningLocation(getActiveModal(), {{}, "return"}, getFrontApp()) end},
+    ["Change to ABC After Focusing Address Bar"] = {{"cmd"}, "l", function() getAppEnv("com.apple.Safari").changeToABCAfterFocusingAddressBar(getActiveModal(), {{"cmd"}, "l"}) end},
     ["Pane 1"] = {"alt", "1", function() getAppEnv("com.apple.Safari").moveFocusToSafariMainArea(getFrontApp(), true) end},
     ["Pane 2"] = {"alt", "2", function() getAppEnv("com.apple.Safari").moveFocusToSafariMainArea(getFrontApp(), false) end},
     ["New Bookmarks Folder"] = {{"cmd", "shift"}, "n", function() getAppEnv("com.apple.Safari").newBookmarksFolder(getFrontApp()) end},
     ["Right Size Bookmarks/History Column"] = {"alt", "r", function() getAppEnv("com.apple.Safari").rightSizeBookmarksOrHistoryColumn(getFrontApp()) end},
     ["Focus First Bookmark/History Item"] = {{}, "tab", function() getAppEnv("com.apple.Safari").firstSearchResult(getFrontApp(), getActiveModal()) end},
-    -- ["Get Page Text"] = {"alt", "f", function() getAppEnv("com.apple.Safari").getText() end},
-    -- ["Next Tab"] = {{"cmd", "alt"}, "right", function() getAppEnv("com.apple.Safari").switchTab(getFrontApp(), "Show Next Tab") end},
-    -- ["Previous Tab"] = {{"cmd ", "alt"}, "left", function() getAppEnv("com.apple.Safari").switchTab(getFrontApp(), "Show Previous Tab") end},
   },
   ["desktop.WhatsApp"] = {
     ["Switch to ABC on Search"] = {"cmd", "f", function() getAppEnv("desktop.WhatsApp").switchToABCOnSearch(getFrontApp()) end}

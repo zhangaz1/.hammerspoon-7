@@ -1,5 +1,3 @@
-
-
 local minute = 60
 local hour = 60 * minute
 local DEFAULT_QUIT_INTERVAL = 4 * hour
@@ -8,7 +6,11 @@ local DEFAULT_HIDE_INTERVAL = 10 * minute
 local RULES = {
   ["com.kapeli.dashdoc"] = {
     quit = 6 * hour,
-    hide = 1 * hour,
+    hide = 1 * hour
+  },
+  ["com.google.Chrome"] = {
+    quit = 4 * hour,
+    hide = 1 * hour
   },
   ["at.obdev.LaunchBar.ActionEditor"] = {
     quit = 30 * minute,
@@ -23,6 +25,10 @@ local RULES = {
     hide = 10 * minute
   },
   ["com.latenightsw.ScriptDebugger7"] = {
+    quit = hour,
+    hide = 10 * minute
+  },
+  ["com.apple.iphonesimulator"] = {
     quit = hour,
     hide = 10 * minute
   }
@@ -96,13 +102,13 @@ local APPLY_DEFAULTS = {
   "net.freemacsoft.AppCleaner",
   "net.pornel.ImageOptim",
   "net.sourceforge.sqlitebrowser",
-  "us.zoom.xos",
+  "us.zoom.xos"
 }
 
 for _, v in ipairs(APPLY_DEFAULTS) do
   RULES[v] = {
     quit = DEFAULT_QUIT_INTERVAL,
-    hide = DEFAULT_HIDE_INTERVAL,
+    hide = DEFAULT_HIDE_INTERVAL
   }
 end
 

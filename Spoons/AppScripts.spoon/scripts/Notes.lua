@@ -1,5 +1,4 @@
-  local osascript = require("hs.osascript")
-
+local osascript = require("hs.osascript")
 local ui = require("rb.ui")
 
 local obj = {}
@@ -7,6 +6,7 @@ local obj = {}
 obj.id = "com.apple.Notes"
 
 function obj.searchNotesWithLaunchBar()
+  print("foo")
   osascript.applescript('tell app "LaunchBar" to perform action "Notes: Search"')
 end
 

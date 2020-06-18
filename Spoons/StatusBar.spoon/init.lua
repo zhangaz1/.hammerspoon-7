@@ -1,4 +1,8 @@
-local hs = hs
+local HSApplication = require("hs.application")
+local HSMenubar = require("hs.menubar")
+local HSSettings = require("hs.settings")
+local HSTimer = require("hs.timer")
+local HSURLEvent = require("hs.urlevent")
 local spoon = spoon
 
 local obj = {}
@@ -28,7 +32,7 @@ obj.flashingIconTimer = nil
 obj.taskQueue = 0
 
 local function quitHammerspoon()
-  hs.application("Hammerspoon"):kill()
+  HSApplication("Hammerspoon"):kill()
 end
 
 local function toggleInputWatcher()
@@ -37,9 +41,9 @@ end
 
 local function toggleGenericSetting(menuItem, key)
   if menuItem.checked then
-    hs.settings.set(key, false)
+    HSSettings.set(key, false)
   else
-    hs.settings.set(key, true)
+    HSSettings.set(key, true)
   end
 end
 
@@ -55,21 +59,21 @@ local function menuTable()
       fn = function(_, menuItem)
         toggleGenericSetting(menuItem, configWatcherIsActiveKey)
       end,
-      checked = hs.settings.get(configWatcherIsActiveKey)
+      checked = HSSettings.get(configWatcherIsActiveKey)
     },
     {
       title = "Watch for appearance changes",
       fn = function(_, menuItem)
         toggleGenericSetting(menuItem, appearanceWatcherIsActiveKey)
       end,
-      checked = hs.settings.get(appearanceWatcherIsActiveKey)
+      checked = HSSettings.get(appearanceWatcherIsActiveKey)
     },
     {
       title = "Mute on unknown networks",
       fn = function(_, menuItem)
         toggleGenericSetting(menuItem, muteSoundForUnknownNetworksKey)
       end,
-      checked = hs.settings.get(muteSoundForUnknownNetworksKey)
+      checked = HSSettings.get(muteSoundForUnknownNetworksKey)
     },
     {title = "-"},
     {title = "Quit Hammerspoon", fn = quitHammerspoon}
@@ -97,8 +101,9 @@ function obj.progress.stop()
 end
 
 function obj:init()
-  obj.menuBarItem = hs.menubar.new():setIcon(regularIconPath):setMenu(menuTable)
-  obj.flashingIconTimer = hs.timer.new(
+  obj.menuBarItem = HSMenubar.new():setIcon(regularIconPath):setMenu(menuTable)
+  obj.flashingIconTimer =
+    HSTimer.new(
     0.2,
     function()
       if current == "regular" then
@@ -110,7 +115,8 @@ function obj:init()
       end
     end
   )
-  -- hs.urlevent
+  HSURLEvent.bind("start-task-with-progress", obj.progress.start)
+  HSURLEvent.bind("stop-task-with-progress", obj.progress.stop)
 end
 
 return obj

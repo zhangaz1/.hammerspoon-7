@@ -3,13 +3,11 @@ local eventtap = require("hs.eventtap")
 local geometry = require("hs.geometry")
 local keycodes = require("hs.keycodes")
 local Mouse = require("hs.mouse")
-local OSAScript = require("hs.osascript")
+local AppleScript = require("hs.osascript").applescript
 local pasteboard = require("hs.pasteboard")
 local Timer = require("hs.timer")
 local Hotkey = require("hs.hotkey")
 local Window = require("hs.window")
-local GlobalChooser = require("rb.fuzzychooser")
-local Image = require("hs.image")
 local Task = require("hs.task")
 
 local ax = require("hs._asm.axuielement")
@@ -28,18 +26,11 @@ obj.license = "MIT - https://opensource.org/licenses/MIT"
 
 local hyper = {"shift", "cmd", "alt", "ctrl"}
 
-local function getFrontAppBundleID()
-  return spoon.AppWatcher.frontAppBundleID
-end
-
-local function getAppActions()
-  return spoon.AppWatcher.appActions
-end
-
 local function script_path()
   local str = debug.getinfo(2, "S").source:sub(2)
   return str:match("(.*/)")
 end
+obj.spoonPath = script_path()
 
 local function notificationCenterGetPanel()
   local notifCenterPanel = application.applicationsForBundleID("com.apple.notificationcenterui")[1]:focusedWindow()
@@ -52,8 +43,6 @@ local function notificationCenterGetButton(theButton)
   -- today = 1, notifications = 2
   return ui.getUIElement(notificationCenterGetPanel(), {{"AXRadioGroup", 1}, {"AXRadioButton", theButton}})
 end
-
-obj.spoonPath = script_path()
 
 function obj.moveFocusToTheDock()
   ui.getUIElement(application("Dock"), {{"AXList", 1}}):setAttributeValue("AXFocused", true)
@@ -122,7 +111,7 @@ function obj.notificationCenterClickButton(theButton)
   local app = application.applicationsForBundleID("com.apple.notificationcenterui")[1]
   local axApp = ax.applicationElement(app)
   local allWindows = axApp:children()
-  for i, theWindow in ipairs(allWindows) do
+  for _, theWindow in ipairs(allWindows) do
     local button1 = ui.getUIElement(theWindow, {{"AXButton", 1}})
     -- checking for a banner/alert style notification
     -- if a banner, move mouse cursor to reveal the buttons
@@ -157,50 +146,25 @@ function obj.notificationCenterClickButton(theButton)
           ui.getUIElement(theWindow, {{"AXButton", 2}}):doPress()
           return
         end
-        OSAScript.applescript(string.format([[
-          ignoring application responses
-            tell application "System Events" to tell application process "Notification Center" to tell window %s to click menu button 1
-          end ignoring]], i))
-        Timer.doAfter(
-          0.2,
-          function()
-            button2:children()[1]:children()[1]:setAttributeValue("AXSelected", true)
-          end
-        )
+        ui.getUIElement(theWindow, {{"AXMenuButton", 1}}):setTimeout(0.2):doPress()
+        button2:children()[1]:children()[1]:setAttributeValue("AXSelected", true)
+        --   ignoring application responses
+        --   tell application "System Events" to tell application process "Notification Center" to tell window %s to click menu button 1
+        --   end ignoring
       end
     end
   end
 end
 
-local function appScriptLauncherChooserCallback(choice)
-  getAppActions()[choice.bundleID][choice.text]()
-end
-
-local function appScriptLauncher()
-  local choices = {}
-  local activeAppBundleID = getFrontAppBundleID()
-  for id, actionList in pairs(getAppActions()) do
-    if activeAppBundleID == id then
-      for actionName, _ in pairs(actionList) do
-            table.insert(
-              choices,
-              {
-                text = actionName,
-                subText = "Application Script",
-                image = Image.imageFromAppBundle(activeAppBundleID),
-                bundleID = activeAppBundleID,
-              }
-            )
-        end
-    end
-  end
-  GlobalChooser:start(appScriptLauncherChooserCallback, choices, {"text"})
+function obj.launchBarEmoji()
+  AppleScript([[
+    tell app "LaunchBar" to perform action "Charpicker"
+  ]])
 end
 
 local globalHotkeys = {
-  -- {"alt", "q", function() appScriptLauncher() end},
-  -- {"alt", "e", function() obj.showHelpMenu() end},
   {{"cmd", "shift"}, "1", function() obj.moveFocusToMenuBar() end},
+  {hyper, "e", function() obj.launchBarEmoji() end},
   {hyper, "o", function() obj.rightClick() end},
   {hyper, "1", function() obj.notificationCenterClickButton(1) end},
   {hyper, "2", function() obj.notificationCenterClickButton(2) end},
@@ -209,16 +173,15 @@ local globalHotkeys = {
   {hyper, "l", function() obj.lookUpInDictionary() end},
   -- window manager
   {hyper, "c", function() Window.focusedWindow():centerOnScreen() end},
-  {hyper, "down", function() spoon.WindowManager.pushToCell("Down") end},
   {hyper, "left", function() spoon.WindowManager.pushToCell("Left") end},
-  {hyper, "return", function() spoon.WindowManager.maximize() end},
-  {hyper, "right", function() spoon.WindowManager.pushToCell("Right") end},
+  {hyper, "down", function() spoon.WindowManager.pushToCell("Down") end},
   {hyper, "up", function() spoon.WindowManager.pushToCell("Up") end},
+  {hyper, "right", function() spoon.WindowManager.pushToCell("Right") end},
+  {hyper, "return", function() spoon.WindowManager.maximize() end},
   {hyper, "w", function() spoon.WindowManagerModal:start() end},
   {hyper, "m", function() spoon.MouseGrids:start() end},
   {{}, 10, function() spoon.AppWatcher.toggleInputSource() end, nil, nil}
 }
-
 
 function obj:init()
   for _, hotkey in ipairs(globalHotkeys) do
@@ -227,3 +190,42 @@ function obj:init()
 end
 
 return obj
+
+-- {"alt", "e", function() obj.showHelpMenu() end},
+
+-- deprecated script launcher
+-- {"alt", "q", function() appScriptLauncher() end},
+-- local GlobalChooser = require("rb.fuzzychooser")
+-- local Image = require("hs.image")
+-- local function appScriptLauncherChooserCallback(choice)
+--   getAppActions()[choice.bundleID][choice.text]()
+-- end
+
+-- local function appScriptLauncher()
+--   local choices = {}
+--   local activeAppBundleID = getFrontAppBundleID()
+--   for id, actionList in pairs(getAppActions()) do
+--     if activeAppBundleID == id then
+--       for actionName, _ in pairs(actionList) do
+--             table.insert(
+--               choices,
+--               {
+--                 text = actionName,
+--                 subText = "Application Script",
+--                 image = Image.imageFromAppBundle(activeAppBundleID),
+--                 bundleID = activeAppBundleID,
+--               }
+--             )
+--         end
+--     end
+--   end
+--   GlobalChooser:start(appScriptLauncherChooserCallback, choices, {"text"})
+-- end
+
+-- local function getFrontAppBundleID()
+--   return spoon.AppWatcher.frontAppBundleID
+-- end
+
+-- local function getAppActions()
+--   return spoon.AppWatcher.appActions
+-- end

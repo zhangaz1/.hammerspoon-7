@@ -2,79 +2,97 @@
 # -*- coding: utf-8 -*-
 
 import time
-import subprocess
 import plistlib
 import os
 import signal
-import AppKit
+from subprocess import check_output
 from datetime import datetime
+import AppKit
 
 # https://stackoverflow.com/questions/6337513/how-can-i-debug-a-launchd-script-that-doesnt-run-on-startup
 
 now = datetime.now()
-nowString = "{}:{}".format(now.hour, now.minute)
+NOW_STRING = "{}:{}".format(now.hour, now.minute)
 
 print("")
-print(nowString + ": SESSION BEGIN")
+print("==> " + NOW_STRING + ": Session begin")
 
-runningApps = {}
+running_apps = {}
 
 for app in AppKit.NSWorkspace.sharedWorkspace().runningApplications():
     bundle_id = app.bundleIdentifier()
-    runningApps[bundle_id] = app.processIdentifier()
+    running_apps[bundle_id] = app.processIdentifier()
 
 plist_path = os.path.expanduser(
     "~/Library/Preferences/com.rb.hs.appquitter.tracker.plist")
 plist_obj = plistlib.readPlist(plist_path)
 
-applescript = """
+APPLESCRIPT = """
 on run argv
 	tell application "System Events"
-		tell (application process 1 whose bundle identifier is (item 1 of argv))
-			set visible to false
-		end tell
+        tell (application process 1 whose bundle identifier is (item 1 of argv))
+            if visible then
+                set visible to false
+            end if
+        end tell
 	end tell
 end run
 """
 
+inactive_apps = []
+skipped = []
+scheduled = []
+performed = []
+
+new_plist = {}
+
 for bundle_id in plist_obj:
     # inactive apps
-    if bundle_id not in runningApps.keys():
-        text = bundle_id + " => skipping (APP NOT RUNNING)"
-        print(nowString + ": " + text)
+    if bundle_id not in running_apps.keys():
+        # delete keys for inactive apps
+        # del plist_obj[bundle_id]
+        inactive_apps.append(bundle_id)
         continue
+
+    new_plist[bundle_id] = {"id": bundle_id}
     for operation in plist_obj[bundle_id]:
-        if "_DEBUG" in operation or operation == "id":
+        if operation == "id":
             continue
-        invocation_time = plist_obj[bundle_id][operation]
-        # stopped timers
-        readable_time = datetime.fromtimestamp(invocation_time)
-        hour = readable_time.hour
-        minute = readable_time.minute
-        readable_time_string = "{}:{}".format(hour, minute)
-        if invocation_time == 0:
-            text = "{} => SKIPPING {}, TIMER STOPPED".format(
-                bundle_id, operation)
-            print(nowString + ": " + text)
+        scheduled_action_time = plist_obj[bundle_id][operation]
+        readable_time = datetime.fromtimestamp(scheduled_action_time)
+        hour = str(readable_time.hour).zfill(2)
+        minute = str(readable_time.minute).zfill(2)
+        READABLE_TIME_STRING = "{}:{}".format(hour, minute)
+
+        if scheduled_action_time == 0:
+            TEXT = "{} ({})".format(bundle_id, operation)
+            skipped.append(TEXT)
+            new_plist[bundle_id][operation] = 0
             continue
-        # future timers
-        if invocation_time > time.time():
-            text = "{} => SKIPPING {}, SCHEDULED FOR {}".format(
-                bundle_id, operation, readable_time_string)
-            print(nowString + ": " + text)
+
+        if scheduled_action_time > time.time():
+            TEXT = "{} ({}) @ {}".format(bundle_id, operation, READABLE_TIME_STRING)
+            scheduled.append(TEXT)
+            new_plist[bundle_id][operation] = scheduled_action_time
             continue
+
         if operation == "quit":
-            os.kill(runningApps[bundle_id], signal.SIGTERM)
-        elif operation == "hide":
-            subprocess.check_output(
-                ["/usr/bin/osascript", "-e", applescript, bundle_id])
+            os.kill(running_apps[bundle_id], signal.SIGINT)
+            TEXT = "{} ({})".format(bundle_id, operation)
+            performed.append(TEXT)
+            new_plist[bundle_id][operation] = 0
 
-        plist_obj[bundle_id][operation] = 0
-        plist_obj[bundle_id][operation + "_DEBUG"] = ""
-        plistlib.writePlist(plist_obj, plist_path)
-        text = "{} => PERFORMING {}".format(
-            bundle_id, operation)
-        print(nowString + ": " + text)
+        if operation == "hide":
+            check_output(["/usr/bin/osascript", "-e", APPLESCRIPT, bundle_id])
+            TEXT = "{} ({})".format(bundle_id, operation)
+            performed.append(TEXT)
+            new_plist[bundle_id][operation] = 0
 
-print(nowString + ": SESSION END")
+plistlib.writePlist(new_plist, plist_path)
+
+print("==> Skipped (inactive app): {}".format(len(inactive_apps)))
+print("==> Skipped (zeroed timer): " + "\n" + "\n".join(skipped))
+print("==> Scheduled: " + "\n" + "\n".join(scheduled))
+print("==> Performed: " + "\n" + "\n".join(performed))
+print("==> Session end")
 print("")

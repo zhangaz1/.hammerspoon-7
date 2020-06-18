@@ -18,6 +18,14 @@ ipc.cliUninstall()
 ipc.cliInstall()
 window.animationDuration = 0
 
+----------
+-- LOGGING
+----------
+require("hs.keycodes").log.setLogLevel("error")
+
+------------------
+-- GLOBAL SETTINGS
+------------------
 settingKeys = {
   appearanceWatcherActive = "RBAppearanceWatcherIsActive",
   cachedInterfaceStyle = "RBAppearanceWatcherCachedInterfaceStyle",
