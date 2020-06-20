@@ -29,8 +29,12 @@ plist_obj = plistlib.readPlist(plist_path)
 
 APPLESCRIPT = """
 on run argv
+    set theID to (item 1 of argv)
 	tell application "System Events"
-        tell (application process 1 whose bundle identifier is (item 1 of argv))
+        if not (exists (application process 1 whose bundle identifier is theID)) then
+		    return
+	    end if
+        tell (application process 1 whose bundle identifier is theID)
             if visible then
                 set visible to false
             end if
@@ -78,15 +82,12 @@ for bundle_id in plist_obj:
 
         if operation == "quit":
             os.kill(running_apps[bundle_id], signal.SIGINT)
-            TEXT = "{} ({})".format(bundle_id, operation)
-            performed.append(TEXT)
-            new_plist[bundle_id][operation] = 0
-
         if operation == "hide":
             check_output(["/usr/bin/osascript", "-e", APPLESCRIPT, bundle_id])
-            TEXT = "{} ({})".format(bundle_id, operation)
-            performed.append(TEXT)
-            new_plist[bundle_id][operation] = 0
+
+        TEXT = "{} ({})".format(bundle_id, operation)
+        performed.append(TEXT)
+        new_plist[bundle_id][operation] = 0
 
 plistlib.writePlist(new_plist, plist_path)
 

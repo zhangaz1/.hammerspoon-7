@@ -31,8 +31,8 @@ local LAUNCH_AGENT_PLIST_OBJ = {
   ProgramArguments = {
     "/usr/local/bin/appquitter"
   },
-  StandardErrorPath = "/Users/roey/Desktop/err.txt",
-  StandardOutPath = "/Users/roey/Desktop/out.txt"
+  StandardErrorPath = os.getenv("HOME") .. "/Library/Logs/com.rb.hs.appquitter.errors.txt",
+  StandardOutPath = os.getenv("HOME") .. "/Library/Logs/com.rb.hs.appquitter.txt"
 }
 
 local function isJobLoaded(label)
@@ -108,19 +108,27 @@ function obj:update(event, bundleID)
 end
 
 local function cleanup()
-  print("secs since boot", hs.timer.absoluteTime() * (10^-9))
+  print("secs since boot", hs.timer.absoluteTime() * (10 ^ -9))
 end
 
 function obj:init()
   cleanup()
 
   obj.RULES = dofile(script_path() .. "/appquitter_rules.lua")
+
   -- launchd plist
   if not FS.displayName(LAUNCH_AGENT_PLIST) then
     Plist.write(LAUNCH_AGENT_PLIST, LAUNCH_AGENT_PLIST_OBJ)
   end
 
-  if hs.inspect(LAUNCH_AGENT_PLIST_OBJ) ~= hs.inspect(Plist.read(LAUNCH_AGENT_PLIST)) then
+  local updatePlist = false
+  local currentPlist = Plist.read(LAUNCH_AGENT_PLIST)
+  for k, _ in pairs(LAUNCH_AGENT_PLIST_OBJ) do
+    if LAUNCH_AGENT_PLIST_OBJ[k] ~= currentPlist[k] then
+      updatePlist = true
+    end
+  end
+  if updatePlist then
     local unload = string.format([[/bin/launchctl unload "%s"]], LAUNCH_AGENT_PLIST)
     os.execute(unload)
     Plist.write(LAUNCH_AGENT_PLIST, LAUNCH_AGENT_PLIST_OBJ)
