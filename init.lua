@@ -32,8 +32,6 @@ settingKeys = {
   muteSoundForUnknownNetworks = "RBMuteSoundWhenJoiningUnknownNetworks",
   configWatcherActive = "RBConfigWatcherActive",
   processedDownloadsInodes = "RBDownloadsWatcherProcessedDownloadsInodes",
-  appsLastActiveKeyboardLayouts = "RBAppsLastActiveKeyboardLayouts",
-  safariKeyboardLayoutsPerTab = "RBSafariKeyboardLayoutsPerTab"
 }
 
 local settingKeysDefault = {
@@ -43,8 +41,6 @@ local settingKeysDefault = {
   configWatcherActive = true,
   processedDownloadsInodes = {},
   appQuitterUnterminatedTimers = {},
-  appsLastActiveKeyboardLayouts = {},
-  safariKeyboardLayoutsPerTab = {}
 }
 
 for i, v in pairs(settingKeys) do

@@ -42,7 +42,8 @@ local obj = {
   ["com.kapeli.dashdoc"] = {
     ["Pane 1"] = {"alt", "1", function() getAppEnv("com.kapeli.dashdoc").pane1(getFrontApp()) end},
     ["Pane 2"] = {"alt", "2", function() getAppEnv("com.kapeli.dashdoc").pane2(getFrontApp()) end},
-    ["History"] = {"cmd", "y", function() getAppEnv("com.kapeli.dashdoc").clickOnHistoryMenuItem(getFrontApp()) end}
+    ["History"] = {"cmd", "y", function() getAppEnv("com.kapeli.dashdoc").clickOnHistoryMenuItem(getFrontApp()) end},
+    ["Show Bookmarks"] = {{"cmd", "alt"}, "b", function() getAppEnv("com.kapeli.dashdoc").toggleBookmarks(getFrontApp()) end}
   },
   ["com.apple.Dictionary"] = {
     ["Pane 1"] = {'alt', '1', function() getAppEnv("com.apple.Dictionary").pane1(getFrontApp()) end},
