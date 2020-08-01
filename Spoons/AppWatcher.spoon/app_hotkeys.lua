@@ -95,13 +95,6 @@ local obj = {
     ["Pane 1"] = {"alt", "1", function() getAppEnv("com.apple.mail").pane1(getFrontApp()) end},
     ["Pane 2"] = {"alt", "2", function() getAppEnv("com.apple.mail").pane2(getFrontApp()) end},
     ["Pane 3"] = {"alt", "3", function() getAppEnv("com.apple.mail").pane3(getFrontApp()) end},
-    -- TODO: remove?
-    ["Get Message Text"] =  {"alt", "f", function() getAppEnv("com.apple.mail").getText() end},
-    ["Show Links in Message"] = {"alt", "o", function() getAppEnv("com.apple.mail").getMessageLinks(getFrontApp()) end},
-  },
-  ["com.apple.iChat"] = {
-    -- TODO: remove?
-    ["Show Links in Message"] = {"alt", "o", function() getAppEnv("com.apple.iChat").getLinks(getFrontApp()) end}
   },
   ["com.apple.Music"] = {
     ["Pane 1"] = {"alt", "1", function() getAppEnv("com.apple.Music").pane1(getFrontApp()) end},

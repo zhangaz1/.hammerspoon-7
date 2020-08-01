@@ -12,7 +12,7 @@ local UI = require("rb.ui")
 local obj = {}
 local modals = {}
 
-local additionalApps = {
+local transientApps = {
   ["LaunchBar"] = {allowRoles = "AXSystemDialog"},
   ["1Password 7"] = {allowRoles = "AXSystemDialog"},
   ["Spotlight"] = {allowRoles = "AXSystemDialog"},
@@ -26,10 +26,6 @@ local allowedWindowFilterEvents = {
   Window.filter.windowDestroyed,
   Window.filter.windowFocused,
   Window.filter.windowTitleChanged -- only for safari
-  -- Window.filter.windowVisible,
-  -- Window.filter.windowNotVisible,
-  -- Window.filter.windowUnminimized,
-  -- Window.filter.windowUnhidden,
 }
 
 local keyboardLayoutSwitcherExcludedApps = {
@@ -66,8 +62,19 @@ obj.safariPid = nil
 obj.safariObserver = nil
 obj.layoutsForURL = {}
 
-local function extractTopLevelURL(url)
-  for _, v in ipairs(hs.fnutils.split(url, "/")) do
+local function safariGetCurrentURL()
+  -- applescript method
+  local url
+  -- TODO: handle status bar (it's a window also)
+  local _, currentURL, _ = hs.osascript.applescript([[
+    tell application "Safari"
+      tell window 1
+        return URL of current tab
+      end tell
+    end tell
+    ]])
+  url = currentURL
+  for _, v in ipairs(FNUtils.split(url, "/")) do
     if v and string.find(v, "%.") then
       url = v
       break
@@ -76,7 +83,7 @@ local function extractTopLevelURL(url)
   return url
 end
 
-local function addSafariObserver(appObj)
+local function safariGetAddressBarUIElement(appObj)
   local element
   local axAppObj = AX.applicationElement(appObj)
   local addressBarObject = UI.getUIElement(axAppObj, {{"AXWindow", "AXMain", true}, {"AXToolbar", 1}}):attributeValue("AXChildren")
@@ -92,32 +99,49 @@ local function addSafariObserver(appObj)
       end
     end
   end
+  return element
+end
+
+local function safariGetTabBarElement(appObj)
+  local axAppObj = AX.applicationElement(appObj)
+  return UI.getUIElement(axAppObj, {{"AXWindow", "AXMain", true}, {"AXGroup", "AXIdentifier", "TabBar"}})
+end
+
+local function safariSetLayoutForURL(_, _, _, _)
+  -- don't change layout while typing addresses!
+  -- print("focused tab changed!!")
+  -- if true then
+  --   return
+  -- end
+  if obj.safariAddressBar:attributeValue("AXFocused") == true then
+    return
+  end
+  local url = safariGetCurrentURL()
+  local special = {"bookmarks://", "history://", "favorites://"}
+  if not url or FNUtils.contains(special, url) then
+    Keycodes.setLayout("ABC")
+    return
+  end
+  local newLayout = "ABC"
+  local settingsTable = Settings.get("RBSafariLayoutsForURL") or {}
+  local urlSetting = settingsTable[url]
+  if urlSetting then
+    newLayout = urlSetting
+  end
+  print(url, newLayout, hs.inspect(settingsTable))
+  Keycodes.setLayout(newLayout)
+end
+
+local function safariAddObserver(appObj)
   local pid = appObj:pid()
   local observer = Observer.new(pid)
+  local element = safariGetAddressBarUIElement(appObj)
+  -- local tabBar = safariGetTabBarElement(appObj)
   observer:addWatcher(element, "AXValueChanged")
-  observer:callback(
-    function()
-      -- don't change layout while typing addresses!
-      local url = element:attributeValue("AXValue")
-      if not url or url == "" then
-        Keycodes.setLayout("ABC")
-        return
-      end
-      if obj.safariAddressBar:attributeValue("AXFocused") == true then
-        return
-      end
-      local topLevelURL = extractTopLevelURL(url)
-      local newLayout = "ABC"
-      local settingsTable = Settings.get("RBSafariLayoutsForURL") or {}
-      local urlSetting = settingsTable[topLevelURL]
-      if urlSetting then
-        newLayout = urlSetting
-      end
-      print(topLevelURL, newLayout, hs.inspect(settingsTable))
-      Keycodes.setLayout(newLayout)
-    end
-  )
+  -- observer:addWatcher(tabBar, "AXValueChanged")
+  observer:callback(safariSetLayoutForURL)
   observer:start()
+  safariSetLayoutForURL()
 end
 
 local function setInputSource(bundleid)
@@ -146,16 +170,17 @@ end
 
 local function appWatcherCallback(_, event, appObj)
   local bundleID = appObj:bundleID()
-  if bundleID == "com.apple.Safari" then
-    addSafariObserver(appObj)
-  end
   if event == Application.watcher.activated or event == "FROM_WINDOW_WATCHER" then
     if bundleID == obj.frontAppBundleID then
       return
     end
     obj.frontApp = appObj
     obj.frontAppBundleID = bundleID
-    setInputSource(bundleID) -- set input source
+    if bundleID == "com.apple.Safari" then
+      safariAddObserver(appObj)
+    else
+      setInputSource(bundleID) -- set input source
+    end
     enterModalForActiveApp() -- enter modal
     if event ~= "FROM_WINDOW_WATCHER" then
       obj.lastNonTransientApp = appObj
@@ -200,38 +225,35 @@ function obj.toggleInputSource()
     newLayout = "ABC"
   end
   Keycodes.setLayout(newLayout)
-
   if FNUtils.contains(keyboardLayoutSwitcherExcludedApps, bundleID) then
     return
   end
+
   if bundleID == "com.apple.Safari" then
     local settingsTable = Settings.get("RBSafariLayoutsForURL") or {}
-    local url = obj.safariAddressBar:attributeValue("AXValue")
-    local topLevelURL = extractTopLevelURL(url)
-    settingsTable[topLevelURL] = newLayout
+    local currentURL = safariGetCurrentURL()
+    settingsTable[currentURL] = newLayout
     Settings.set("RBSafariLayoutsForURL", settingsTable)
-  else
-    local settingsTable = Settings.get("RBAppsLastActiveKeyboardLayouts") or {}
-    settingsTable[obj.frontAppBundleID] = {
-      ["LastActiveKeyboardLayout"] = newLayout,
-      ["LastActiveKeyboardLayoutTimestamp"] = os.time()
-    }
-    Settings.set("RBAppsLastActiveKeyboardLayouts", settingsTable)
+    return
   end
+
+  local settingsTable = Settings.get("RBAppsLastActiveKeyboardLayouts") or {}
+  settingsTable[obj.frontAppBundleID] = {
+    ["LastActiveKeyboardLayout"] = newLayout,
+    ["LastActiveKeyboardLayoutTimestamp"] = os.time()
+  }
+  Settings.set("RBAppsLastActiveKeyboardLayouts", settingsTable)
 end
 
 function obj:init()
-  -- appquitter
   obj.appquitter:init()
-  -- app modals
   loadAppHotkeys()
   URLEvent.bind("toggleInputSource", obj.toggleInputSource)
   self.appWatcher = Application.watcher.new(appWatcherCallback)
   -- on reload, enter modal (if any) for the front app (saves an redundant cmd+tab)
   appWatcherCallback(nil, Application.watcher.activated, Application.frontmostApplication())
   self.appWatcher:start()
-  self.windowFilter = Window.filter.new(false):setFilters(additionalApps)
-  -- on reload, enter modal (if any) for the front app (saves an redundant cmd+tab)
+  self.windowFilter = Window.filter.new(false):setFilters(transientApps)
   self.windowFilter:subscribe(allowedWindowFilterEvents, windowFilterCallback)
   windowFilterCallback(Application.frontmostApplication():mainWindow(), nil, "windowFocused")
 end

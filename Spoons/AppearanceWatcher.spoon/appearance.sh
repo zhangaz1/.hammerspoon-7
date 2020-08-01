@@ -22,33 +22,8 @@ if [[ "$(defaults read "com.contextsformac.Contexts" CTAppearanceTheme)" != "${c
 	osascript -e 'tell application "System Events" to click button 1 of window 1 of application process "Contexts"'
 fi
 
-### restart whatsapp when transitioning to dark mode ###
-if [[ "${MODE}" == "dark" ]]; then
-	if pgrep "WhatsApp"; then
-		killall -9 "WhatsApp"
-		sleep 1
-		open -jga "WhatsApp"
-		sleep 1
-		osascript <<-EOF
-			tell application "System Events"
-				tell application process "WhatsApp"
-					set visible to false
-				end tell
-			end tell
-		EOF
-	fi
-fi
-
-### vscode ###
-if [[ "${MODE}" == "dark" ]]; then
-	vscode_theme="Solarized Dark"
-elif [[ "${MODE}" == "light" ]]; then
-	vscode_theme="Solarized Light"
-fi
-vscode_settings_file="${HOME}/Library/Application Support/Code/User/settings.json"
-if ! grep --silent "\"workbench.colorTheme\": \"${vscode_theme}\"" "${vscode_settings_file}"; then
-	sed -E -i .bak "s|(\"workbench.colorTheme\":).+$|\1 \"${vscode_theme}\",|" "${vscode_settings_file}"
-fi
+# ### whatsapp ###
+# ~/Library/Containers/desktop.WhatsApp/Data/Library/Application Support/WhatsApp
 
 ### launchbar ###
 if [[ "${MODE}" == "dark" ]]; then
@@ -70,3 +45,31 @@ osascript -e "tell application \"Hammerspoon\" to execute lua code \"hs.console.
 if pgrep "iTerm"; then
 	osascript -e 'tell application "iTerm" to launch API script named "changeColorPreset.py"'
 fi
+
+### vscode ###
+if [[ "${MODE}" == "dark" ]]; then
+	vscode_theme="Solarized Dark"
+elif [[ "${MODE}" == "light" ]]; then
+	vscode_theme="Solarized Light"
+fi
+vscode_settings_file="${HOME}/Library/Application Support/Code/User/settings.json"
+if ! grep --silent "\"workbench.colorTheme\": \"${vscode_theme}\"" "${vscode_settings_file}"; then
+	sed -E -i .bak "s|(\"workbench.colorTheme\":).+$|\1 \"${vscode_theme}\",|" "${vscode_settings_file}"
+fi
+
+# ### restart whatsapp when transitioning to dark mode ###
+# if [[ "${MODE}" == "dark" ]]; then
+# 	if pgrep "WhatsApp"; then
+# 		killall -9 "WhatsApp"
+# 		sleep 1
+# 		open -jga "WhatsApp"
+# 		sleep 1
+# 		osascript <<-EOF
+# 			tell application "System Events"
+# 				tell application process "WhatsApp"
+# 					set visible to false
+# 				end tell
+# 			end tell
+# 		EOF
+# 	fi
+# fi

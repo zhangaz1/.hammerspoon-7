@@ -1,20 +1,11 @@
 local osascript = require("hs.osascript")
 local eventtap = require("hs.eventtap")
-local pasteboard = require("hs.pasteboard")
 local geometry = require("hs.geometry")
-local ax = require("hs._asm.axuielement")
-
 local ui = require("rb.ui")
-local fuzzyChooser = require("rb.fuzzychooser")
-local Util = require("rb.util")
 
 local obj = {}
 
 obj.id = "com.apple.mail"
-
-local function chooserCallback(choice)
-	os.execute(string.format([["/usr/bin/open" "%s"]], choice.url))
-end
 
 local function getSelectedMessages()
 	local _, messageIds, _ = osascript.applescript([[
@@ -72,51 +63,6 @@ function obj.pane3(appObj)
 	local pos = e:attributeValue("AXPosition")
 	local point = geometry.point({pos.x + 10, pos.y + 10})
 	eventtap.leftClick(point)
-end
-
-function obj.getMessageLinks(appObj)
-	local window = ax.windowElement(appObj:focusedWindow())
-	-- when viewed in the main app OR when viewed in a standalone container
-	local messageWindow = ui.getUIElement(window, ({{"AXSplitGroup", 1}, {"AXSplitGroup", 1}, {"AXScrollArea", 2}})) or ui.getUIElement(window, ({{"AXScrollArea", 1}}))
-	local messageContainers = messageWindow:attributeValue("AXChildren")
-	local choices = {}
-	for _, messageContainer in ipairs(messageContainers) do
-		if messageContainer:attributeValue("AXRole") == "AXGroup" then
-			local webArea =
-				ui.getUIElement(
-				messageContainer,
-				{
-					{"AXScrollArea", 1},
-					{"AXGroup", 1},
-					{"AXGroup", 1},
-					{"AXScrollArea", 1},
-					{"AXWebArea", 1}
-				}
-			)
-			local links = webArea:attributeValue("AXLinkUIElements")
-			for _, v in ipairs(links) do
-				local title = v:attributeValue("AXTitle")
-				local url = v:attributeValue("AXURL")
-				table.insert(
-					choices,
-					{
-						url = url,
-						text = title or url,
-						subText = url
-					}
-				)
-			end
-		end
-	end
-	if Util.tableCount(choices) == 0 then
-		table.insert(
-			choices,
-			{
-				text = "No Links"
-			}
-		)
-	end
-	fuzzyChooser:start(chooserCallback, choices, {"text", "subText"})
 end
 
 return obj

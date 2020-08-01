@@ -1,3 +1,9 @@
+--- === AppearanaceWatcher ===
+---
+--- Perform actions when the system's theme changes.
+---
+--- Actions can be configured by editing the shell script inside the Spoon's directory.
+
 local task = require("hs.task")
 local settings = require("hs.settings")
 local pathwatcher = require("hs.pathwatcher")
@@ -5,15 +11,15 @@ local Host = require("hs.host")
 
 local obj = {}
 
-local appearanceWatcherActiveKey = settingKeys.appearanceWatcherActive
-local cachedInterfaceStyleKey = settingKeys.cachedInterfaceStyle
-
 obj.__index = obj
 obj.name = "AppearanceWatcher"
 obj.version = "1.0"
 obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
+
+local appearanceWatcherActiveKey = "RBAppearanceWatcherIsActive"
+local cachedInterfaceStyleKey = "RBAppearanceWatcherCachedInterfaceStyle"
 
 local function script_path()
   local str = debug.getinfo(2, "S").source:sub(2)
@@ -45,6 +51,9 @@ local function setStyle()
   end
 end
 
+--- AppearanaceWatcher:stop()
+--- Method
+--- Initializes this module.
 function obj:init()
   self.pathwatcher =
     pathwatcher.new(
@@ -53,8 +62,46 @@ function obj:init()
       setStyle()
     end
   )
+end
+
+--- AppearanaceWatcher:stop()
+--- Method
+--- Stops this module.
+function obj:stop()
+  obj.pathwatcher:stop()
+  obj.pathwatcher = nil
+  settings.set(appearanceWatcherActiveKey, false)
+end
+
+--- AppearanaceWatcher:start()
+--- Method
+--- starts this module.
+function obj:start()
   setStyle()
+  obj:init()
   obj.pathwatcher:start()
+  settings.set(appearanceWatcherActiveKey, true)
+end
+
+--- AppearanaceWatcher:toggle()
+--- Method
+--- Toggles this module.
+function obj:toggle()
+  if obj:isActive() then
+    obj:stop()
+  else
+    obj:start()
+  end
+end
+
+--- AppearanaceWatcher:isActive()
+--- Method
+--- Determines whether module is active.
+---
+--- Returns:
+---  * A boolean, true if the module's watcher is active, otherwise false
+function obj:isActive()
+  return obj.pathwatcher ~= nil
 end
 
 return obj

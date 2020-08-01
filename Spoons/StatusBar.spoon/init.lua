@@ -23,7 +23,6 @@ obj.spoonPath = script_path()
 local regularIconPath = obj.spoonPath .. "/statusicon.pdf"
 local fadedIconPath = obj.spoonPath .. "/statusicon_faded.pdf"
 
-local appearanceWatcherIsActiveKey = settingKeys.appearanceWatcherActive
 local muteSoundForUnknownNetworksKey = settingKeys.muteSoundForUnknownNetworks
 local configWatcherIsActiveKey = settingKeys.configWatcherActive
 
@@ -63,10 +62,10 @@ local function menuTable()
     },
     {
       title = "Watch for appearance changes",
-      fn = function(_, menuItem)
-        toggleGenericSetting(menuItem, appearanceWatcherIsActiveKey)
+      fn = function()
+        spoon.AppearanceWatcher:toggle()
       end,
-      checked = HSSettings.get(appearanceWatcherIsActiveKey)
+      checked = spoon.AppearanceWatcher:isActive()
     },
     {
       title = "Mute on unknown networks",

@@ -125,19 +125,19 @@ local function delayedTimerCallback()
 end
 
 function obj:init()
-  self.magicMouseMenuBarItem = Menubar.new()
-  self.airPodsMenuBarItem = Menubar.new()
-  -- self.delayedTimer = Timer.delayed.new(0.5, delayedTimerCallback)
-  self.pathWatcher =
-    PathWatcher.new(
-    "/Library/Preferences/com.apple.Bluetooth.plist",
-    function()
-      -- self.delayedTimer:start()
-      getStatus()
-    end
-  )
-  getStatus()
-  self.pathWatcher:start()
+  -- self.magicMouseMenuBarItem = Menubar.new()
+  -- self.airPodsMenuBarItem = Menubar.new()
+  -- -- self.delayedTimer = Timer.delayed.new(0.5, delayedTimerCallback)
+  -- self.pathWatcher =
+  --   PathWatcher.new(
+  --   "/Library/Preferences/com.apple.Bluetooth.plist",
+  --   function()
+  --     -- self.delayedTimer:start()
+  --     getStatus()
+  --   end
+  -- )
+  -- getStatus()
+  -- self.pathWatcher:start()
 end
 
 return obj

@@ -27,8 +27,6 @@ require("hs.keycodes").log.setLogLevel("error")
 -- GLOBAL SETTINGS
 ------------------
 settingKeys = {
-  appearanceWatcherActive = "RBAppearanceWatcherIsActive",
-  cachedInterfaceStyle = "RBAppearanceWatcherCachedInterfaceStyle",
   muteSoundForUnknownNetworks = "RBMuteSoundWhenJoiningUnknownNetworks",
   configWatcherActive = "RBConfigWatcherActive",
   processedDownloadsInodes = "RBDownloadsWatcherProcessedDownloadsInodes",
@@ -59,3 +57,5 @@ if iterFn then
     end
   end
 end
+
+spoon.AppearanceWatcher:start()
