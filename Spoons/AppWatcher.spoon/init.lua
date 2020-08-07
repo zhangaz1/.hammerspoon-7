@@ -47,7 +47,6 @@ local transientApps = {
   ["Spotlight"] = {allowRoles = "AXSystemDialog"},
   ["Contexts"] = false,
   ["Emoji & Symbols"] = true
-  -- ["Safari"] = true
 }
 
 local allowedWindowFilterEvents = {

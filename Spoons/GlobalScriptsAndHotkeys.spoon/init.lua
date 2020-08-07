@@ -3,17 +3,19 @@ local eventtap = require("hs.eventtap")
 local geometry = require("hs.geometry")
 local keycodes = require("hs.keycodes")
 local Mouse = require("hs.mouse")
-local AppleScript = require("hs.osascript").applescript
 local pasteboard = require("hs.pasteboard")
 local Timer = require("hs.timer")
 local Hotkey = require("hs.hotkey")
 local Window = require("hs.window")
 local Task = require("hs.task")
-
 local ax = require("hs._asm.axuielement")
 local ui = require("rb.ui")
-
 local spoon = spoon
+
+local function script_path()
+  local str = debug.getinfo(2, "S").source:sub(2)
+  return str:match("(.*/)")
+end
 
 local obj = {}
 
@@ -23,14 +25,29 @@ obj.version = "1.0"
 obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
+obj.spoonPath = script_path()
 
 local hyper = {"shift", "cmd", "alt", "ctrl"}
-
-local function script_path()
-  local str = debug.getinfo(2, "S").source:sub(2)
-  return str:match("(.*/)")
-end
-obj.spoonPath = script_path()
+local globalHotkeys = {
+  {{"cmd", "shift"}, "1", function() obj.moveFocusToMenuBar() end},
+  {hyper, "e", function() obj.launchBarEmoji() end},
+  {hyper, "o", function() obj.rightClick() end},
+  {hyper, "1", function() obj.notificationCenterClickButton(1) end},
+  {hyper, "2", function() obj.notificationCenterClickButton(2) end},
+  {hyper, "3", function() obj.notificationCenterClickButton(3) end},
+  {hyper, "n", function() obj.notificationCenterToggle() end},
+  {hyper, "l", function() obj.lookUpInDictionary() end},
+  -- window manager
+  {hyper, "c", function() Window.focusedWindow():centerOnScreen() end},
+  {hyper, "left", function() spoon.WindowManager.pushToCell("Left") end},
+  {hyper, "down", function() spoon.WindowManager.pushToCell("Down") end},
+  {hyper, "up", function() spoon.WindowManager.pushToCell("Up") end},
+  {hyper, "right", function() spoon.WindowManager.pushToCell("Right") end},
+  {hyper, "return", function() spoon.WindowManager.maximize() end},
+  {hyper, "w", function() spoon.WindowManagerModal:start() end},
+  {hyper, "m", function() spoon.MouseGrids:start() end},
+  {{}, 10, function() spoon.AppWatcher.toggleInputSource() end, nil, nil}
+}
 
 local function notificationCenterGetPanel()
   local notifCenterPanel = application.applicationsForBundleID("com.apple.notificationcenterui")[1]:focusedWindow()
@@ -60,9 +77,7 @@ function obj.lookUpInDictionary()
 end
 
 function obj.showHelpMenu()
-  -- BEGIN HEBREW SUPPORT
   keycodes.setLayout("ABC")
-  -- END HEBREW SUPPORT
   local menuBar = ax.systemElementAtPosition({0, 0}):attributeValue("AXParent")
   for _, v in ipairs(menuBar) do
     if v:attributeValue("AXTitle") == "Help" then
@@ -156,33 +171,6 @@ function obj.notificationCenterClickButton(theButton)
   end
 end
 
-function obj.launchBarEmoji()
-  AppleScript([[
-    tell app "LaunchBar" to perform action "Charpicker"
-  ]])
-end
-
-local globalHotkeys = {
-  {{"cmd", "shift"}, "1", function() obj.moveFocusToMenuBar() end},
-  {hyper, "e", function() obj.launchBarEmoji() end},
-  {hyper, "o", function() obj.rightClick() end},
-  {hyper, "1", function() obj.notificationCenterClickButton(1) end},
-  {hyper, "2", function() obj.notificationCenterClickButton(2) end},
-  {hyper, "3", function() obj.notificationCenterClickButton(3) end},
-  {hyper, "n", function() obj.notificationCenterToggle() end},
-  {hyper, "l", function() obj.lookUpInDictionary() end},
-  -- window manager
-  {hyper, "c", function() Window.focusedWindow():centerOnScreen() end},
-  {hyper, "left", function() spoon.WindowManager.pushToCell("Left") end},
-  {hyper, "down", function() spoon.WindowManager.pushToCell("Down") end},
-  {hyper, "up", function() spoon.WindowManager.pushToCell("Up") end},
-  {hyper, "right", function() spoon.WindowManager.pushToCell("Right") end},
-  {hyper, "return", function() spoon.WindowManager.maximize() end},
-  {hyper, "w", function() spoon.WindowManagerModal:start() end},
-  {hyper, "m", function() spoon.MouseGrids:start() end},
-  {{}, 10, function() spoon.AppWatcher.toggleInputSource() end, nil, nil}
-}
-
 function obj:init()
   for _, hotkey in ipairs(globalHotkeys) do
     Hotkey.bind(table.unpack(hotkey))
@@ -190,42 +178,3 @@ function obj:init()
 end
 
 return obj
-
--- {"alt", "e", function() obj.showHelpMenu() end},
-
--- deprecated script launcher
--- {"alt", "q", function() appScriptLauncher() end},
--- local GlobalChooser = require("rb.fuzzychooser")
--- local Image = require("hs.image")
--- local function appScriptLauncherChooserCallback(choice)
---   getAppActions()[choice.bundleID][choice.text]()
--- end
-
--- local function appScriptLauncher()
---   local choices = {}
---   local activeAppBundleID = getFrontAppBundleID()
---   for id, actionList in pairs(getAppActions()) do
---     if activeAppBundleID == id then
---       for actionName, _ in pairs(actionList) do
---             table.insert(
---               choices,
---               {
---                 text = actionName,
---                 subText = "Application Script",
---                 image = Image.imageFromAppBundle(activeAppBundleID),
---                 bundleID = activeAppBundleID,
---               }
---             )
---         end
---     end
---   end
---   GlobalChooser:start(appScriptLauncherChooserCallback, choices, {"text"})
--- end
-
--- local function getFrontAppBundleID()
---   return spoon.AppWatcher.frontAppBundleID
--- end
-
--- local function getAppActions()
---   return spoon.AppWatcher.appActions
--- end
