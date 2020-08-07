@@ -7,36 +7,13 @@ local URLEvent = require("hs.urlevent")
 local Hotkey = require("hs.hotkey")
 local AX = require("hs._asm.axuielement")
 local Observer = AX.observer
-local UI = require("rb.ui")
-
-local obj = {}
-local modals = {}
-
-local transientApps = {
-  ["LaunchBar"] = {allowRoles = "AXSystemDialog"},
-  ["1Password 7"] = {allowRoles = "AXSystemDialog"},
-  ["Spotlight"] = {allowRoles = "AXSystemDialog"},
-  ["Contexts"] = false,
-  ["Emoji & Symbols"] = true
-  -- ["Safari"] = true
-}
-
-local allowedWindowFilterEvents = {
-  Window.filter.windowCreated,
-  Window.filter.windowDestroyed,
-  Window.filter.windowFocused,
-  Window.filter.windowTitleChanged -- only for safari
-}
-
-local keyboardLayoutSwitcherExcludedApps = {
-  "at.obdev.LaunchBar",
-  "com.contextsformac.Contexts"
-}
 
 local function script_path()
   local str = debug.getinfo(2, "S").source:sub(2)
   return str:match("(.*/)")
 end
+
+local obj = {}
 
 obj.__index = obj
 obj.name = "AppWatcher"
@@ -62,6 +39,28 @@ obj.safariPid = nil
 obj.safariObserver = nil
 obj.layoutsForURL = {}
 
+local modals = {}
+
+local transientApps = {
+  ["LaunchBar"] = {allowRoles = "AXSystemDialog"},
+  ["1Password 7"] = {allowRoles = "AXSystemDialog"},
+  ["Spotlight"] = {allowRoles = "AXSystemDialog"},
+  ["Contexts"] = false,
+  ["Emoji & Symbols"] = true
+  -- ["Safari"] = true
+}
+
+local allowedWindowFilterEvents = {
+  Window.filter.windowCreated,
+  Window.filter.windowDestroyed,
+  Window.filter.windowFocused
+}
+
+local keyboardLayoutSwitcherExcludedApps = {
+  "at.obdev.LaunchBar",
+  "com.contextsformac.Contexts"
+}
+
 local function safariGetCurrentURL()
   -- applescript method
   local url
@@ -83,39 +82,7 @@ local function safariGetCurrentURL()
   return url
 end
 
-local function safariGetAddressBarUIElement(appObj)
-  local element
-  local axAppObj = AX.applicationElement(appObj)
-  local addressBarObject = UI.getUIElement(axAppObj, {{"AXWindow", "AXMain", true}, {"AXToolbar", 1}}):attributeValue("AXChildren")
-  for _, toolbarObject in ipairs(addressBarObject) do
-    local toolbarObjectsChilds = toolbarObject:attributeValue("AXChildren")
-    if toolbarObjectsChilds then
-      for _, toolbarObjectChild in ipairs(toolbarObjectsChilds) do
-        if toolbarObjectChild:attributeValue("AXRole") == "AXTextField" then
-          element = toolbarObjectChild
-          obj.safariAddressBar = element
-          break
-        end
-      end
-    end
-  end
-  return element
-end
-
-local function safariGetTabBarElement(appObj)
-  local axAppObj = AX.applicationElement(appObj)
-  return UI.getUIElement(axAppObj, {{"AXWindow", "AXMain", true}, {"AXGroup", "AXIdentifier", "TabBar"}})
-end
-
 local function safariSetLayoutForURL(_, _, _, _)
-  -- don't change layout while typing addresses!
-  -- print("focused tab changed!!")
-  -- if true then
-  --   return
-  -- end
-  if obj.safariAddressBar:attributeValue("AXFocused") == true then
-    return
-  end
   local url = safariGetCurrentURL()
   local special = {"bookmarks://", "history://", "favorites://"}
   if not url or FNUtils.contains(special, url) then
@@ -134,13 +101,11 @@ end
 
 local function safariAddObserver(appObj)
   local pid = appObj:pid()
-  local observer = Observer.new(pid)
-  local element = safariGetAddressBarUIElement(appObj)
-  -- local tabBar = safariGetTabBarElement(appObj)
-  observer:addWatcher(element, "AXValueChanged")
-  -- observer:addWatcher(tabBar, "AXValueChanged")
-  observer:callback(safariSetLayoutForURL)
-  observer:start()
+  obj.safariObserver = Observer.new(pid)
+  local element = AX.applicationElement(appObj)
+  obj.safariObserver:addWatcher(element, "AXTitleChanged")
+  obj.safariObserver:callback(safariSetLayoutForURL)
+  obj.safariObserver:start()
   safariSetLayoutForURL()
 end
 
@@ -179,6 +144,9 @@ local function appWatcherCallback(_, event, appObj)
     if bundleID == "com.apple.Safari" then
       safariAddObserver(appObj)
     else
+      if obj.safariObserver then
+        obj.safariObserver:stop()
+      end
       setInputSource(bundleID) -- set input source
     end
     enterModalForActiveApp() -- enter modal
@@ -255,7 +223,10 @@ function obj:init()
   self.appWatcher:start()
   self.windowFilter = Window.filter.new(false):setFilters(transientApps)
   self.windowFilter:subscribe(allowedWindowFilterEvents, windowFilterCallback)
-  windowFilterCallback(Application.frontmostApplication():mainWindow(), nil, "windowFocused")
+  local window = Application.frontmostApplication():mainWindow()
+  if window then
+    windowFilterCallback(window, nil, "windowFocused")
+  end
 end
 
 return obj

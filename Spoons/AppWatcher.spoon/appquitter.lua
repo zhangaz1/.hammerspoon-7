@@ -4,7 +4,6 @@
 local Application = require("hs.application")
 local FS = require("hs.fs")
 local Plist = require("hs.plist")
-local spoon = spoon
 local hs = hs
 
 local function script_path()
@@ -15,10 +14,8 @@ end
 local obj = {}
 
 obj.RULES = nil
--- obj.appWatcher = nil
 
 local minute = 60
--- local hour = 60 * minute
 local LAUNCHD_RUN_INTERVAL = 10 * minute
 local LAUNCHD_LABEL = "com.rb.hs.appquitter.daemon"
 local LAUNCH_AGENT_PLIST = os.getenv("HOME") .. "/Library/LaunchAgents/" .. LAUNCHD_LABEL .. ".plist"
@@ -42,7 +39,7 @@ local function isJobLoaded(label)
   end
 end
 
-function obj:stopTimersForActivatedOrTerminatedApp(bundleID)
+local function stopTimersForActivatedOrTerminatedApp(bundleID)
   if not obj.RULES[bundleID] then
     return
   end
@@ -58,7 +55,7 @@ function obj:stopTimersForActivatedOrTerminatedApp(bundleID)
   Plist.write(TIMERS_PLIST, timersPlist)
 end
 
-function obj:stopTimersForHiddenApp(bundleID)
+local function stopTimersForHiddenApp(bundleID)
   if not obj.RULES[bundleID] then
     return
   end
@@ -74,7 +71,7 @@ function obj:stopTimersForHiddenApp(bundleID)
   Plist.write(TIMERS_PLIST, timersPlist)
 end
 
-function obj:startTimersForLaunchedOrDeactivatedApp(bundleID)
+local function startTimersForLaunchedOrDeactivatedApp(bundleID)
   if not obj.RULES[bundleID] then
     return
   end
@@ -97,13 +94,13 @@ end
 
 function obj:update(event, bundleID)
   if event == Application.watcher.deactivated or event == Application.watcher.launched then
-    obj:startTimersForLaunchedOrDeactivatedApp(bundleID)
+    startTimersForLaunchedOrDeactivatedApp(bundleID)
   end
   if event == Application.watcher.activated or event == Application.watcher.terminated then
-    obj:stopTimersForActivatedOrTerminatedApp(bundleID)
+    stopTimersForActivatedOrTerminatedApp(bundleID)
   end
   if event == Application.watcher.hidden then
-    obj:stopTimersForHiddenApp(bundleID)
+    stopTimersForHiddenApp(bundleID)
   end
 end
 
@@ -116,21 +113,20 @@ function obj:init()
 
   obj.RULES = dofile(script_path() .. "/appquitter_rules.lua")
 
-  -- launchd plist
-  if not FS.displayName(LAUNCH_AGENT_PLIST) then
-    Plist.write(LAUNCH_AGENT_PLIST, LAUNCH_AGENT_PLIST_OBJ)
-  end
-
-  local updatePlist = false
-  local currentPlist = Plist.read(LAUNCH_AGENT_PLIST)
-  for k, _ in pairs(LAUNCH_AGENT_PLIST_OBJ) do
-    if LAUNCH_AGENT_PLIST_OBJ[k] ~= currentPlist[k] then
-      updatePlist = true
+  local launchdPlistExists = FS.displayName(LAUNCH_AGENT_PLIST)
+  local shouldUpdateLaunchdPlist = false
+  if launchdPlistExists then
+    local currentPlist = Plist.read(LAUNCH_AGENT_PLIST)
+    for property, _ in pairs(LAUNCH_AGENT_PLIST_OBJ) do
+      if LAUNCH_AGENT_PLIST_OBJ[property] ~= currentPlist[property] then
+        shouldUpdateLaunchdPlist = true
+        os.execute(string.format([[/bin/launchctl unload "%s"]], LAUNCH_AGENT_PLIST))
+        break
+      end
     end
   end
-  if updatePlist then
-    local unload = string.format([[/bin/launchctl unload "%s"]], LAUNCH_AGENT_PLIST)
-    os.execute(unload)
+
+  if not launchdPlistExists or shouldUpdateLaunchdPlist then
     Plist.write(LAUNCH_AGENT_PLIST, LAUNCH_AGENT_PLIST_OBJ)
   end
 
@@ -153,7 +149,7 @@ function obj:init()
     if not v:isFrontmost() then
       for id, _ in pairs(obj.RULES) do
         if v:bundleID() == id then
-          obj:startTimersForLaunchedOrDeactivatedApp(id)
+          startTimersForLaunchedOrDeactivatedApp(id)
           break
         end
       end

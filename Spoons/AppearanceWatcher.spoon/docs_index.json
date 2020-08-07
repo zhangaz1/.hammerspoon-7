@@ -1,0 +1,31 @@
+[
+  {
+    "desc": "Perform actions when the system's theme changes.",
+    "name": "AppearanaceWatcher",
+    "type": "Module"
+  },
+  {
+    "desc": "Determines whether module is active.",
+    "module": "AppearanaceWatcher",
+    "name": "isActive",
+    "type": "Method"
+  },
+  {
+    "desc": "starts this module.",
+    "module": "AppearanaceWatcher",
+    "name": "start",
+    "type": "Method"
+  },
+  {
+    "desc": "Stops this module.",
+    "module": "AppearanaceWatcher",
+    "name": "stop",
+    "type": "Method"
+  },
+  {
+    "desc": "Toggles this module.",
+    "module": "AppearanaceWatcher",
+    "name": "toggle",
+    "type": "Method"
+  }
+]

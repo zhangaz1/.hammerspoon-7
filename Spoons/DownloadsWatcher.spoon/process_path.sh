@@ -27,7 +27,7 @@ case "${path}" in
 	output="${target}"
 	/bin/mv -f "${path}" ~/.Trash/
 	;;
-*".tgz"|*".gz")
+*".tgz" | *".gz")
 	tar_output=$(/usr/bin/tar -xvf "${path}" -C ~/Downloads)
 	output=$(printf "%s\n" "${tar_output}" | sed 's/x //' | sed -E '/^\.\//d' | sed -E "s|^|${HOME}/Downloads/|")
 	/bin/mv -f "${path}" ~/.Trash/
