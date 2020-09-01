@@ -46,7 +46,7 @@ local globalHotkeys = {
   {hyper, "return", function() spoon.WindowManager.maximize() end},
   {hyper, "w", function() spoon.WindowManagerModal:start() end},
   {hyper, "m", function() spoon.MouseGrids:start() end},
-  {{}, 10, function() spoon.AppWatcher.toggleInputSource() end, nil, nil}
+  {{}, 10, function() spoon.KeyboardLayoutManager:toggleInputSource() end, nil, nil}
 }
 
 local function notificationCenterGetPanel()

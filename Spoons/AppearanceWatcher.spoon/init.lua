@@ -6,7 +6,7 @@
 
 local task = require("hs.task")
 local settings = require("hs.settings")
-local pathwatcher = require("hs.pathwatcher")
+local PathWatcher = require("hs.pathwatcher")
 local Host = require("hs.host")
 
 local obj = {}
@@ -18,15 +18,15 @@ obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
+local watcher
 local appearanceWatcherActiveKey = "RBAppearanceWatcherIsActive"
 local cachedInterfaceStyleKey = "RBAppearanceWatcherCachedInterfaceStyle"
+local appearancePlist = os.getenv("HOME") .. "/Library/Preferences/.GlobalPreferences.plist"
 
 local function script_path()
   local str = debug.getinfo(2, "S").source:sub(2)
   return str:match("(.*/)")
 end
-
-obj.pathwatcher = nil
 
 local function setStyle()
   local currentSystemStyle = Host.interfaceStyle() or "Light"
@@ -54,10 +54,10 @@ end
 --- AppearanaceWatcher:stop()
 --- Method
 --- Initializes this module.
-function obj:init()
-  self.pathwatcher =
-    pathwatcher.new(
-    os.getenv("HOME") .. "/Library/Preferences/.GlobalPreferences.plist",
+function obj.init()
+  watcher =
+    PathWatcher.new(
+    appearancePlist,
     function()
       setStyle()
     end
@@ -67,30 +67,32 @@ end
 --- AppearanaceWatcher:stop()
 --- Method
 --- Stops this module.
-function obj:stop()
-  obj.pathwatcher:stop()
-  obj.pathwatcher = nil
+function obj.stop()
+  watcher:stop()
+  watcher = nil
   settings.set(appearanceWatcherActiveKey, false)
 end
 
 --- AppearanaceWatcher:start()
 --- Method
 --- starts this module.
-function obj:start()
+function obj.start()
+  if not watcher then
+    obj.init()
+  end
+  watcher:start()
   setStyle()
-  obj:init()
-  obj.pathwatcher:start()
   settings.set(appearanceWatcherActiveKey, true)
 end
 
 --- AppearanaceWatcher:toggle()
 --- Method
 --- Toggles this module.
-function obj:toggle()
+function obj.toggle()
   if obj:isActive() then
-    obj:stop()
+    obj.stop()
   else
-    obj:start()
+    obj.start()
   end
 end
 
@@ -100,8 +102,8 @@ end
 ---
 --- Returns:
 ---  * A boolean, true if the module's watcher is active, otherwise false
-function obj:isActive()
-  return obj.pathwatcher ~= nil
+function obj.isActive()
+  return watcher ~= nil
 end
 
 return obj

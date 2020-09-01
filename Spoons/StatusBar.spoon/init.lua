@@ -1,9 +1,13 @@
 local HSApplication = require("hs.application")
 local HSMenubar = require("hs.menubar")
-local HSSettings = require("hs.settings")
 local HSTimer = require("hs.timer")
 local HSURLEvent = require("hs.urlevent")
 local spoon = spoon
+
+local function script_path()
+  local str = debug.getinfo(2, "S").source:sub(2)
+  return str:match("(.*/)")
+end
 
 local obj = {}
 
@@ -14,51 +18,31 @@ obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
-local function script_path()
-  local str = debug.getinfo(2, "S").source:sub(2)
-  return str:match("(.*/)")
-end
-obj.spoonPath = script_path()
+local spoonPath = script_path()
+local regularIconPath = spoonPath .. "/statusicon.pdf"
+local fadedIconPath = spoonPath .. "/statusicon_faded.pdf"
+local current = "regular"
 
-local regularIconPath = obj.spoonPath .. "/statusicon.pdf"
-local fadedIconPath = obj.spoonPath .. "/statusicon_faded.pdf"
-
-local muteSoundForUnknownNetworksKey = settingKeys.muteSoundForUnknownNetworks
-local configWatcherIsActiveKey = settingKeys.configWatcherActive
-
+obj.progress = {}
 obj.menuBarItem = nil
 obj.flashingIconTimer = nil
 obj.taskQueue = 0
-
-local function quitHammerspoon()
-  HSApplication("Hammerspoon"):kill()
-end
-
-local function toggleInputWatcher()
-  spoon.InputWatcher:toggle()
-end
-
-local function toggleGenericSetting(menuItem, key)
-  if menuItem.checked then
-    HSSettings.set(key, false)
-  else
-    HSSettings.set(key, true)
-  end
-end
 
 local function menuTable()
   local dropdownMenuTable = {
     {
       title = "Watch for input events",
-      fn = toggleInputWatcher,
+      fn = function()
+        spoon.InputWatcher:toggle()
+      end,
       checked = spoon.InputWatcher.watcher:isEnabled()
     },
     {
       title = "Watch for config changes",
-      fn = function(_, menuItem)
-        toggleGenericSetting(menuItem, configWatcherIsActiveKey)
+      fn = function()
+        spoon.ConfigWatcher:toggle()
       end,
-      checked = HSSettings.get(configWatcherIsActiveKey)
+      checked = spoon.ConfigWatcher:isActive()
     },
     {
       title = "Watch for appearance changes",
@@ -69,20 +53,21 @@ local function menuTable()
     },
     {
       title = "Mute on unknown networks",
-      fn = function(_, menuItem)
-        toggleGenericSetting(menuItem, muteSoundForUnknownNetworksKey)
+      fn = function()
+        spoon.WifiWatcher:toggle()
       end,
-      checked = HSSettings.get(muteSoundForUnknownNetworksKey)
+      checked = spoon.WifiWatcher:isActive()
     },
     {title = "-"},
-    {title = "Quit Hammerspoon", fn = quitHammerspoon}
+    {
+      title = "Quit Hammerspoon",
+      fn = function()
+        HSApplication("Hammerspoon"):kill()
+      end
+    }
   }
   return dropdownMenuTable
 end
-
-local current = "regular"
-
-obj.progress = {}
 
 function obj.progress.start()
   if not obj.flashingIconTimer:running() then

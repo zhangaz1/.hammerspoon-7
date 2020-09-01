@@ -8,4 +8,4 @@ Personal [Hammerspoon](https://github.com/Hammerspoon/hammerspoon) config.
 
 ## Thanks
 
-- [dharmapoudel](https://github.com/dharmapoudel)
+- [dharmapoudel](https://github.com/dharmapoudel), for KSheet.spoon

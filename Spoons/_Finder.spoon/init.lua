@@ -1,3 +1,7 @@
+--- === Finder ===
+---
+--- Finder automations.
+
 local eventtap = require("hs.eventtap")
 local geometry = require("hs.geometry")
 local osascript = require("hs.osascript")
@@ -7,27 +11,23 @@ local ui = require("rb.ui")
 local Util = require("rb.util")
 local GlobalChooser = require("rb.fuzzychooser")
 local FNUtils = require("hs.fnutils")
-
+local Hotkey = require("hs.hotkey")
 local next = next
 
 local obj = {}
+local _modal = nil
+local _appObj = nil
 
-obj.id = "com.apple.finder"
+obj.bundleID = "com.apple.finder"
 
-function obj.browseInLaunchBar()
-  osascript.applescript([[
-  ignoring application responses
-    tell application "LaunchBar" to perform action "Browse Current Folder"
-  end ignoring]])
-end
+obj.__index = obj
+obj.name = "Finder"
+obj.version = "1.0"
+obj.author = "roeybiran <roeybiran@icloud.com>"
+obj.homepage = "https://github.com/Hammerspoon/Spoons"
+obj.license = "MIT - https://opensource.org/licenses/MIT"
 
-function obj.newWindow(modal)
-  modal:exit()
-  eventtap.keyStroke({"cmd", "alt"}, "n")
-  modal:enter()
-end
-
-function obj.getFinderSelection()
+local function getFinderSelection()
   local _, selection, _ = osascript.applescript([[
     set theSelectionPOSIX to {}
     tell application "Finder" to set theSelection to selection as alias list
@@ -49,42 +49,20 @@ function obj.getFinderSelection()
   end
 end
 
-function obj.getFinderSelectionCount()
-  local selection = obj.getFinderSelection()
-  if not selection then
-    return 0
-  end
-  local n = 0
-  for i, _ in ipairs(selection) do
-    n = i
-  end
-  return n
+local function browseInLaunchBar()
+  osascript.applescript([[
+  ignoring application responses
+    tell application "LaunchBar" to perform action "Browse Current Folder"
+  end ignoring]])
 end
 
-function obj.getMainArea(appObj)
-  -- the last common ancestors to all finder views
-  local mainArea =
-    ui.getUIElement(
-    appObj,
-    {
-      {"AXWindow", 1},
-      {"AXSplitGroup", 1},
-      {"AXSplitGroup", 1}
-    }
-  )
-  -- column view: axbrowser 1; axscrollarea 1 for icon, list and gallery
-  if mainArea then
-    return mainArea:children()[1]
-  end
+local function newWindow(modal)
+  modal:exit()
+  eventtap.keyStroke({"cmd", "alt"}, "n")
+  modal:enter()
 end
 
-function obj.deselectAll(appObj)
-  for _, k in ipairs({{"Edit", "Select All"}, {"Edit", "Deselect All"}}) do
-    appObj:selectMenuItem(k)
-  end
-end
-
-function obj.rightSizeColumn(appObj, arg)
+local function rightSizeColumn(appObj, arg)
   -- right-size the first column in list view, or the 'active' column in columns view
   -- for columns view: if arg is "all", right sizes all columns indivdually; if arg is "this", right sizes just the 'focused' column
   -- for list view, arg is ignored and the first column (usually 'name') is resized
@@ -131,73 +109,7 @@ function obj.rightSizeColumn(appObj, arg)
   Util.doubleLeftClick(point, modifiers, true)
 end
 
-function obj.selectColumnChooserCallback(choice)
-  osascript.applescript([[
-    tell application "System Events"
-    tell process "Finder"
-      click menu item "Show View Options" of menu 1 of menu bar item "View" of menu bar 1
-      delay 2
-      tell window 1
-        tell group 1
-          click checkbox "]] .. choice.text .. [["
-        end tell
-        click button 2
-      end tell
-    end tell
-  end tell
-  ]])
-end
-
-function obj.toggleColumns()
-  local columnChoices = {}
-  local columns = {
-    "iCloud Status",
-    "Date Modified",
-    "Date Created",
-    "Date Last Opened",
-    "Date Added",
-    "Size",
-    "Kind",
-    "Version",
-    "Comments",
-    "Tags"
-  }
-  for _, col in ipairs(columns) do
-    table.insert(columnChoices, {["text"] = col})
-  end
-  timer.doAfter(
-    0.1,
-    function()
-      GlobalChooser:start(obj.selectColumnChooserCallback, columnChoices, {"text"})
-    end
-  )
-end
-
-function obj.focusMainArea(appObj)
-  -- move focus to files area
-  -- scroll area 1 = the common ancestor to all Finder views (list, columns, icons, etc...)
-  -- assumption: the files area ui element is different for every view, but it is always to the first child
-  obj.getMainArea(appObj):setAttributeValue("AXFocused", true)
-  for _ = 1, 3 do
-    if obj.getFinderSelection() == nil then
-      eventtap.keyStroke({}, "down")
-    else
-      break
-    end
-  end
-end
-
-function obj.nextSearchScope(appObj)
-  local searchScopesBar = {
-    {"AXWindow", 1},
-    {"AXSplitGroup", 1},
-    {"AXGroup", 1},
-    {"AXRadioGroup", 1}
-  }
-  return ui.cycleUIElements(appObj, searchScopesBar, "AXRadioButton", "next")
-end
-
-function obj.undoCloseTab()
+local function undoCloseTab()
   osascript.applescript(
     [[
     tell application "Default Folder X" to set recentFinderWindows to GetRecentFinderWindows
@@ -230,27 +142,38 @@ function obj.undoCloseTab()
   )
 end
 
-function obj.clickHistoryToolbarItem(appObj, backOrForward)
-  local button
-  if backOrForward == "back" then
-    button = 1
-  elseif backOrForward == "forward" then
-    button = 2
-  else
-    return
-  end
-  ui.getUIElement(
-    ax.windowElement(appObj:mainWindow()),
+local function getMainArea(appObj)
+  -- the last common ancestors to all finder views
+  local mainArea =
+    ui.getUIElement(
+    appObj,
     {
-      {"AXToolbar", 1},
-      {"AXGroup", 1},
-      {"AXGroup", 1},
-      {"AXButton", button}
+      {"AXWindow", 1},
+      {"AXSplitGroup", 1},
+      {"AXSplitGroup", 1}
     }
-  ):performAction("AXShowMenu")
+  )
+  -- column view: axbrowser 1; axscrollarea 1 for icon, list and gallery
+  if mainArea then
+    return mainArea:children()[1]
+  end
 end
 
-function obj.isSearchModeActive(appObj)
+local function focusMainArea(appObj)
+  -- move focus to files area
+  -- scroll area 1 = the common ancestor to all Finder views (list, columns, icons, etc...)
+  -- assumption: the files area ui element is different for every view, but it is always to the first child
+  getMainArea(appObj):setAttributeValue("AXFocused", true)
+  for _ = 1, 3 do
+    if getFinderSelection() == nil then
+      eventtap.keyStroke({}, "down")
+    else
+      break
+    end
+  end
+end
+
+local function isSearchModeActive(appObj)
   local title = appObj:focusedWindow():title()
   if string.match(title, "^Searching “.+”$") then
     -- if search field is focused
@@ -261,9 +184,9 @@ function obj.isSearchModeActive(appObj)
   end
 end
 
-function obj.moveFocusToFilesAreaIfInSearchMode(appObj, modal)
-  if obj.isSearchModeActive(appObj) then
-    obj.focusMainArea(appObj)
+local function moveFocusToFilesAreaIfInSearchMode(appObj, modal)
+  if isSearchModeActive(appObj) then
+    focusMainArea(appObj)
   else
     modal:exit()
     eventtap.keyStroke({}, "tab")
@@ -271,7 +194,7 @@ function obj.moveFocusToFilesAreaIfInSearchMode(appObj, modal)
   end
 end
 
-function obj.openPackage()
+local function openPackage()
   osascript.applescript([[
     tell application "Finder"
     set theSelection to selection
@@ -295,4 +218,186 @@ function obj.openPackage()
   end tell]])
 end
 
+local function deselectAll(appObj)
+  for _, k in ipairs({{"Edit", "Select All"}, {"Edit", "Deselect All"}}) do
+    appObj:selectMenuItem(k)
+  end
+end
+
+local function toggleColumns()
+  local function selectColumnChooserCallback(choice)
+    osascript.applescript([[
+      tell application "System Events"
+      tell process "Finder"
+        click menu item "Show View Options" of menu 1 of menu bar item "View" of menu bar 1
+        delay 2
+        tell window 1
+          tell group 1
+            click checkbox "]] .. choice.text .. [["
+          end tell
+          click button 2
+        end tell
+      end tell
+    end tell
+    ]])
+  end
+  local columnChoices = {}
+  local columns = {
+    "iCloud Status",
+    "Date Modified",
+    "Date Created",
+    "Date Last Opened",
+    "Date Added",
+    "Size",
+    "Kind",
+    "Version",
+    "Comments",
+    "Tags"
+  }
+  for _, col in ipairs(columns) do
+    table.insert(columnChoices, {["text"] = col})
+  end
+  timer.doAfter(
+    0.1,
+    function()
+      GlobalChooser:start(selectColumnChooserCallback, columnChoices, {"text"})
+    end
+  )
+end
+
+local function clickHistoryToolbarItem(appObj, backOrForward)
+  local button
+  if backOrForward == "back" then
+    button = 1
+  elseif backOrForward == "forward" then
+    button = 2
+  else
+    return
+  end
+  ui.getUIElement(
+    ax.windowElement(appObj:mainWindow()),
+    {
+      {"AXToolbar", 1},
+      {"AXGroup", 1},
+      {"AXGroup", 1},
+      {"AXButton", button}
+    }
+  ):performAction("AXShowMenu")
+end
+
+local hotkeys = {
+  {
+    "alt",
+    "f",
+    function()
+      browseInLaunchBar()
+    end
+  },
+  {
+    "alt",
+    "2",
+    function()
+      focusMainArea(_appObj)
+    end
+  },
+  {
+    "cmd",
+    "n",
+    function()
+      newWindow(_modal)
+    end
+  },
+  {
+    {"shift", "cmd"},
+    "t",
+    function()
+      undoCloseTab()
+    end
+  },
+  {
+    {},
+    "tab",
+    function()
+      moveFocusToFilesAreaIfInSearchMode(_appObj, _modal)
+    end
+  },
+  -- TODO: remove?
+  {
+    {"shift", "cmd"},
+    "up",
+    function()
+      _appObj:selectMenuItem({"File", "Show Original"})
+    end
+  },
+  {
+    {"shift", "cmd"},
+    "down",
+    function()
+      _appObj:selectMenuItem({"File", "Open in New Tab"})
+    end
+  },
+  {
+    "alt",
+    "o",
+    function()
+      openPackage()
+    end
+  },
+  {
+    {"alt", "shift"},
+    "r",
+    function()
+      rightSizeColumn(_appObj, "all")
+    end
+  },
+  {
+    "alt",
+    "r",
+    function()
+      rightSizeColumn(_appObj, "this")
+    end
+  }
+}
+
+function obj:start(appObj)
+  _appObj = appObj
+  _modal:enter()
+end
+
+function obj:stop()
+  _modal:exit()
+end
+
+function obj:init()
+  if not obj.bundleID then
+    hs.showError("bundle indetifier for app spoon is nil")
+  end
+  _modal = Hotkey.modal.new()
+  for _, v in ipairs(hotkeys) do
+    _modal:bind(table.unpack(v))
+  end
+end
+
 return obj
+
+-- local function getFinderSelectionCount()
+--   local selection = getFinderSelection()
+--   if not selection then
+--     return 0
+--   end
+--   local n = 0
+--   for i, _ in ipairs(selection) do
+--     n = i
+--   end
+--   return n
+-- end
+
+-- local function nextSearchScope(appObj)
+--   local searchScopesBar = {
+--     {"AXWindow", 1},
+--     {"AXSplitGroup", 1},
+--     {"AXGroup", 1},
+--     {"AXRadioGroup", 1}
+--   }
+--   return ui.cycleUIElements(appObj, searchScopesBar, "AXRadioButton", "next")
+-- end

@@ -12,9 +12,8 @@ obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
-obj.pathWatcher = nil
-
-local configWatcherActiveKey = settingKeys.configWatcherActive
+local pathWatcher = nil
+local configWatcherActiveKey = "RBConfigWatcherActive"
 
 local function patchWatcherCallbackFn(files, flagTables)
   local doReload = false
@@ -33,9 +32,34 @@ local function patchWatcherCallbackFn(files, flagTables)
   end
 end
 
-function obj:init()
-  self.pathWatcher = PathWatcher.new(".", patchWatcherCallbackFn)
-  self.pathWatcher:start()
+function obj.toggle()
+  if pathWatcher then
+    obj.stop()
+  else
+    obj.start()
+  end
+end
+
+function obj.stop()
+  Settings.set(configWatcherActiveKey, false)
+  pathWatcher:stop()
+  pathWatcher = nil
+end
+
+function obj.start()
+  Settings.set(configWatcherActiveKey, true)
+  if not pathWatcher then
+    obj.init()
+  end
+  pathWatcher:start()
+end
+
+function obj.isActive()
+  return pathWatcher ~= nil
+end
+
+function obj.init()
+  pathWatcher = PathWatcher.new(".", patchWatcherCallbackFn)
 end
 
 return obj

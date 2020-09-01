@@ -1,0 +1,26 @@
+local hotkeys = {}
+local obj = {}
+local _modal = nil
+local _appObj = nil
+obj.bundleID = "com.apple.Notes"
+
+function obj:start(appObj)
+  _appObj = appObj
+  _modal:enter()
+end
+
+function obj:stop()
+  _modal:exit()
+end
+
+function obj:init()
+  if not obj.bundleID then
+    hs.showError("bundle indetifier for app spoon is nil")
+  end
+  _modal = Hotkey.modal.new()
+  for _, v in ipairs(hotkeys) do
+    _modal:bind(table.unpack(v))
+  end
+end
+
+return obj

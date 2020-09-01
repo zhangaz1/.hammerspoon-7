@@ -1,6 +1,5 @@
 local Hotkey = require("hs.hotkey")
 local Eventtap = require("hs.eventtap")
-local Timer = require("hs.timer")
 
 local obj = {}
 
@@ -11,34 +10,32 @@ obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
-obj.delayedTimer = nil
-obj.brightnessControlModal = nil
+local brightnessControlModal = nil
 
 local function systemKey(key)
   Eventtap.event.newSystemKeyEvent(string.upper(key), true):post()
   Eventtap.event.newSystemKeyEvent(string.upper(key), false):post()
-  -- obj.delayedTimer:start()
 end
 
-local function increaseBrightness(repeating)
+local function increaseBrightness()
   systemKey("BRIGHTNESS_UP")
 end
 
-local function decreaseBrightness(repeating)
+local function decreaseBrightness()
   systemKey("BRIGHTNESS_DOWN")
 end
 
-function obj:start()
-  obj.brightnessControlModal:enter()
+function obj.start()
+  brightnessControlModal:enter()
 end
 
-function obj:stop()
-  obj.brightnessControlModal:exit()
+function obj.stop()
+  brightnessControlModal:exit()
 end
 
-function obj:init()
+function obj.init()
   -- obj.delayedTimer = Timer.delayed.new(1, obj.stop)
-  obj.brightnessControlModal = Hotkey.modal.new()
+  brightnessControlModal = Hotkey.modal.new()
     :bind({}, "right", nil, increaseBrightness, increaseBrightness, nil)
     :bind({}, "left", nil, decreaseBrightness, decreaseBrightness, nil)
     :bind({}, "escape", nil, obj.stop, nil, nil)

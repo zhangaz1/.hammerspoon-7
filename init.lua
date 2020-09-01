@@ -4,6 +4,7 @@ local ipc = require("hs.ipc")
 local application = require("hs.application")
 
 local hs = hs
+
 ----------------------------------
 -- HAMMERSPOON SETTINGS, VARIABLES
 ----------------------------------
@@ -26,27 +27,6 @@ require("hs.keycodes").log.setLogLevel("error")
 ------------------
 -- GLOBAL SETTINGS
 ------------------
-settingKeys = {
-  muteSoundForUnknownNetworks = "RBMuteSoundWhenJoiningUnknownNetworks",
-  configWatcherActive = "RBConfigWatcherActive",
-  processedDownloadsInodes = "RBDownloadsWatcherProcessedDownloadsInodes",
-}
-
-local settingKeysDefault = {
-  appearanceWatcherActive = true,
-  cachedInterfaceStyle = hs.host.interfaceStyle() or "Light",
-  muteSoundForUnknownNetworks = true,
-  configWatcherActive = true,
-  processedDownloadsInodes = {},
-  appQuitterUnterminatedTimers = {},
-}
-
-for i, v in pairs(settingKeys) do
-  if hs.settings.get(v) == nil then
-    hs.settings.set(v, settingKeysDefault[i])
-  end
-end
-
 -- load spoons
 local iterFn, dirObj = FS.dir("Spoons/")
 if iterFn then
@@ -58,4 +38,9 @@ if iterFn then
   end
 end
 
+spoon.AppQuitter:start()
+spoon.AppWatcher:start()
 spoon.AppearanceWatcher:start()
+spoon.ConfigWatcher:start()
+spoon.DownloadsWatcher:start()
+spoon.WifiWatcher:start()

@@ -5,9 +5,16 @@ local Fnutils = require("hs.fnutils")
 local Settings = require("hs.settings")
 local Timer = require("hs.timer")
 local Pasteboard = require("hs.pasteboard")
-
 local spoon = spoon
-local processedDownloadsInodesKey = settingKeys.processedDownloadsInodes
+
+local obj = {}
+
+obj.__index = obj
+obj.name = "DownloadsWatcher"
+obj.version = "1.0"
+obj.author = "roeybiran <roeybiran@icloud.com>"
+obj.homepage = "https://github.com/Hammerspoon/Spoons"
+obj.license = "MIT - https://opensource.org/licenses/MIT"
 
 local function tableCount(t)
   local n = 0
@@ -22,27 +29,15 @@ local function script_path()
   return str:match("(.*/)")
 end
 
-local obj = {}
-
-obj.__index = obj
-obj.name = "DownloadsWatcher"
-obj.version = "1.0"
-obj.author = "roeybiran <roeybiran@icloud.com>"
-obj.homepage = "https://github.com/Hammerspoon/Spoons"
-obj.license = "MIT - https://opensource.org/licenses/MIT"
-obj.spoonPath = script_path()
-
+local processedDownloadsInodesKey = "RBDownloadsWatcherProcessedDownloadsInodes"
+local spoonPath = script_path()
 local home = os.getenv("HOME")
 local downloadsDir = home .. "/Downloads"
-local shellScript = obj.spoonPath .. "/process_path.sh"
-
-obj.pathWatcher = nil
-obj.lastPathsDetected = {}
-obj.lastFlagTables = {}
-obj.ProcessedDownloadsInodes = {}
-obj.delayedTimer = nil
-
+local shellScript = spoonPath .. "/process_path.sh"
 local filesToIgnore = {".DS_Store", ".localized", ".", ".."}
+local pathWatcher
+local delayedTimer
+local processedDownloadsInodes = {}
 
 local function delayedTimerCallbackFn()
   local iteratedFiles = {}
@@ -57,15 +52,15 @@ local function delayedTimerCallbackFn()
       if not file:match("%.download/?$") then
         local fullPath = downloadsDir .. "/" .. file
         local inode = FS.attributes(fullPath, "ino")
-        if not Fnutils.contains(obj.ProcessedDownloadsInodes, inode) then
-          table.insert(obj.ProcessedDownloadsInodes, inode)
+        if not Fnutils.contains(processedDownloadsInodes, inode) then
+          table.insert(processedDownloadsInodes, inode)
           table.insert(pathsToProcess, fullPath)
         end
         table.insert(iteratedFiles, file)
       end
     end
   end
-  local newPlistSetting = obj.ProcessedDownloadsInodes
+  local newPlistSetting = processedDownloadsInodes
   if tableCount(iteratedFiles) == 0 then
     print("DownloadsWatcher: ~/Downloads emptied, clearing inodes list")
     newPlistSetting = {}
@@ -81,7 +76,6 @@ local function delayedTimerCallbackFn()
           print("DownloadsWatcher shell script stderr: ", stderr)
         end
         Pasteboard.setContents(stdout)
-        -- table.insert(collectedPaths, stdout)
         spoon.StatusBar.progress.stop()
       end,
       {path}
@@ -90,14 +84,17 @@ local function delayedTimerCallbackFn()
 end
 
 local function pathWatcherCallbackFn()
-  obj.delayedTimer:start()
+  delayedTimer:start()
 end
 
-function obj:init()
-  self.delayedTimer = Timer.delayed.new(1, delayedTimerCallbackFn)
-  self.pathWatcher = PathWatcher.new(downloadsDir, pathWatcherCallbackFn)
-  self.ProcessedDownloadsInodes = Settings.get(processedDownloadsInodesKey)
-  self.pathWatcher:start()
+function obj.init()
+  delayedTimer = Timer.delayed.new(1, delayedTimerCallbackFn)
+  processedDownloadsInodes = Settings.get(processedDownloadsInodesKey)
+  pathWatcher = PathWatcher.new(downloadsDir, pathWatcherCallbackFn)
+end
+
+function obj.start()
+  pathWatcher:start()
 end
 
 return obj
