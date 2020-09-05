@@ -1,6 +1,7 @@
 local Keycodes = require("hs.keycodes")
 local Settings = require("hs.settings")
 local FNUtils = require("hs.fnutils")
+local Spoons = require("hs.spoons")
 
 local obj = {}
 
@@ -18,7 +19,7 @@ local keyboardLayoutSwitcherExcludedApps = {
   "com.contextsformac.Contexts"
 }
 
-function obj:toggleInputSource()
+local function toggleInputSource()
   local bundleID = _frontAppBundleID
   local currentLayout = Keycodes.currentLayout()
   local newLayout = "ABC"
@@ -31,7 +32,7 @@ function obj:toggleInputSource()
   end
 
   if bundleID == "com.apple.Safari" then
-    spoon.Safari:saveLayoutForCurrentURL(newLayout)
+    spoon._Safari:saveLayoutForCurrentURL(newLayout)
   end
 
   local settingsTable = Settings.get("RBAppsLastActiveKeyboardLayouts") or {}
@@ -54,6 +55,15 @@ function obj:setInputSource(bundleid)
     newLayout = appSetting["LastActiveKeyboardLayout"]
   end
   Keycodes.setLayout(newLayout)
+end
+
+function obj:bindHotKeys(_mapping)
+  local def = {
+    toggleInputSource = function()
+      toggleInputSource()
+    end
+  }
+  Spoons.bindHotkeysToSpec(def, _mapping)
 end
 
 return obj

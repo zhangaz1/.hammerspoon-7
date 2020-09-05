@@ -1,9 +1,9 @@
-local hotkeys = {}
 local obj = {}
 local _modal = nil
 local _appObj = nil
 obj.bundleID = "com.apple.Notes"
 
+local hotkeys = {}
 function obj:start(appObj)
   _appObj = appObj
   _modal:enter()

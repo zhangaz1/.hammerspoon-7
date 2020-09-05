@@ -2,50 +2,58 @@
 
 shopt -s nocasematch
 
+export PATH="$PATH:/bin:/usr/bin"
+
 SOURCE="${BASH_SOURCE[0]}"
 # resolve $SOURCE until the file is no longer a symlink
 while [ -h "$SOURCE" ]; do
-	DIR="$(/usr/bin/cd -P "$(/usr/bin/dirname "$SOURCE")" >/dev/null 2>&1 && /bin/pwd)"
-	SOURCE="$(/usr/bin/readlink "$SOURCE")"
-	[[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+	DIR="$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"
+	SOURCE="$(readlink "$SOURCE")"
+	# if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+	[[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
 done
-DIR="$(/usr/bin/dirname "${SOURCE}")"
+DIR="$(dirname "${SOURCE}")"
 
 path="${1}"
 parsepath() {
-	dir="$(/usr/bin/dirname "${1}")"
-	name_no_ext="$(/usr/bin/basename "${1}" | /usr/bin/cut -f 1 -d '.')"
-	/usr/bin/printf "%s\n" "${dir}/${name_no_ext}"
+	dir="$(dirname "${1}")"
+	name_no_ext="$(basename "${1}" | cut -f 1 -d '.')"
+	printf "%s\n" "${dir}/${name_no_ext}"
 }
 
 output=""
 case "${path}" in
 *".zip")
+	# a naive check for a wordpress plugin
+	# TODO: find a better solution
+	if unzip -l "${path}" | grep php; then
+		exit 0
+	fi
 	target="$(parsepath "${path}")"
 	mkdir -p "${target}"
-	/usr/bin/ditto -xk "${path}" "${target}"
+	ditto -xk "${path}" "${target}"
 	output="${target}"
-	/bin/mv -f "${path}" ~/.Trash/
+	mv -f "${path}" ~/.Trash/
 	;;
 *".tgz" | *".gz")
-	tar_output=$(/usr/bin/tar -xvf "${path}" -C ~/Downloads)
+	tar_output=$(tar -xvf "${path}" -C ~/Downloads)
 	output=$(printf "%s\n" "${tar_output}" | sed 's/x //' | sed -E '/^\.\//d' | sed -E "s|^|${HOME}/Downloads/|")
-	/bin/mv -f "${path}" ~/.Trash/
+	mv -f "${path}" ~/.Trash/
 	;;
 *".dmg")
-	mounted_path=$(/usr/bin/yes | /usr/bin/hdiutil attach -nobrowse "${path}" | /usr/bin/tail -n 1 | /usr/bin/grep -E -o "/Volumes/.+$")
-	/bin/cp -R "${mounted_path}" ~/Downloads
+	mounted_path=$(yes | hdiutil attach -nobrowse "${path}" | tail -n 1 | grep -E -o "/Volumes/.+$")
+	cp -R "${mounted_path}" ~/Downloads
 	output=~/Downloads/$(basename "${mounted_path}")
-	/usr/bin/hdiutil detach "${mounted_path}" 1>/dev/null
-	/bin/mv -f "${path}" ~/.Trash/
+	hdiutil detach "${mounted_path}" 1>/dev/null
+	mv -f "${path}" ~/.Trash/
 	;;
 *".heic")
 	output="$(parsepath "${path}").jpg"
-	/usr/bin/sips -s format jpeg "${path}" --out "${output}"
-	/bin/mv -f "${path}" ~/.Trash/
+	sips -s format jpeg "${path}" --out "${output}"
+	mv -f "${path}" ~/.Trash/
 	;;
 *)
 	output="${path}"
 	;;
 esac
-/usr/bin/printf "%s" "${output}"
+printf "%s" "${output}"

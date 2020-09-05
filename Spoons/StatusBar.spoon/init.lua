@@ -30,13 +30,13 @@ obj.taskQueue = 0
 
 local function menuTable()
   local dropdownMenuTable = {
-    {
-      title = "Watch for input events",
-      fn = function()
-        spoon.InputWatcher:toggle()
-      end,
-      checked = spoon.InputWatcher.watcher:isEnabled()
-    },
+    -- {
+    --   title = "Watch for input events",
+    --   fn = function()
+    --     spoon.InputWatcher:toggle()
+    --   end,
+    --   checked = spoon.InputWatcher.watcher:isEnabled()
+    -- },
     {
       title = "Watch for config changes",
       fn = function()

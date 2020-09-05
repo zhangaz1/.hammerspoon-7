@@ -1,6 +1,8 @@
+--- === ConfigWatcher ===
+--- Reload the environment when .lua files in ~/.hammerspoon are modified.
+
 local PathWatcher = require("hs.pathwatcher")
 local Settings = require("hs.settings")
-
 local hs = hs
 
 local obj = {}
@@ -32,6 +34,9 @@ local function patchWatcherCallbackFn(files, flagTables)
   end
 end
 
+--- ConfigWatcher:toggle()
+--- Method
+--- Toggles the module.
 function obj.toggle()
   if pathWatcher then
     obj.stop()
@@ -40,12 +45,18 @@ function obj.toggle()
   end
 end
 
+--- ConfigWatcher:stop()
+--- Method
+--- Stops the module.
 function obj.stop()
   Settings.set(configWatcherActiveKey, false)
   pathWatcher:stop()
   pathWatcher = nil
 end
 
+--- ConfigWatcher:start()
+--- Method
+--- Starts the module.
 function obj.start()
   Settings.set(configWatcherActiveKey, true)
   if not pathWatcher then
@@ -54,6 +65,10 @@ function obj.start()
   pathWatcher:start()
 end
 
+--- ConfigWatcher:toggle()
+--- Method
+--- Returns:
+---  * A boolean, true if the module is active, otherwise false
 function obj.isActive()
   return pathWatcher ~= nil
 end

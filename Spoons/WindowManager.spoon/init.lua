@@ -1,9 +1,7 @@
-local Grid = require("hs.grid")
 local Window = require("hs.window")
-local Geometry = require("hs.geometry")
 local Screen = require("hs.screen")
-local FNUtils = require("hs.fnutils")
-local Drawing = require("hs.drawing")
+local Geometry = require("hs.geometry")
+local Spoons = require("hs.spoons")
 
 local obj = {}
 
@@ -14,171 +12,184 @@ obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
+local screenFrame = Screen.mainScreen():frame()
+local minX = screenFrame.x -- not simply zero, because of the menu bar
+local midX = screenFrame.w / 2
+local maxX = screenFrame.w
+local minY = screenFrame.y
+local midY = screenFrame.h / 2
+local maxY = screenFrame.h
+
 -- POSSIBLE CELLS --
-obj.possibleCells = {
-  {
-    id = "northWest",
-    rect = {0.0, 0.0, 1.0, 1.0},
+local possibleCells = {
+  northWest = {
+    rect = Geometry.rect({minX, minY, midX, midY}),
     onLeft = "west",
     onRight = "northEast",
     onUp = "north",
-    onDown = "southEast",
-    counterpart = "northEast"
-  }, {
-    id = "northEast",
-    rect = {1.0, 0.0, 1.0, 1.0},
+    onDown = "southWest"
+  },
+  northEast = {
+    rect = Geometry.rect({midX, minY, midX, midY}),
     onLeft = "northWest",
     onRight = "east",
     onUp = "north",
-    onDown = "southWest",
-    counterpart = "northWest"
-  }, {
-    id = "southWest",
-    rect = {1.0, 1.0, 1.0, 1.0},
-    onLeft = "southEast",
+    onDown = "southEast"
+  },
+  southWest = {
+    rect = Geometry.rect({minX, midY, midX, midY}),
+    onLeft = "west",
+    onRight = "southEast",
+    onUp = "northWest",
+    onDown = "south"
+  },
+  southEast = {
+    rect = Geometry.rect({midX, midY, midX, midY}),
+    onLeft = "southWest",
     onRight = "east",
     onUp = "northEast",
-    onDown = "south",
-    counterpart = "southEast"
-  }, {
-    id = "southEast",
-    rect = {0.0, 1.0, 1.0, 1.0},
-    onLeft = "west",
-    onRight = "southWest",
-    onUp = "northWest",
-    onDown = "south",
-    counterpart = "southWest"
-  }, {
-    id = "west",
-    rect = {0.0, 0.0, 1.0, 2.0},
+    onDown = "south"
+  },
+  west = {
+    rect = Geometry.rect({minX, minY, midX, maxY}),
     onLeft = "fullScreen",
     onRight = "east",
     onUp = "northWest",
-    onDown = "southEast",
-    counterpart = "east"
-  }, {
-    id = "east",
-    rect = {1.0, 0.0, 1.0, 2.0},
+    onDown = "southWest"
+  },
+  east = {
+    rect = Geometry.rect({midX, minY, midX, maxY}),
     onLeft = "west",
     onRight = "fullScreen",
     onUp = "northEast",
-    onDown = "southWest",
-    counterpart = "west"
-  }, {
-    id = "south",
-    rect = {0.0, 1.0, 2.0, 1.0},
-    onLeft = "southEast",
-    onRight = "southWest",
+    onDown = "southEast"
+  },
+  south = {
+    rect = Geometry.rect({minX, midY, maxX, midY}),
+    onLeft = "southWest",
+    onRight = "southEast",
     onUp = "north",
-    onDown = "fullScreen",
-    counterpart = "north"
-  }, {
-    id = "north",
-    rect = {0.0, 0.0, 2.0, 1.0},
+    onDown = "fullScreen"
+  },
+  north = {
+    rect = Geometry.rect({minX, minY, maxX, midY}),
     onLeft = "northWest",
     onRight = "northEast",
     onUp = "fullScreen",
-    onDown = "south",
-    counterpart = "south"
+    onDown = "south"
   },
-  {id = "fullScreen", rect = {0.0, 0.0, 2.0, 2.0}, onLeft = "west", onRight = "east", onUp = "north", onDown = "south"}
+  fullScreen = {
+    rect = Geometry.rect({minX, minY, maxX, maxY}),
+    onLeft = "west",
+    onRight = "east",
+    onUp = "north",
+    onDown = "south"
+  }
 }
 
 local fallbacks = {Up = "north", Down = "south", Right = "east", Left = "west"}
-local function getSystemBlueColor() return Drawing.color.lists()["System"]["systemBlueColor"] end
-local function getMainScreen() return Screen.mainScreen() end
-local function defaultGrid() return Grid.setMargins(Geometry.point({0, 0})).setGrid("2x2", getMainScreen(), nil) end
 
-local function paintOverlay(counterpartID)
-  local mainScreen = getMainScreen()
-  for _, possibleCell in ipairs(obj.possibleCells) do
-    if possibleCell.id == counterpartID then
-      local overlayDimensions = defaultGrid().getCell(possibleCell.rect, mainScreen)
-      obj.overlay.show(overlayDimensions)
-    end
-  end
-end
-
-local function secondWindowTimedOppurtunity(counterpart)
-  -- print("Entering transient modal...")
-  -- local tabBind = hs.hotkey.bind({}, "tab", function() paintOverlay(counterpart) end)
-  -- hs.timer.doAfter(0.5, function() tabBind:disable() end)
-end
-
-local function setWindowSizeByCellId(frontWindow, cellID)
-  for _, possibleCell in pairs(obj.possibleCells) do
-    if possibleCell.id == cellID then
-      defaultGrid().set(frontWindow, possibleCell.rect)
-      -- begin second window sequence, if a counter part is defined
-      obj.overlay.hide()
-      if possibleCell.counterpart then
-        secondWindowTimedOppurtunity(possibleCell.counterpart)
-      end
+local function pushToCell(direction)
+  local frontWindow = Window.frontmostWindow()
+  local frontWindowFrame = frontWindow:frame()
+  -- local targetCell
+  for _, cellProperties in pairs(possibleCells) do
+    if frontWindowFrame:equals(cellProperties.rect) then
+      local targetCellName = cellProperties["on" .. direction]
+      local targetCell = possibleCells[targetCellName].rect
+      frontWindow:setFrame(targetCell)
       return
     end
   end
+  local targetCellName = fallbacks[direction]
+  frontWindow:setFrame(possibleCells[targetCellName].rect)
 end
 
-local function compareTables(table1, table2)
-  local function fn(x) return math.floor(math.abs(x)) end
-  table1 = FNUtils.map(table1, fn)
-  table2 = FNUtils.map(table2, fn)
-  if table1._x == table2.x and table1._y == table2.y and table1._w == table2.w and table1._h == table2.h then
-    return true
-  else
-    return false
-  end
+local function pushLeft()
+  pushToCell("Left")
 end
 
-local function getCellObjectByWindowSize(frontWindow)
-  local mainScreen = getMainScreen()
-  local frameForCurrentWindow = frontWindow:frame()
-  for _, possibleCell in pairs(obj.possibleCells) do
-    local frameForPossibleCell = defaultGrid().getCell(possibleCell.rect, mainScreen)
-    -- TODO: direct comparison between possibleCell.rect and hs.grid.get(frontWindow)?
-    if compareTables(frameForCurrentWindow, frameForPossibleCell) then return possibleCell end
-  end
-  return nil
+local function pushDown()
+  pushToCell("Down")
 end
 
-obj.overlay = {
-  fill = Drawing.rectangle({0, 0, 0, 0}):setLevel(Drawing.windowLevels["_MaximumWindowLevelKey"]):setFill(true)
-    :setFillColor(getSystemBlueColor()):setAlpha(0.2):setRoundedRectRadii(3, 3),
-  stroke = Drawing.rectangle({0, 0, 0, 0}):setLevel(Drawing.windowLevels["_MaximumWindowLevelKey"]):setFill(false)
-    :setStrokeWidth(15):setStrokeColor(getSystemBlueColor()):setStroke(true):setRoundedRectRadii(3, 3),
-  show = function(dimensions)
-    for _, v in ipairs({obj.overlay.fill, obj.overlay.stroke}) do
-      if v and v.hide then v:setFrame(dimensions):show(0.2) end
-    end
-  end,
-  hide = function()
-    for _, v in ipairs({obj.overlay.fill, obj.overlay.stroke}) do
-      if v and v.hide then v:setFrame({0, 0, 0, 0}):hide(0.2) end
-    end
-  end
-}
-
-function obj.pushToCell(direction)
-  local frontWindow = Window.focusedWindow()
-  local cellObject = getCellObjectByWindowSize(frontWindow)
-  local targetCell
-  if cellObject then
-    targetCell = cellObject["on" .. direction]
-  else
-    targetCell = fallbacks[direction]
-  end
-  setWindowSizeByCellId(frontWindow, targetCell)
+local function pushUp()
+  pushToCell("Up")
 end
 
-function obj.maximize()
-  local frontWindow = Window.focusedWindow()
-  local currentCell = getCellObjectByWindowSize(frontWindow)
-  if currentCell and currentCell.id == "fullScreen" then
-    setWindowSizeByCellId(frontWindow, "northWest")
+local function pushRight()
+  pushToCell("Right")
+end
+
+local function maximize()
+  local frontWindow = Window.frontmostWindow()
+  local frontWindowFrame = frontWindow:frame()
+  if frontWindowFrame:equals(possibleCells.fullScreen.rect) then
+    frontWindow:setFrame(possibleCells.northWest.rect)
     frontWindow:centerOnScreen()
   else
-    setWindowSizeByCellId(frontWindow, "fullScreen")
+    frontWindow:setFrame(possibleCells.fullScreen.rect)
   end
+end
+
+function obj:bindHotKeys(_mapping)
+  local def = {
+    maximize = function()
+      maximize()
+    end,
+    pushLeft = function()
+      pushLeft()
+    end,
+    pushRight = function()
+      pushRight()
+    end,
+    pushDown = function()
+      pushDown()
+    end,
+    pushUp = function()
+      pushUp()
+    end
+  }
+  Spoons.bindHotkeysToSpec(def, _mapping)
 end
 
 return obj
+
+-- obj.overlay = {
+--   fill = Drawing.rectangle({0, 0, 0, 0}):setLevel(Drawing.windowLevels["_MaximumWindowLevelKey"]):setFill(true):setFillColor(
+--     getSystemBlueColor()
+--   ):setAlpha(0.2):setRoundedRectRadii(3, 3),
+--   stroke = Drawing.rectangle({0, 0, 0, 0}):setLevel(Drawing.windowLevels["_MaximumWindowLevelKey"]):setFill(false):setStrokeWidth(
+--     15
+--   ):setStrokeColor(getSystemBlueColor()):setStroke(true):setRoundedRectRadii(3, 3),
+--   show = function(dimensions)
+--     for _, v in ipairs({obj.overlay.fill, obj.overlay.stroke}) do
+--       if v and v.hide then
+--         v:setFrame(dimensions):show(0.2)
+--       end
+--     end
+--   end,
+--   hide = function()
+--     for _, v in ipairs({obj.overlay.fill, obj.overlay.stroke}) do
+--       if v and v.hide then
+--         v:setFrame({0, 0, 0, 0}):hide(0.2)
+--       end
+--     end
+--   end
+-- }
+
+-- local function getSystemBlueColor()
+--   return Drawing.color.lists()["System"]["systemBlueColor"]
+-- end
+
+--   local mainScreen = getMainScreen()
+--   for _, possibleCell in ipairs(possibleCells) do
+--       local overlayDimensions = defaultGrid().getCell(possibleCell.rect, mainScreen)
+--       obj.overlay.show(overlayDimensions)
+--     end
+--   end
+-- end
+
+-- print("Entering transient modal...")
+-- hs.timer.doAfter(0.5, function() tabBind:disable() end)
+-- end

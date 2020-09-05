@@ -42,9 +42,30 @@ local function moveFocusToSafariMainArea(appObj, includeSidebar)
   -- ui scripting notes:
   -- when the statusbar overlay shows, it's the first window. you should look for the "Main" window instread.
   -- "pane1" = is either the main web area, or the sidebar
-  local UIElementSidebar = {{"AXWindow", "AXRoleDescription", "standard window"}, {"AXSplitGroup", 1}, {"AXGroup", 1}, {"AXScrollArea", 1}, {"AXOutline", 1}}
-  local UIElementPane1BookmarksHistoryView = {{"AXWindow", "AXRoleDescription", "standard window"}, {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXGroup", 1}, {"AXScrollArea", 1}, {"AXOutline", 1}}
-  local UIElementPane1StandardView = {{"AXWindow", "AXRoleDescription", "standard window"}, {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXGroup", 1}, {"AXGroup", 1}, {"AXScrollArea", 1}, {"AXWebArea", 1}}
+  local UIElementSidebar = {
+    {"AXWindow", "AXRoleDescription", "standard window"},
+    {"AXSplitGroup", 1},
+    {"AXGroup", 1},
+    {"AXScrollArea", 1},
+    {"AXOutline", 1}
+  }
+  local UIElementPane1BookmarksHistoryView = {
+    {"AXWindow", "AXRoleDescription", "standard window"},
+    {"AXSplitGroup", 1},
+    {"AXTabGroup", 1},
+    {"AXGroup", 1},
+    {"AXScrollArea", 1},
+    {"AXOutline", 1}
+  }
+  local UIElementPane1StandardView = {
+    {"AXWindow", "AXRoleDescription", "standard window"},
+    {"AXSplitGroup", 1},
+    {"AXTabGroup", 1},
+    {"AXGroup", 1},
+    {"AXGroup", 1},
+    {"AXScrollArea", 1},
+    {"AXWebArea", 1}
+  }
   local targetPane
   local sideBar
   local webArea = UI.getUIElement(appObj, UIElementPane1StandardView)
@@ -64,7 +85,8 @@ end
 
 local function isSafariAddressBarFocused(appObj)
   local axAppObj = AX.applicationElement(appObj)
-  local addressBarObject = UI.getUIElement(axAppObj, {{"AXWindow", "AXMain", true}, {"AXToolbar", 1}}):attributeValue("AXChildren")
+  local addressBarObject =
+    UI.getUIElement(axAppObj, {{"AXWindow", "AXMain", true}, {"AXToolbar", 1}}):attributeValue("AXChildren")
   for _, toolbarObject in ipairs(addressBarObject) do
     local toolbarObjectsChilds = toolbarObject:attributeValue("AXChildren")
     if toolbarObjectsChilds then
@@ -87,7 +109,12 @@ local function changeToABCAfterFocusingAddressBar(modal, keystroke)
 end
 
 local function moveFocusToMainAreaAfterOpeningLocation(appObj, modal, keystroke)
-  local UIElementHomeScreenView = {{"AXWindow", "AXRoleDescription", "standard window"}, {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXScrollArea", 1}}
+  local UIElementHomeScreenView = {
+    {"AXWindow", "AXRoleDescription", "standard window"},
+    {"AXSplitGroup", 1},
+    {"AXTabGroup", 1},
+    {"AXScrollArea", 1}
+  }
   if isSafariAddressBarFocused(appObj) then
     KeyCodes.setLayout("ABC")
   end
@@ -117,7 +144,8 @@ end
 
 local function pageNavigation(direction)
   local jsFile = script_path() .. "/navigatePages.js"
-  local script = [[
+  local script =
+    [[
     set _arg to "%s"
     set theFile to (POSIX file "%s" as alias)
     set theScript to read theFile as string
@@ -136,7 +164,8 @@ end
 
 local function goToFirstInputField()
   local jsFile = script_path() .. "/goToFirstInputField.js"
-  local script = [[
+  local script =
+    [[
     set theFile to (POSIX file "%s" as alias)
     set theScript to read theFile as string
     tell application "Safari"
@@ -154,7 +183,9 @@ end
 local function newBookmarksFolder(appObj)
   local title = appObj:focusedWindow():title()
   if string.match(title, "Bookmarks") then
-    UI.getUIElement(appObj, {{"AXWindow", 1}, {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXGroup", 1}, {"AXButton", 1}}):performAction("AXPress")
+    UI.getUIElement(appObj, {{"AXWindow", 1}, {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXGroup", 1}, {"AXButton", 1}}):performAction(
+      "AXPress"
+    )
   else
     appObj:selectMenuItem({"File", "New Private Window"})
   end
@@ -203,7 +234,8 @@ local function moveTab(direction)
   else
     args = {"-", "(index of last tab)", "after", "before"}
   end
-  local script = [[
+  local script =
+    [[
     tell application "Safari"
     tell window 1
       set sourceIndex to index of current tab
@@ -223,13 +255,16 @@ end
 
 local function getCurrentURL()
   -- applescript method
-  local _, currentURL, _ = AppleScript([[
+  local _, currentURL, _ =
+    AppleScript(
+    [[
     tell application "Safari"
       tell window 1
         return URL of current tab
       end tell
     end tell
-    ]])
+    ]]
+  )
   if not currentURL then
     return
   end

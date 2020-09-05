@@ -2,12 +2,12 @@ local FS = require("hs.fs")
 local window = require("hs.window")
 local ipc = require("hs.ipc")
 local application = require("hs.application")
-
-local hs = hs
+-- local hs = hs
 
 ----------------------------------
 -- HAMMERSPOON SETTINGS, VARIABLES
 ----------------------------------
+require("hs.keycodes").log.setLogLevel("error")
 application.enableSpotlightForNameSearches(true)
 hs.allowAppleScript(true)
 hs.autoLaunch(true)
@@ -19,15 +19,10 @@ ipc.cliUninstall()
 ipc.cliInstall()
 window.animationDuration = 0
 
-----------
--- LOGGING
-----------
-require("hs.keycodes").log.setLogLevel("error")
-
-------------------
--- GLOBAL SETTINGS
-------------------
--- load spoons
+---------
+-- SPOONS
+---------
+-- load
 local iterFn, dirObj = FS.dir("Spoons/")
 if iterFn then
   for file in iterFn, dirObj do
@@ -38,9 +33,28 @@ if iterFn then
   end
 end
 
+local hyper = {"shift", "cmd", "alt", "ctrl"}
+
+-- ORDER MATTERS!
 spoon.AppQuitter:start()
 spoon.AppWatcher:start()
 spoon.AppearanceWatcher:start()
 spoon.ConfigWatcher:start()
 spoon.DownloadsWatcher:start()
 spoon.WifiWatcher:start()
+spoon.KeyboardLayoutManager:bindHotKeys({toggleInputSource = {{}, 10}})
+spoon.Globals:bindHotKeys(
+  {
+    focusMenuBar = {{"cmd", "shift"}, "1"},
+    rightClick = {{"cmd", "shift", "alt", "ctrl"}, "o"}
+  }
+)
+spoon.WindowManager:bindHotKeys(
+  {
+    pushLeft = {hyper, "left"},
+    pushRight = {hyper, "right"},
+    pushUp = {hyper, "up"},
+    pushDown = {hyper, "down"},
+    maximize = {hyper, "return"}
+  }
+)

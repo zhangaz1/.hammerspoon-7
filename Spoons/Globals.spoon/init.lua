@@ -1,11 +1,11 @@
 local application = require("hs.application")
 local eventtap = require("hs.eventtap")
 local geometry = require("hs.geometry")
-local keycodes = require("hs.keycodes")
 local Mouse = require("hs.mouse")
-local pasteboard = require("hs.pasteboard")
 local Timer = require("hs.timer")
 local Hotkey = require("hs.hotkey")
+local keycodes = require("hs.keycodes")
+local pasteboard = require("hs.pasteboard")
 local Window = require("hs.window")
 local Task = require("hs.task")
 local ax = require("hs._asm.axuielement")
@@ -20,7 +20,7 @@ end
 local obj = {}
 
 obj.__index = obj
-obj.name = "GlobalScriptsAndHotkeys"
+obj.name = "Globals"
 obj.version = "1.0"
 obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
@@ -29,24 +29,42 @@ obj.spoonPath = script_path()
 
 local hyper = {"shift", "cmd", "alt", "ctrl"}
 local globalHotkeys = {
-  {{"cmd", "shift"}, "1", function() obj.moveFocusToMenuBar() end},
-  {hyper, "e", function() obj.launchBarEmoji() end},
-  {hyper, "o", function() obj.rightClick() end},
-  {hyper, "1", function() obj.notificationCenterClickButton(1) end},
-  {hyper, "2", function() obj.notificationCenterClickButton(2) end},
-  {hyper, "3", function() obj.notificationCenterClickButton(3) end},
-  {hyper, "n", function() obj.notificationCenterToggle() end},
-  {hyper, "l", function() obj.lookUpInDictionary() end},
+  {
+    hyper,
+    "1",
+    function()
+      obj.notificationCenterClickButton(1)
+    end
+  },
+  {
+    hyper,
+    "2",
+    function()
+      obj.notificationCenterClickButton(2)
+    end
+  },
+  {
+    hyper,
+    "3",
+    function()
+      obj.notificationCenterClickButton(3)
+    end
+  },
+  {
+    hyper,
+    "n",
+    function()
+      obj.notificationCenterToggle()
+    end
+  },
   -- window manager
-  {hyper, "c", function() Window.focusedWindow():centerOnScreen() end},
-  {hyper, "left", function() spoon.WindowManager.pushToCell("Left") end},
-  {hyper, "down", function() spoon.WindowManager.pushToCell("Down") end},
-  {hyper, "up", function() spoon.WindowManager.pushToCell("Up") end},
-  {hyper, "right", function() spoon.WindowManager.pushToCell("Right") end},
-  {hyper, "return", function() spoon.WindowManager.maximize() end},
-  {hyper, "w", function() spoon.WindowManagerModal:start() end},
-  {hyper, "m", function() spoon.MouseGrids:start() end},
-  {{}, 10, function() spoon.KeyboardLayoutManager:toggleInputSource() end, nil, nil}
+  {
+    hyper,
+    "w",
+    function()
+      spoon.WindowManagerModal:start()
+    end
+  }
 }
 
 local function notificationCenterGetPanel()
@@ -59,40 +77,6 @@ end
 local function notificationCenterGetButton(theButton)
   -- today = 1, notifications = 2
   return ui.getUIElement(notificationCenterGetPanel(), {{"AXRadioGroup", 1}, {"AXRadioButton", theButton}})
-end
-
-function obj.moveFocusToTheDock()
-  ui.getUIElement(application("Dock"), {{"AXList", 1}}):setAttributeValue("AXFocused", true)
-end
-
-function obj.lookUpInDictionary()
-  eventtap.keyStroke({"cmd"}, "c")
-  Timer.doAfter(
-    0.4,
-    function()
-      local arg = "dict://" .. pasteboard.getContents()
-      Task.new("/usr/bin/open", nil, {arg}):start()
-    end
-  )
-end
-
-function obj.showHelpMenu()
-  keycodes.setLayout("ABC")
-  local menuBar = ax.systemElementAtPosition({0, 0}):attributeValue("AXParent")
-  for _, v in ipairs(menuBar) do
-    if v:attributeValue("AXTitle") == "Help" then
-      return v:doPress()
-    end
-  end
-end
-
-function obj.moveFocusToMenuBar()
-  ax.systemElementAtPosition({0, 0}):attributeValue("AXParent")[2]:doPress()
-end
-
-function obj.rightClick()
-  local thisApp = application.frontmostApplication()
-  ax.applicationElement(thisApp):focusedUIElement():performAction("AXShowMenu")
 end
 
 function obj.notificationCenterToggle()
@@ -109,7 +93,8 @@ function obj.notificationCenterToggle()
   end
   currentMousePos = Mouse.getAbsolutePosition()
   local app = ax.applicationElement(application.applicationsForBundleID("com.apple.systemuiserver")[1])
-  local menuBarIconPos = ui.getUIElement(app, {{"AXMenuBar", 1}, {"AXMenuBarItem", "AXTitle", "Notification Center"}}):position()
+  local menuBarIconPos =
+    ui.getUIElement(app, {{"AXMenuBar", 1}, {"AXMenuBarItem", "AXTitle", "Notification Center"}}):position()
   local x = menuBarIconPos.x + 10
   local y = menuBarIconPos.y + 10
   eventtap.leftClick(geometry.point({x, y}))
@@ -163,12 +148,32 @@ function obj.notificationCenterClickButton(theButton)
         end
         ui.getUIElement(theWindow, {{"AXMenuButton", 1}}):setTimeout(0.2):doPress()
         button2:children()[1]:children()[1]:setAttributeValue("AXSelected", true)
-        --   ignoring application responses
-        --   tell application "System Events" to tell application process "Notification Center" to tell window %s to click menu button 1
-        --   end ignoring
+      --   ignoring application responses
+      --   tell application "System Events" to tell application process "Notification Center" to tell window %s to click menu button 1
+      --   end ignoring
       end
     end
   end
+end
+
+local function focusMenuBar()
+  ax.systemElementAtPosition({0, 0}):attributeValue("AXParent")[2]:doPress()
+end
+
+local function rightClick()
+  ax.applicationElement(application.frontmostApplication()):focusedUIElement():performAction("AXShowMenu")
+end
+
+function obj:bindHotKeys(_mapping)
+  local def = {
+    rightClick = function()
+      rightClick()
+    end,
+    focusMenuBar = function()
+      focusMenuBar()
+    end
+  }
+  hs.spoons.bindHotkeysToSpec(def, _mapping)
 end
 
 function obj:init()
@@ -178,3 +183,28 @@ function obj:init()
 end
 
 return obj
+
+-- local function lookUpInDictionary()
+--   eventtap.keyStroke({"cmd"}, "c")
+--   Timer.doAfter(
+--     0.4,
+--     function()
+--       local arg = "dict://" .. pasteboard.getContents()
+--       Task.new("/usr/bin/open", nil, {arg}):start()
+--     end
+--   )
+-- end
+
+-- local function moveFocusToTheDock()
+--   ui.getUIElement(application("Dock"), {{"AXList", 1}}):setAttributeValue("AXFocused", true)
+-- end
+
+-- local function showHelpMenu()
+--   Keycodes.setLayout("ABC")
+--   local menuBar = ax.systemElementAtPosition({0, 0}):attributeValue("AXParent")
+--   for _, v in ipairs(menuBar) do
+--     if v:attributeValue("AXTitle") == "Help" then
+--       return v:doPress()
+--     end
+--   end
+-- end

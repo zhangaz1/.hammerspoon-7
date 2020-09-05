@@ -37,9 +37,12 @@
     "com.apple.loginwindow",
     "com.apple.mail",
     "com.apple.Safari",
+    "com.apple.SecurityAgent",
+    "com.bjango.istatmenus",
     "com.contextsformac.Contexts",
     "com.googlecode.iterm2",
     "desktop.WhatsApp",
-    "org.hammerspoon.Hammerspoon"
+    "org.hammerspoon.Hammerspoon",
+    "com.sindresorhus.Dato"
   ]
 }

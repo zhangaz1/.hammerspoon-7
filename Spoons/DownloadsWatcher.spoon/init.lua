@@ -1,3 +1,6 @@
+--- === DownloadsWatcher ===
+--- Monitor the ~/Downloads folder, and execute a shell script that accepts newly downloaded files as arguments.
+--- The script can be found in the Spoon's folder.
 local PathWatcher = require("hs.pathwatcher")
 local Task = require("hs.task")
 local FS = require("hs.fs")
@@ -30,14 +33,17 @@ local function script_path()
 end
 
 local processedDownloadsInodesKey = "RBDownloadsWatcherProcessedDownloadsInodes"
-local spoonPath = script_path()
 local home = os.getenv("HOME")
 local downloadsDir = home .. "/Downloads"
-local shellScript = spoonPath .. "/process_path.sh"
+local shellScript = script_path() .. "/process_path.sh"
 local filesToIgnore = {".DS_Store", ".localized", ".", ".."}
+local processedDownloadsInodes = {}
 local pathWatcher
 local delayedTimer
-local processedDownloadsInodes = {}
+
+local function pathWatcherCallbackFn()
+  delayedTimer:start()
+end
 
 local function delayedTimerCallbackFn()
   local iteratedFiles = {}
@@ -83,18 +89,24 @@ local function delayedTimerCallbackFn()
   end
 end
 
-local function pathWatcherCallbackFn()
-  delayedTimer:start()
+--- DownlodasWatcher:stop()
+--- Method
+--- Stops the module.
+function obj.start()
+  pathWatcher:start()
+end
+
+--- DownlodasWatcher:start()
+--- Method
+--- Starts the module.
+function obj.start()
+  pathWatcher:start()
 end
 
 function obj.init()
   delayedTimer = Timer.delayed.new(1, delayedTimerCallbackFn)
   processedDownloadsInodes = Settings.get(processedDownloadsInodesKey)
   pathWatcher = PathWatcher.new(downloadsDir, pathWatcherCallbackFn)
-end
-
-function obj.start()
-  pathWatcher:start()
 end
 
 return obj
