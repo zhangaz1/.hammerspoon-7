@@ -15,7 +15,7 @@ obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
-local appWatcher = nil
+local _watcher = nil
 local frontAppBundleID = nil
 local windowFilter = nil
 
@@ -23,7 +23,7 @@ local function mainCallback(_, event, appObj)
   local newBundleID = appObj:bundleID()
 
   if event ~= "FROM_WINDOW_WATCHER" then
-    spoon.AppQuitter:update(event, newBundleID)
+    spoon.AppQuitter.update(event, newBundleID)
   end
 
   if event == Application.watcher.activated or event == "FROM_WINDOW_WATCHER" then
@@ -66,12 +66,12 @@ obj.transientApps = {
   ["Emoji & Symbols"] = true
 }
 
---- AppWatcher:stop()
+--- AppWatcher.stop()
 --- Method
 --- Starts the module.
-function obj:stop()
+function obj.stop()
   windowFilter:unsubscribe()
-  appWatcher:stop()
+  _watcher:stop()
 end
 
 --- AppWatcher:start()
@@ -85,7 +85,7 @@ function obj.start()
   }
   -- on reload, enter modal (if any) for the front app (saves an redundant cmd+tab)
   mainCallback(nil, Application.watcher.activated, Application.frontmostApplication())
-  appWatcher:start()
+  _watcher:start()
   windowFilter:setFilters(obj.transientApps):subscribe(allowedWindowFilterEvents, windowFilterCallback)
   local window = Application.frontmostApplication():mainWindow()
   if window then
@@ -93,9 +93,9 @@ function obj.start()
   end
 end
 
-function obj:init()
+function obj.init()
   windowFilter = Window.filter.new(false)
-  appWatcher = Application.watcher.new(mainCallback)
+  _watcher = Application.watcher.new(mainCallback)
 end
 
 return obj

@@ -34,7 +34,7 @@ local function patchWatcherCallbackFn(files, flagTables)
   end
 end
 
---- ConfigWatcher:toggle()
+--- ConfigWatcher.toggle()
 --- Method
 --- Toggles the module.
 function obj.toggle()
@@ -45,7 +45,7 @@ function obj.toggle()
   end
 end
 
---- ConfigWatcher:stop()
+--- ConfigWatcher.stop()
 --- Method
 --- Stops the module.
 function obj.stop()
@@ -54,7 +54,7 @@ function obj.stop()
   pathWatcher = nil
 end
 
---- ConfigWatcher:start()
+--- ConfigWatcher.start()
 --- Method
 --- Starts the module.
 function obj.start()
@@ -65,7 +65,7 @@ function obj.start()
   pathWatcher:start()
 end
 
---- ConfigWatcher:toggle()
+--- ConfigWatcher.toggle()
 --- Method
 --- Returns:
 ---  * A boolean, true if the module is active, otherwise false

@@ -2,7 +2,7 @@ local FS = require("hs.fs")
 local window = require("hs.window")
 local ipc = require("hs.ipc")
 local application = require("hs.application")
--- local hs = hs
+local hs = hs
 
 ----------------------------------
 -- HAMMERSPOON SETTINGS, VARIABLES
@@ -36,7 +36,50 @@ end
 local hyper = {"shift", "cmd", "alt", "ctrl"}
 
 -- ORDER MATTERS!
-spoon.AppQuitter:start()
+spoon.AppQuitter.start(
+  {
+    ["com.kapeli.dashdoc"] = {
+      quit = 6,
+      hide = 1
+    },
+    ["com.google.Chrome"] = {
+      quit = 4,
+      hide = 1
+    },
+    ["at.obdev.LaunchBar.ActionEditor"] = {
+      quit = 0.5,
+      hide = 0.2
+    },
+    ["com.apple.Preview"] = {
+      quit = 1,
+      hide = 0.2
+    },
+    ["com.toggl.toggldesktop.TogglDesktop"] = {
+      quit = 8,
+      hide = 0.2
+    },
+    ["com.latenightsw.ScriptDebugger7"] = {
+      quit = 1,
+      hide = 0.2
+    },
+    ["com.apple.iphonesimulator"] = {
+      quit = 1,
+      hide = 0.2
+    }
+  },
+  {
+    "at.obdev.LaunchBar",
+    "com.apple.mail",
+    "com.apple.Safari",
+    "com.bjango.istatmenus",
+    "com.contextsformac.Contexts",
+    "com.googlecode.iterm2",
+    "desktop.WhatsApp",
+    "org.hammerspoon.Hammerspoon",
+    "com.sindresorhus.Dato"
+  }
+)
+
 spoon.AppWatcher:start()
 spoon.AppearanceWatcher:start()
 spoon.ConfigWatcher:start()
@@ -46,7 +89,7 @@ spoon.KeyboardLayoutManager:bindHotKeys({toggleInputSource = {{}, 10}})
 spoon.Globals:bindHotKeys(
   {
     focusMenuBar = {{"cmd", "shift"}, "1"},
-    rightClick = {{"cmd", "shift", "alt", "ctrl"}, "o"}
+    rightClick = {hyper, "o"}
   }
 )
 spoon.WindowManager:bindHotKeys(
@@ -56,5 +99,13 @@ spoon.WindowManager:bindHotKeys(
     pushUp = {hyper, "up"},
     pushDown = {hyper, "down"},
     maximize = {hyper, "return"}
+  }
+)
+spoon.NotificationCenter:bindHotKeys(
+  {
+    firstButton = {hyper, "1"},
+    secondButton = {hyper, "2"},
+    thirdButton = {hyper, "3"},
+    toggle = {hyper, "n"}
   }
 )

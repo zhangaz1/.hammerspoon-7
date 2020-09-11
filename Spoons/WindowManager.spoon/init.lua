@@ -12,13 +12,16 @@ obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
-local screenFrame = Screen.mainScreen():frame()
-local minX = screenFrame.x -- not simply zero, because of the menu bar
-local midX = screenFrame.w / 2
-local maxX = screenFrame.w
-local minY = screenFrame.y
-local midY = screenFrame.h / 2
-local maxY = screenFrame.h
+local mainScreen = Screen.mainScreen()
+local usableFrame = mainScreen:frame()
+local fullFrame = mainScreen:fullFrame()
+local menuBarHeight = fullFrame.h - usableFrame.h
+local minX = usableFrame.x -- = 0.0
+local midX = usableFrame.w / 2
+local maxX = usableFrame.w
+local minY = usableFrame.y -- not simply zero, because of the menu bar
+local midY = usableFrame.h / 2
+local maxY = usableFrame.h
 
 -- POSSIBLE CELLS --
 local possibleCells = {
@@ -37,14 +40,14 @@ local possibleCells = {
     onDown = "southEast"
   },
   southWest = {
-    rect = Geometry.rect({minX, midY, midX, midY}),
+    rect = Geometry.rect({minX, midY, midX, midY + menuBarHeight}),
     onLeft = "west",
     onRight = "southEast",
     onUp = "northWest",
     onDown = "south"
   },
   southEast = {
-    rect = Geometry.rect({midX, midY, midX, midY}),
+    rect = Geometry.rect({midX, midY, midX, midY + menuBarHeight}),
     onLeft = "southWest",
     onRight = "east",
     onUp = "northEast",
@@ -65,7 +68,7 @@ local possibleCells = {
     onDown = "southEast"
   },
   south = {
-    rect = Geometry.rect({minX, midY, maxX, midY}),
+    rect = Geometry.rect({minX, midY, maxX, midY + menuBarHeight}),
     onLeft = "southWest",
     onRight = "southEast",
     onUp = "north",
@@ -92,7 +95,6 @@ local fallbacks = {Up = "north", Down = "south", Right = "east", Left = "west"}
 local function pushToCell(direction)
   local frontWindow = Window.frontmostWindow()
   local frontWindowFrame = frontWindow:frame()
-  -- local targetCell
   for _, cellProperties in pairs(possibleCells) do
     if frontWindowFrame:equals(cellProperties.rect) then
       local targetCellName = cellProperties["on" .. direction]
@@ -103,22 +105,6 @@ local function pushToCell(direction)
   end
   local targetCellName = fallbacks[direction]
   frontWindow:setFrame(possibleCells[targetCellName].rect)
-end
-
-local function pushLeft()
-  pushToCell("Left")
-end
-
-local function pushDown()
-  pushToCell("Down")
-end
-
-local function pushUp()
-  pushToCell("Up")
-end
-
-local function pushRight()
-  pushToCell("Right")
 end
 
 local function maximize()
@@ -138,16 +124,16 @@ function obj:bindHotKeys(_mapping)
       maximize()
     end,
     pushLeft = function()
-      pushLeft()
+      pushToCell("Left")
     end,
     pushRight = function()
-      pushRight()
+      pushToCell("Right")
     end,
     pushDown = function()
-      pushDown()
+      pushToCell("Down")
     end,
     pushUp = function()
-      pushUp()
+      pushToCell("Up")
     end
   }
   Spoons.bindHotkeysToSpec(def, _mapping)
