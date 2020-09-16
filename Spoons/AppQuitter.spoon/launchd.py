@@ -4,16 +4,19 @@
 import time
 import plistlib
 import os
-from subprocess import check_output
+import subprocess
 from datetime import datetime
 
 # https://stackoverflow.com/questions/6337513/how-can-i-debug-a-launchd-script-that-doesnt-run-on-startup
 
 
 def run_applescript(script, app):
-    result = check_output(["/usr/bin/osascript", "-e", "on run argv",
-                           "-e", script, "-e", "end run", app]).rstrip()
-    return result
+    try:
+        result = subprocess.check_output(["/usr/bin/osascript", "-e", "on run argv",
+                                          "-e", script, "-e", "end run", app]).rstrip()
+        return result
+    except subprocess.CalledProcessError as err:
+        print("catched error: {}".format(err))
 
 
 def is_running(app):

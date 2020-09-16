@@ -37,7 +37,7 @@ local home = os.getenv("HOME")
 local downloadsDir = home .. "/Downloads"
 local shellScript = script_path() .. "/process_path.sh"
 local filesToIgnore = {".DS_Store", ".localized", ".", ".."}
-local processedDownloadsInodes = {}
+local processedDownloadsInodes
 local pathWatcher
 local delayedTimer
 
@@ -66,13 +66,13 @@ local function delayedTimerCallbackFn()
       end
     end
   end
-  local newPlistSetting = processedDownloadsInodes
   if tableCount(iteratedFiles) == 0 then
     print("DownloadsWatcher: ~/Downloads emptied, clearing inodes list")
-    newPlistSetting = {}
+    Settings.clear(processedDownloadsInodesKey)
+    processedDownloadsInodes = {}
+  else
+    Settings.set(processedDownloadsInodesKey, processedDownloadsInodes)
   end
-  Settings.set(processedDownloadsInodesKey, newPlistSetting)
-  -- local collectedPaths = {}
   for _, path in ipairs(pathsToProcess) do
     spoon.StatusBar.progress.start()
     Task.new(
@@ -81,7 +81,9 @@ local function delayedTimerCallbackFn()
         if string.match(stderr, "%s+") then
           print("DownloadsWatcher shell script stderr: ", stderr)
         end
-        Pasteboard.setContents(stdout)
+        if string.match(stdout, "/Downloads/") then
+          Pasteboard.setContents(stdout)
+        end
         spoon.StatusBar.progress.stop()
       end,
       {path}
@@ -89,24 +91,27 @@ local function delayedTimerCallbackFn()
   end
 end
 
---- DownlodasWatcher:stop()
+--- DownloadsWatcher:stop()
 --- Method
 --- Stops the module.
-function obj.start()
-  pathWatcher:start()
+function obj:stop()
+  pathWatcher:stop()
+  return self
 end
 
---- DownlodasWatcher:start()
+--- DownloadsWatcher:start()
 --- Method
 --- Starts the module.
-function obj.start()
+function obj:start()
   pathWatcher:start()
+  return self
 end
 
-function obj.init()
+function obj:init()
   delayedTimer = Timer.delayed.new(1, delayedTimerCallbackFn)
-  processedDownloadsInodes = Settings.get(processedDownloadsInodesKey)
+  processedDownloadsInodes = Settings.get(processedDownloadsInodesKey) or {}
   pathWatcher = PathWatcher.new(downloadsDir, pathWatcherCallbackFn)
+  return self
 end
 
 return obj

@@ -21,14 +21,16 @@ parsepath() {
 	printf "%s\n" "${dir}/${name_no_ext}"
 }
 
+
 output=""
 case "${path}" in
 *".zip")
 	# a naive check for a wordpress plugin
 	# TODO: find a better solution
-	if unzip -l "${path}" | grep php; then
-		exit 0
-	fi
+	# if unzip -l "${path}" | grep php; then
+		# echo "Skipping unarchiving a WordPress plugin/theme"
+		# exit 0
+	# fi
 	target="$(parsepath "${path}")"
 	mkdir -p "${target}"
 	ditto -xk "${path}" "${target}"

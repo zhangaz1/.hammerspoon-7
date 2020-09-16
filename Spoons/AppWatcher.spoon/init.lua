@@ -23,7 +23,7 @@ local function mainCallback(_, event, appObj)
   local newBundleID = appObj:bundleID()
 
   if event ~= "FROM_WINDOW_WATCHER" then
-    spoon.AppQuitter.update(event, newBundleID)
+    spoon.AppQuitter:update(event, newBundleID)
   end
 
   if event == Application.watcher.activated or event == "FROM_WINDOW_WATCHER" then
@@ -62,22 +62,24 @@ obj.transientApps = {
   ["LaunchBar"] = {allowRoles = "AXSystemDialog"},
   ["1Password 7"] = {allowRoles = "AXSystemDialog"},
   ["Spotlight"] = {allowRoles = "AXSystemDialog"},
+  ["Paletro"] = {allowRoles = "AXSystemDialog"},
   ["Contexts"] = false,
   ["Emoji & Symbols"] = true
 }
 
 --- AppWatcher.stop()
 --- Method
---- Starts the module.
-function obj.stop()
+--- Stops the module.
+function obj:stop()
   windowFilter:unsubscribe()
   _watcher:stop()
+  return self
 end
 
 --- AppWatcher:start()
 --- Method
 --- Starts the module.
-function obj.start()
+function obj:start()
   local allowedWindowFilterEvents = {
     Window.filter.windowCreated,
     Window.filter.windowDestroyed,
@@ -91,11 +93,13 @@ function obj.start()
   if window then
     windowFilterCallback(window, nil, "windowFocused")
   end
+  return self
 end
 
-function obj.init()
+function obj:init()
   windowFilter = Window.filter.new(false)
   _watcher = Application.watcher.new(mainCallback)
+  return self
 end
 
 return obj

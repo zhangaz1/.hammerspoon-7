@@ -98,7 +98,8 @@ spoon.WindowManager:bindHotKeys(
     pushRight = {hyper, "right"},
     pushUp = {hyper, "up"},
     pushDown = {hyper, "down"},
-    maximize = {hyper, "return"}
+    maximize = {hyper, "return"},
+    center = {hyper, "c"}
   }
 )
 spoon.NotificationCenter:bindHotKeys(

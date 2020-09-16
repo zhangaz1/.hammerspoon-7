@@ -1,7 +1,5 @@
 --- === Safari ===
----
 --- Safari automations.
----
 
 local EventTap = require("hs.eventtap")
 local AppleScript = require("hs.osascript").applescript
@@ -14,7 +12,7 @@ local UI = require("rb.ui")
 local Util = require("rb.util")
 local AX = require("hs._asm.axuielement")
 local Observer = AX.observer
-
+local hs = hs
 local spoon = spoon
 
 local function script_path()
@@ -40,7 +38,7 @@ local layoutsPerURLKey = "RBSafariLayoutsForURL"
 
 local function moveFocusToSafariMainArea(appObj, includeSidebar)
   -- ui scripting notes:
-  -- when the statusbar overlay shows, it's the first window. you should look for the "Main" window instread.
+  -- when the status bar overlay shows, it's the first window. you should look for the "Main" window instead.
   -- "pane1" = is either the main web area, or the sidebar
   local UIElementSidebar = {
     {"AXWindow", "AXRoleDescription", "standard window"},
@@ -183,9 +181,16 @@ end
 local function newBookmarksFolder(appObj)
   local title = appObj:focusedWindow():title()
   if string.match(title, "Bookmarks") then
-    UI.getUIElement(appObj, {{"AXWindow", 1}, {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXGroup", 1}, {"AXButton", 1}}):performAction(
-      "AXPress"
-    )
+    UI.getUIElement(
+      appObj,
+      {
+        {"AXWindow", 1},
+        {"AXSplitGroup", 1},
+        {"AXTabGroup", 1},
+        {"AXGroup", 1},
+        {"AXButton", 1}
+      }
+    ):performAction("AXPress")
   else
     appObj:selectMenuItem({"File", "New Private Window"})
   end
@@ -254,7 +259,7 @@ local function moveTab(direction)
 end
 
 local function getCurrentURL()
-  -- applescript method
+  -- AppleScript method
   local _, currentURL, _ =
     AppleScript(
     [[
@@ -403,12 +408,14 @@ function obj:saveLayoutForCurrentURL(newLayout)
   local currentURL = getCurrentURL()
   settingsTable[currentURL] = newLayout
   Settings.set(layoutsPerURLKey, settingsTable)
+  return self
 end
 
 function obj:start(appObj)
   _appObj = appObj
   _modal:enter()
   addObserver(appObj)
+  return self
 end
 
 function obj:stop()
@@ -417,6 +424,7 @@ function obj:stop()
     _observer:stop()
     _observer = nil
   end
+  return self
 end
 
 function obj:init()
@@ -427,6 +435,7 @@ function obj:init()
   for _, v in ipairs(hotkeys) do
     _modal:bind(table.unpack(v))
   end
+  return self
 end
 
 return obj

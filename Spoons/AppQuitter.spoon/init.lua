@@ -42,6 +42,10 @@ local function script_path()
 end
 
 local function startTimersForBackgroundLaunchedOrDeactivatedApp(bundleID)
+  -- TODO: find better fix
+  if not bundleID then
+    return
+  end
   -- the sole purpose of this function is to start/update the timer
   -- when an app is deactivated or launched (in the background).
   local now = os.time()
@@ -55,8 +59,8 @@ local function startTimersForBackgroundLaunchedOrDeactivatedApp(bundleID)
   if not timersPlist then
     timersPlist = {}
   end
+  print("OFFENSIVE KEY ==>" .. (bundleID or "nil"))
   if not timersPlist[bundleID] then
-    print("OFFENSIVE KEY ==>" .. bundleID)
     timersPlist[bundleID] = {}
   end
   timersPlist[bundleID] = {
@@ -66,13 +70,13 @@ local function startTimersForBackgroundLaunchedOrDeactivatedApp(bundleID)
   Plist.write(TIMERS_PLIST_PATH, timersPlist)
 end
 
---- AppQuitter.update(event, bundleID)
+--- AppQuitter:update(event, bundleID)
 --- Method
 --- Updates the module's timers.
 --- Parameters:
 ---  * event - A string, one of the `hs.application.watcher` event constants.
----  * bunldeID - A string, the bundle indetifier of event-triggering app.
-function obj.update(event, bundleID)
+---  * bundleID - A string, the bundle identifier of event-triggering app.
+function obj:update(event, bundleID)
   -- bail out if app is blacklisted
   if FnUtils.contains(blacklist, bundleID) then
     return
@@ -80,6 +84,7 @@ function obj.update(event, bundleID)
   if event == Application.watcher.deactivated or event == Application.watcher.launched then
     startTimersForBackgroundLaunchedOrDeactivatedApp(bundleID)
   end
+  return self
 end
 
 --- AppQuitter.start()
@@ -94,7 +99,7 @@ end
 ---     * The values for each keys are integers, and they should correspond to the period (in hours) of inactivity
 ---     before an action takes place. Example: ["com.apple.Safari"] = {quit = 1, hide = 0.2}.
 ---     This will set a rule for Safari to quit after 1 hour and hide after 12 minutes.
---- * list - A table of strings, each represting the bundle identifier of the app you want to be ignored.
+--- * list - A table of strings, each representing the bundle identifier of the app you want to be ignored.
 --- * explicit - a boolean. If set to true, which is the default, only apps included in the `rules` parameter will be
 ---   monitored by the module. If false, apps not included in the table will be watched as well,
 ---   just with fallback timing values (4 hours of inactivity before an app quits, 10 minutes before it hides).
@@ -177,7 +182,7 @@ function obj.start(_rules, _blacklist, _explicitMode)
   for _, appID in ipairs(dockApps) do
     if not FnUtils.contains(blacklist, appID) and not FnUtils.contains(appsWithRunningTimers, appID) then
       -- ... unless they're blacklisted
-      -- dont overwrite apps with running timers
+      -- don't overwrite apps with running timers
       startTimersForBackgroundLaunchedOrDeactivatedApp(appID)
     end
   end

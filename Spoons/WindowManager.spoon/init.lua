@@ -118,6 +118,10 @@ local function maximize()
   end
 end
 
+local function center()
+  Window.frontmostWindow():centerOnScreen()
+end
+
 function obj:bindHotKeys(_mapping)
   local def = {
     maximize = function()
@@ -134,6 +138,9 @@ function obj:bindHotKeys(_mapping)
     end,
     pushUp = function()
       pushToCell("Up")
+    end,
+    center = function()
+      center()
     end
   }
   Spoons.bindHotkeysToSpec(def, _mapping)
