@@ -1,8 +1,7 @@
 --- === NotificationCenter ===
----
 --- Notification Center automations.
 local ui = require("rb.ui")
-local ax = require("hs._asm.axuielement")
+local ax = require("hs.axuielement")
 local application = require("hs.application")
 local Mouse = require("hs.mouse")
 local eventtap = require("hs.eventtap")
@@ -45,7 +44,7 @@ local function toggle()
   currentMousePos = Mouse.getAbsolutePosition()
   local app = ax.applicationElement(application.applicationsForBundleID("com.apple.systemuiserver")[1])
   local menuBarIconPos =
-    ui.getUIElement(app, {{"AXMenuBar", 1}, {"AXMenuBarItem", "AXTitle", "Notification Center"}}):position()
+    ui.getUIElement(app, {{"AXMenuBar", 1}, {"AXMenuBarItem", "AXTitle", "Notification Center"}}):attributeValue("AXPosition")
   local x = menuBarIconPos.x + 10
   local y = menuBarIconPos.y + 10
   eventtap.leftClick(geometry.point({x, y}))
@@ -53,7 +52,7 @@ local function toggle()
   Timer.doAfter(
     0.2,
     function()
-      notificationCenterGetButton(1):doPress()
+      notificationCenterGetButton(1):performAction("AXPress")
     end
   )
 end
@@ -61,14 +60,14 @@ end
 local function clickButton(theButton)
   local app = application.applicationsForBundleID("com.apple.notificationcenterui")[1]
   local axApp = ax.applicationElement(app)
-  local allWindows = axApp:children()
+  local allWindows = axApp:attributeValue("AXChildren")
   for _, theWindow in ipairs(allWindows) do
     local button1 = ui.getUIElement(theWindow, {{"AXButton", 1}})
     -- checking for a banner/alert style notification
     -- if a banner, move mouse cursor to reveal the buttons
     -- "button" 3 -> click on the banner and return
     if not button1 or theButton == 3 then
-      local windowPosition = theWindow:position()
+      local windowPosition = theWindow:attributeValue("AXPosition")
       local x = windowPosition.x + 10
       local y = windowPosition.y + 10
       local originalPosition = Mouse.getAbsolutePosition()
@@ -88,22 +87,30 @@ local function clickButton(theButton)
     end
     if button1 then
       if theButton == 1 then
-        button1:doPress()
+        button1:performAction("AXPress")
         return
       end
       if theButton == 2 then
         local button2 = ui.getUIElement(theWindow, {{"AXMenuButton", 1}})
         if not button2 then
-          ui.getUIElement(theWindow, {{"AXButton", 2}}):doPress()
+          ui.getUIElement(theWindow, {{"AXButton", 2}}):performAction("AXPress")
           return
         end
-        ui.getUIElement(theWindow, {{"AXMenuButton", 1}}):setTimeout(0.2):doPress()
-        button2:children()[1]:children()[1]:setAttributeValue("AXSelected", true)
+        ui.getUIElement(theWindow, {{"AXMenuButton", 1}}):setTimeout(0.2):performAction("AXPress")
+        button2:attributeValue("AXChildren")[1]:attributeValue("AXChildren")[1]:setAttributeValue("AXSelected", true)
       end
     end
   end
 end
 
+--- NotificationCenter:bindHotkeys(_mapping)
+--- Method
+--- Bind hotkeys for this module. The `_mapping` table keys correspond to the following functionalities:
+---   * firstButton - clicks on the first (or only) button of a notification center banner. If banners are configured through system preferences to be transient, a mouse move operation will be performed first to try and reveal the button, should it exists.
+---   * secondButton - clicks on the second button of a notification center banner. If banners are configured through system preferences to be transient, a mouse move operation will be performed first to try and reveal the button, should it exists. If the button is in fact a menu button (that is, it offers a dropdown of additional options), revealing the menu will be favored over a simple click.
+---   * toggle - Reveal the notification center itself (side bar). Once revealed, a second call of this function will switch between the panel's 2 different modes ("Today" and "Notifications"). Closing the panel could be done normally, e.g. by pressing escape.
+--- Parameters:
+---  * _mapping. See the Spoon plugin documentation for the implementation.
 function obj:bindHotKeys(_mapping)
   local def = {
     firstButton = function()

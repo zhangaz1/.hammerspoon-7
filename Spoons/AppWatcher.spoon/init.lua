@@ -1,7 +1,5 @@
 --- === AppWatcher ===
----
---- an `hs.application.watcher` instance bolstered by `hs.window.filter` to catch and react on activation of "transient"
---- apps, such as Spotlight and the 1Password 7 mini window.
+--- An `hs.application.watcher` instance bolstered by `hs.window.filter` to catch and react on activation of "transient" apps, such as Spotlight and the 1Password 7 mini window.
 local Application = require("hs.application")
 local Window = require("hs.window")
 local spoon = spoon
@@ -56,8 +54,7 @@ end
 
 --- AppWatcher.transientApps
 --- Variable
---- a table containing apps you consider to be transient and want to be taken into account by the window filter.
---- elements should have the same structure as the `filters` parameter of hs.window.filter `setFilters` method.
+--- A table containing apps you consider to be transient and want to be taken into account by the window filter. Elements should have the same structure as the `filters` parameter of hs.window.filter `setFilters` method.
 obj.transientApps = {
   ["LaunchBar"] = {allowRoles = "AXSystemDialog"},
   ["1Password 7"] = {allowRoles = "AXSystemDialog"},

@@ -1,7 +1,5 @@
---- === AppearanaceWatcher ===
----
+--- === AppearanceWatcher ===
 --- Perform actions when the system's theme changes.
----
 --- Actions can be configured by editing the shell script inside the Spoon's directory.
 
 local task = require("hs.task")
@@ -51,7 +49,7 @@ local function setStyle()
   end
 end
 
---- AppearanaceWatcher:stop()
+--- AppearanceWatcher:stop()
 --- Method
 --- Initializes this module.
 function obj.init()
@@ -64,7 +62,7 @@ function obj.init()
   )
 end
 
---- AppearanaceWatcher:stop()
+--- AppearanceWatcher:stop()
 --- Method
 --- Stops this module.
 function obj.stop()
@@ -73,7 +71,7 @@ function obj.stop()
   settings.set(appearanceWatcherActiveKey, false)
 end
 
---- AppearanaceWatcher:start()
+--- AppearanceWatcher:start()
 --- Method
 --- starts this module.
 function obj.start()
@@ -85,7 +83,7 @@ function obj.start()
   settings.set(appearanceWatcherActiveKey, true)
 end
 
---- AppearanaceWatcher:toggle()
+--- AppearanceWatcher:toggle()
 --- Method
 --- Toggles this module.
 function obj.toggle()
@@ -96,10 +94,9 @@ function obj.toggle()
   end
 end
 
---- AppearanaceWatcher:isActive()
+--- AppearanceWatcher:isActive()
 --- Method
 --- Determines whether module is active.
----
 --- Returns:
 ---  * A boolean, true if the module's watcher is active, otherwise false
 function obj.isActive()

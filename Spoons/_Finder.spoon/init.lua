@@ -1,12 +1,11 @@
 --- === Finder ===
----
 --- Finder automations.
 
 local eventtap = require("hs.eventtap")
 local geometry = require("hs.geometry")
 local osascript = require("hs.osascript")
 local timer = require("hs.timer")
-local ax = require("hs._asm.axuielement")
+local ax = require("hs.axuielement")
 local ui = require("rb.ui")
 local Util = require("rb.util")
 local GlobalChooser = require("rb.fuzzychooser")
@@ -77,7 +76,7 @@ local function rightSizeColumn(appObj, arg)
   -- we'll get the position of the column-resize icon based on the selected scroll area's AXFrame
   -- each scroll area represents a Finder column (scroll area 1 = column 1...)
   if currentView == "clvw" then
-    coords = axApp:focusedUIElement():attributeValue("AXParent"):attributeValue("AXFrame")
+    coords = axApp:attributeValue("AXFocusedUIElement"):attributeValue("AXParent"):attributeValue("AXFrame")
     x = (coords.x + coords.w) - 10
     y = (coords.y + coords.h) - 10
   elseif currentView == "lsvw" then
@@ -155,7 +154,7 @@ local function getMainArea(appObj)
   )
   -- column view: axbrowser 1; axscrollarea 1 for icon, list and gallery
   if mainArea then
-    return mainArea:children()[1]
+    return mainArea:attributeValue("AXChildren")[1]
   end
 end
 
@@ -178,7 +177,7 @@ local function isSearchModeActive(appObj)
   if string.match(title, "^Searching “.+”$") then
     -- if search field is focused
     local axApp = ax.applicationElement(appObj)
-    if axApp:focusedUIElement():attributeValue("AXSubrole") == "AXSearchField" then
+    if axApp:attributeValue("AXFocusedUIElement"):attributeValue("AXSubrole") == "AXSearchField" then
       return true
     end
   end

@@ -1,9 +1,8 @@
 --- === ActivityMonitor ===
----
 --- Activity Monitor.app automations.
 
 local Hotkey = require("hs.hotkey")
-local ax = require("hs._asm.axuielement")
+local ax = require("hs.axuielement")
 local ui = require("rb.ui")
 
 local obj = {}

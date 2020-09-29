@@ -1,5 +1,4 @@
 --- === AdobeInDesign ===
----
 --- Adobe InDesign automations.
 local Hotkey = require("hs.hotkey")
 local EventTap = require("hs.eventtap")

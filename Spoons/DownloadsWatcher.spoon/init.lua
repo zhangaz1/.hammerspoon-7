@@ -74,7 +74,7 @@ local function delayedTimerCallbackFn()
     Settings.set(processedDownloadsInodesKey, processedDownloadsInodes)
   end
   for _, path in ipairs(pathsToProcess) do
-    spoon.StatusBar.progress.start()
+    spoon.StatusBar:addTask()
     Task.new(
       shellScript,
       function(_, stdout, stderr)
@@ -84,7 +84,7 @@ local function delayedTimerCallbackFn()
         if string.match(stdout, "/Downloads/") then
           Pasteboard.setContents(stdout)
         end
-        spoon.StatusBar.progress.stop()
+        spoon.StatusBar:removeTask()
       end,
       {path}
     ):start()

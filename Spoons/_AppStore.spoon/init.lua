@@ -1,5 +1,4 @@
 --- === AppStore ===
----
 --- AppStore automations.
 local UI = require("rb.ui")
 local Hotkey = require("hs.hotkey")

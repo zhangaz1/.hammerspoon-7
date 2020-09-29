@@ -1,5 +1,4 @@
 --- === AdobeIllustrator ===
----
 --- Adobe Illustrator automations.
 local Hotkey = require("hs.hotkey")
 local EventTap = require("hs.eventtap")

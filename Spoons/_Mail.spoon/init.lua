@@ -1,11 +1,10 @@
 --- === Mail ===
----
 --- Mail.app automations.
 
 local osascript = require("hs.osascript")
 local eventtap = require("hs.eventtap")
 local geometry = require("hs.geometry")
-local ax = require("hs._asm.axuielement")
+local ax = require("hs.axuielement")
 local ui = require("rb.ui")
 local fuzzyChooser = require("rb.fuzzychooser")
 local Util = require("rb.util")

@@ -1,3 +1,6 @@
+--- === StatusBar ===
+--- Enables a status menu item with the familiar Hammerspoon logo, but with customizable contents and a flashing mode to signal ongoing operations.
+
 local HSApplication = require("hs.application")
 local HSMenubar = require("hs.menubar")
 local HSTimer = require("hs.timer")
@@ -18,25 +21,44 @@ obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
+local menuBarItem
 local spoonPath = script_path()
 local regularIconPath = spoonPath .. "/statusicon.pdf"
 local fadedIconPath = spoonPath .. "/statusicon_faded.pdf"
 local current = "regular"
+local flashingIconTimer
+local taskQueue = 0
 
-obj.progress = {}
-obj.menuBarItem = nil
-obj.flashingIconTimer = nil
-obj.taskQueue = 0
+--- StatusBar.menuTable
+--- Variable
+--- TODO
+obj.menuTable = nil
 
-local function menuTable()
-  local dropdownMenuTable = {
-    -- {
-    --   title = "Watch for input events",
-    --   fn = function()
-    --     spoon.InputWatcher:toggle()
-    --   end,
-    --   checked = spoon.InputWatcher.watcher:isEnabled()
-    -- },
+--- StatusBar:addTask()
+--- Method
+--- TODO
+function obj:addTask()
+  if not flashingIconTimer:running() then
+    flashingIconTimer:start()
+  end
+  taskQueue = taskQueue + 1
+  return self
+end
+
+--- StatusBar:removeTask()
+--- Method
+--- TODO
+function obj:removeTask()
+  taskQueue = taskQueue - 1
+  if taskQueue < 1 then
+    menuBarItem:setIcon(regularIconPath)
+    flashingIconTimer:stop()
+  end
+  return self
+end
+
+function obj:start()
+  obj.menuTable = {
     {
       title = "Watch for config changes",
       fn = function()
@@ -66,41 +88,33 @@ local function menuTable()
       end
     }
   }
-  return dropdownMenuTable
-end
-
-function obj.progress.start()
-  if not obj.flashingIconTimer:running() then
-    obj.flashingIconTimer:start()
-  end
-  obj.taskQueue = obj.taskQueue + 1
-end
-
-function obj.progress.stop()
-  obj.taskQueue = obj.taskQueue - 1
-  if obj.taskQueue < 1 then
-    obj.menuBarItem:setIcon(regularIconPath)
-    obj.flashingIconTimer:stop()
-  end
-end
-
-function obj:init()
-  obj.menuBarItem = HSMenubar.new():setIcon(regularIconPath):setMenu(menuTable)
-  obj.flashingIconTimer =
+  menuBarItem = HSMenubar.new():setIcon(regularIconPath):setMenu(obj.menuTable)
+  flashingIconTimer =
     HSTimer.new(
     0.2,
     function()
       if current == "regular" then
-        obj.menuBarItem:setIcon(regularIconPath)
+        menuBarItem:setIcon(regularIconPath)
         current = "faded"
       else
-        obj.menuBarItem:setIcon(fadedIconPath)
+        menuBarItem:setIcon(fadedIconPath)
         current = "regular"
       end
     end
   )
-  HSURLEvent.bind("start-task-with-progress", obj.progress.start)
-  HSURLEvent.bind("stop-task-with-progress", obj.progress.stop)
+  HSURLEvent.bind(
+    "start-task-with-progress",
+    function()
+      obj:addTask()
+    end
+  )
+  HSURLEvent.bind(
+    "stop-task-with-progress",
+    function()
+      obj:removeTask()
+    end
+  )
+  return self
 end
 
 return obj

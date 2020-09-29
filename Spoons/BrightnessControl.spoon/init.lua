@@ -1,7 +1,5 @@
 --- === BrightnessControl ===
----
---- Enters a transient modal in which the left and right arrow keys
---- decrease and increase the system's brightness, respectively.
+--- Enters a transient modal in which the left and right arrow keys decrease and increase the system's brightness, respectively.
 
 local Hotkey = require("hs.hotkey")
 local Eventtap = require("hs.eventtap")
@@ -46,14 +44,12 @@ end
 
 --- BrightnessControl.increaseBrightnessKey
 --- Variable
---- A hotkey that increases brightness. It's a table that must include 2 keys, "mods" and "key", each must be of the
---- same type as the first 2 parameters to the `hs.hotkey.bind` method. Defaults to →.
+--- A hotkey that increases brightness. It's a table that must include 2 keys, "mods" and "key", each must be of the same type as the first 2 parameters to the `hs.hotkey.bind` method. Defaults to →.
 obj.increaseBrightnessKey = {mods = {}, key = "right"}
 
 --- BrightnessControl.decreaseBrightnessKey
 --- Variable
---- A hotkey that decreases brightness. It's a table that must include 2 keys, "mods" and "key", each must be of the
---- same type as the first 2 parameters to the `hs.hotkey.bind` method. Defaults to ←.
+--- A hotkey that decreases brightness. It's a table that must include 2 keys, "mods" and "key", each must be of the same type as the first 2 parameters to the `hs.hotkey.bind` method. Defaults to ←.
 obj.decreaseBrightnessKey = {mods = {}, key = "left"}
 
 function obj.init()

@@ -58,4 +58,4 @@ case "${path}" in
 	output="${path}"
 	;;
 esac
-printf "%s" "${output}"
+printf "%s\n" "${output}"
