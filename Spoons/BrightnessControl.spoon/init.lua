@@ -1,5 +1,5 @@
 --- === BrightnessControl ===
---- Enters a transient modal in which the left and right arrow keys decrease and increase the system's brightness, respectively.
+--- Enters a transient mode in which the left and right arrow keys decrease and increase the system's brightness, respectively.
 
 local Hotkey = require("hs.hotkey")
 local Eventtap = require("hs.eventtap")

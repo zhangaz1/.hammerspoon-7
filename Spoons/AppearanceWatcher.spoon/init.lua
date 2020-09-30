@@ -1,6 +1,5 @@
 --- === AppearanceWatcher ===
---- Perform actions when the system's theme changes.
---- Actions can be configured by editing the shell script inside the Spoon's directory.
+--- Perform actions when the system's theme changes. Actions can be configured by editing the shell script inside the Spoon's directory.
 
 local task = require("hs.task")
 local settings = require("hs.settings")
@@ -49,9 +48,6 @@ local function setStyle()
   end
 end
 
---- AppearanceWatcher:stop()
---- Method
---- Initializes this module.
 function obj.init()
   watcher =
     PathWatcher.new(

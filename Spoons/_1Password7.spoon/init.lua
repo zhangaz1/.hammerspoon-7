@@ -2,6 +2,7 @@
 --- 1Password automations.
 local Hotkey = require("hs.hotkey")
 local ui = require("rb.ui")
+local hs = hs
 
 local obj = {}
 
@@ -92,10 +93,12 @@ local hotkeys = {
 function obj:start(appObj)
     _appObj = appObj
     _modal:enter()
+    return self
 end
 
 function obj:stop()
     _modal:exit()
+    return self
 end
 
 function obj:init()
@@ -106,6 +109,7 @@ function obj:init()
     for _, v in ipairs(hotkeys) do
         _modal:bind(table.unpack(v))
     end
+    return self
 end
 
 return obj

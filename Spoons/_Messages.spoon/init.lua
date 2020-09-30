@@ -39,9 +39,7 @@ local function getChatMessageLinks(appObj)
     fuzzyChooser:start(chooserCallback, choices, {"text"})
 end
 
---- Messages:getMessageLinks
---- Variable
---- Adds a device to USBObserver's watch list
+-- TODO
 obj.getMessageLinksHotkey = {"alt", "o"}
 
 local hotkeys = {{"alt", "o", function() getChatMessageLinks(_appObj) end}}

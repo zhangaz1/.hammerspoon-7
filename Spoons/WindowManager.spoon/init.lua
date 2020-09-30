@@ -177,6 +177,6 @@ return obj
 --   return Drawing.color.lists()["System"]["systemBlueColor"]
 -- end
 
--- print("Entering transient modal...")
+-- print("Entering transient mode...")
 -- hs.timer.doAfter(0.5, function() tabBind:disable() end)
 -- end

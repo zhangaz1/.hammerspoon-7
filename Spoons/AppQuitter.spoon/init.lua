@@ -64,11 +64,11 @@ end
 --- Parameters:
 --- * rules - a table that defines inactivity periods after which an app will hide/quit.
 ---   * each element must be one of 2 forms:
----   * a key value pair. Each key should equal to the bundle identifier string of the app you wish to set rules for.
----     * Each value must be a table containing exactly 2 key value pairs: (1) The keys, which are strings, should be named "quit" and "hide".
----     * The values for each keys are integers, and they should correspond to the period (in hours) of inactivity before an action takes place.
----     * For example: ["com.apple.Safari"] = {quit = 1, hide = 0.2}. This will set a rule for Safari to quit after 1 hour and hide after 12 minutes.
----   * a simple string representing that target app's bundle identifier. In this case, the default hide/quit values will be applied.
+---     * a key value pair. Each key should equal to the bundle identifier string of the app you wish to set rules for.
+---       * Each value must be a table containing exactly 2 key value pairs: (1) The keys, which are strings, should be named "quit" and "hide".
+---       * The values for each keys are integers, and they should correspond to the period (in hours) of inactivity before an action takes place.
+---       * For example: ["com.apple.Safari"] = {quit = 1, hide = 0.2}. This will set a rule for Safari to quit after 1 hour and hide after 12 minutes.
+---     * a simple string representing that target app's bundle identifier. In this case, the default hide/quit values will be applied.
 --- Returns:
 --- * the module object, for method chaining
 function obj:start(_rules)
@@ -131,7 +131,7 @@ function obj:start(_rules)
 
     -- load rules
     local DEFAULT_QUIT_INTERVAL = 14400 -- 4 hours
-    local DEFAULT_HIDE_INTERVAL = 1800 --- 10 minutes
+    local DEFAULT_HIDE_INTERVAL = 1800 -- 10 minutes
     for key, value in pairs(_rules) do
         if tonumber(key) then
             rules[value] = {

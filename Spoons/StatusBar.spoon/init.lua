@@ -29,14 +29,14 @@ local current = "regular"
 local flashingIconTimer
 local taskQueue = 0
 
---- StatusBar.menuTable
---- Variable
---- TODO
+-- StatusBar.menuTable
+-- Variable
+-- **TODO**
 obj.menuTable = nil
 
---- StatusBar:addTask()
---- Method
---- TODO
+-- StatusBar:addTask()
+-- Method
+-- **TODO**
 function obj:addTask()
   if not flashingIconTimer:running() then
     flashingIconTimer:start()
@@ -45,9 +45,9 @@ function obj:addTask()
   return self
 end
 
---- StatusBar:removeTask()
---- Method
---- TODO
+-- StatusBar:removeTask()
+-- Method
+-- **TODO**
 function obj:removeTask()
   taskQueue = taskQueue - 1
   if taskQueue < 1 then

@@ -23,9 +23,9 @@ local slider = nil
 local function modifyVolume(direction, withRepeat)
     for _ = 1, withRepeat do
         if direction == "up" then
-            slider:doIncrement()
+            slider:performAction("AXIncrement")
         else
-            slider:doDecrement()
+            slider:performAction("AXDecrement")
         end
     end
 end
@@ -44,7 +44,8 @@ function obj:start()
     local app = Application("com.apple.systemuiserver")
     local axApp = AX.applicationElement(app)
     local pid = app:pid()
-    local menuBarItems = UI.getUIElement(axApp, {{"AXMenuBar", 1}}):attributeValue("AXChildren")
+    local menuBarItems =
+        UI.getUIElement(axApp, {{"AXMenuBar", 1}}):attributeValue("AXChildren")
     local function observerCallback()
         observer:stop()
         modal:exit()
@@ -54,11 +55,10 @@ function obj:start()
         if description:match("volume") then
             menuBarItem:performAction("AXPress")
             local subMenu = menuBarItem:attributeValue("AXChildren")[1]
-            local subMenuChildren = subMenu:attributeValue("AXChildren")
-            for _, menuItem in ipairs(subMenuChildren) do
-                if menuItem.children and menuItem:attributeValue("AXChildren")[1] and
-                    (menuItem:attributeValue("AXChildren")[1]:attributeValue("AXRole") == "AXSlider") then
-                    slider = menuItem:attributeValue("AXChildren")[1]
+            for _, menuItem in ipairs(subMenu:attributeValue("AXChildren")) do
+                local firstChild = menuItem:attributeValue("AXChildren")[1]
+                if firstChild and firstChild:attributeValue("AXRole") == "AXSlider" then
+                    slider = firstChild
                     break
                 end
             end
