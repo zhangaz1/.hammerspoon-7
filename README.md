@@ -10,6 +10,7 @@ Personal [Hammerspoon](https://github.com/Hammerspoon/hammerspoon) config.
 
 ## Notes
 
+- Works best with v0.9.79 or newer.
 - Spoons with names prefixed with an underscore are app-specific. They must be used in conjunction with `AppSpoonsManager.spoon` and `AppWatcher.spoon`, and will be activated when the target app gains focus.
 
 ## API
