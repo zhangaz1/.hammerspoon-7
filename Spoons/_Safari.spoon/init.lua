@@ -12,7 +12,6 @@ local Util = require("rb.util")
 local AX = require("hs.axuielement")
 local Observer = AX.observer
 local hs = hs
-local spoon = spoon
 
 local function script_path()
     local str = debug.getinfo(2, "S").source:sub(2)
@@ -39,30 +38,26 @@ local function moveFocusToSafariMainArea(appObj, includeSidebar)
     -- ui scripting notes:
     -- when the status bar overlay shows, it's the first window. you should look for the "Main" window instead.
     -- "pane1" = is either the main web area, or the sidebar
-    local UIElementSidebar = {
+    local sidebar = {
         {"AXWindow", "AXRoleDescription", "standard window"},
         {"AXSplitGroup", 1}, {"AXGroup", 1}, {"AXScrollArea", 1},
         {"AXOutline", 1}
     }
-    local UIElementPane1BookmarksHistoryView =
-        {
-            {"AXWindow", "AXRoleDescription", "standard window"},
-            {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXGroup", 1},
-            {"AXScrollArea", 1}, {"AXOutline", 1}
-        }
-    local UIElementPane1StandardView = {
+    local bookmarksAndHistoryView = {
+        {"AXWindow", "AXRoleDescription", "standard window"},
+        {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXGroup", 1},
+        {"AXScrollArea", 1}, {"AXOutline", 1}
+    }
+    local standardWebpageView = {
         {"AXWindow", "AXRoleDescription", "standard window"},
         {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXGroup", 1}, {"AXGroup", 1},
         {"AXScrollArea", 1}, {"AXWebArea", 1}
     }
     local targetPane
     local sideBar
-    local webArea = UI.getUIElement(appObj, UIElementPane1StandardView)
-    local bookmarksOrHistory = UI.getUIElement(appObj,
-                                               UIElementPane1BookmarksHistoryView)
-    if includeSidebar then
-        sideBar = UI.getUIElement(appObj, UIElementSidebar)
-    end
+    local webArea = UI.getUIElement(appObj, standardWebpageView)
+    local bookmarksOrHistory = UI.getUIElement(appObj, bookmarksAndHistoryView)
+    if includeSidebar then sideBar = UI.getUIElement(appObj, sidebar) end
     if sideBar then
         targetPane = sideBar
     elseif webArea then
@@ -71,6 +66,11 @@ local function moveFocusToSafariMainArea(appObj, includeSidebar)
         targetPane = bookmarksOrHistory
     end
     targetPane:setAttributeValue("AXFocused", true)
+    -- -- TODO: temporary workaround as setAttributeValue doesn't work
+    -- local pos = targetPane:attributeValue("AXPosition")
+    -- local mousePos = hs.mouse.getAbsolutePosition()
+    -- hs.eventtap.leftClick({x = pos.x + 5, y = pos.y + 5})
+    -- hs.mouse.setAbsolutePosition(mousePos)
 end
 
 local function isSafariAddressBarFocused(appObj)
@@ -98,29 +98,32 @@ local function changeToABCAfterFocusingAddressBar(modal, keystroke)
     modal:enter()
 end
 
-local function moveFocusToMainAreaAfterOpeningLocation(appObj, modal, keystroke)
+local function moveFocusToMainAreaAndChangeToABCAfterOpeningLocation(appObj,
+                                                                     modal,
+                                                                     keystroke)
+    local isFocused = isSafariAddressBarFocused(appObj)
+    modal:exit()
+    EventTap.keyStroke(table.unpack(keystroke))
+    modal:enter()
+    -- if the address bar wasn't focused, it's a regular return press. bail out
+    if not isFocused then return end
+    -- KeyCodes.setLayout("ABC")
     local UIElementHomeScreenView = {
         {"AXWindow", "AXRoleDescription", "standard window"},
         {"AXSplitGroup", 1}, {"AXTabGroup", 1}, {"AXScrollArea", 1}
     }
-    if isSafariAddressBarFocused(appObj) then KeyCodes.setLayout("ABC") end
-    modal:exit()
-    EventTap.keyStroke(table.unpack(keystroke))
-    modal:enter()
-    Timer.doAfter(0.2, function()
-        if isSafariAddressBarFocused(appObj) then
-            for _ = 1, 5 do
-                Timer.doAfter(0.5, function()
-                    local safariStartPage =
-                        UI.getUIElement(appObj, UIElementHomeScreenView)
-                    if not safariStartPage then
-                        moveFocusToSafariMainArea(appObj, true)
-                        return
-                    end
-                end)
+    for _ = 1, 3 do
+        Timer.doAfter(0.2, function()
+            if isSafariAddressBarFocused(appObj) then
+                local welcomePageIsDisplayed =
+                    UI.getUIElement(appObj, UIElementHomeScreenView) ~= nil
+                if not welcomePageIsDisplayed then
+                    moveFocusToSafariMainArea(appObj, true)
+                end
             end
-        end
-    end)
+        end)
+    end
+
 end
 
 local function pageNavigation(direction)
@@ -189,8 +192,8 @@ local function firstSearchResult(appObj, modal)
     if title:match("Bookmarks") or title:match("History") then
         local axApp = AX.applicationElement(appObj)
         -- if search field is focused
-        if axApp:attributeValue("AXFocusedUIElement"):attributeValue("AXSubrole") ==
-            "AXSearchField" then
+        if axApp:attributeValue("AXFocusedUIElement")
+            :attributeValue("AXSubrole") == "AXSearchField" then
             return moveFocusToSafariMainArea(appObj, false)
         end
     end
@@ -272,8 +275,10 @@ local hotkeys = {
     {"ctrl", "n", function() pageNavigation("next") end},
     {"ctrl", "p", function() pageNavigation("previous") end}, {
         {}, "return", function()
-            moveFocusToMainAreaAfterOpeningLocation(_appObj, _modal,
-                                                    {{}, "return"})
+            moveFocusToMainAreaAndChangeToABCAfterOpeningLocation(_appObj,
+                                                                  _modal, {
+                {}, "return"
+            })
         end
     }, {
         {"cmd"}, "l",
