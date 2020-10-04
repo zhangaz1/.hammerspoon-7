@@ -1,6 +1,5 @@
 --- === Finder ===
 --- Finder automations.
-
 local eventtap = require("hs.eventtap")
 local geometry = require("hs.geometry")
 local osascript = require("hs.osascript")
@@ -68,7 +67,7 @@ local function rightSizeColumn(appObj, arg)
   -- if current view is list view, or if current view is columns view (and arg is "this"): double click divider
   -- if currnet view is columns view and arg is "all": double click divider with option down
   -- getting the current view from Finder
-  local _, currentView, _ = osascript.applescript('tell application "Finder" to return current view of window 1')
+  local _, currentView, _ = osascript.applescript("tell application \"Finder\" to return current view of window 1")
   local axApp = ax.applicationElement(appObj)
   local x, y, coords, modifiers
   -- for columns view:
@@ -82,19 +81,15 @@ local function rightSizeColumn(appObj, arg)
   elseif currentView == "lsvw" then
     -- for list view, `arg` is ignored
     arg = "this"
-    local firstColumn =
-      ui.getUIElement(
-      appObj,
-      {
-        {"AXWindow", 1},
-        {"AXSplitGroup", 1},
-        {"AXSplitGroup", 1},
-        {"AXScrollArea", 1},
-        {"AXOutline", 1},
-        {"AXGroup", 1},
-        {"AXButton", 1}
-      }
-    )
+    local firstColumn = ui.getUIElement(appObj, {
+      {"AXWindow", 1},
+      {"AXSplitGroup", 1},
+      {"AXSplitGroup", 1},
+      {"AXScrollArea", 1},
+      {"AXOutline", 1},
+      {"AXGroup", 1},
+      {"AXButton", 1}
+    })
     coords = firstColumn:attributeValue("AXFrame")
     x = coords.x + coords.w
     y = coords.y + (coords.h / 2)
@@ -109,8 +104,7 @@ local function rightSizeColumn(appObj, arg)
 end
 
 local function undoCloseTab()
-  osascript.applescript(
-    [[
+  osascript.applescript([[
     tell application "Default Folder X" to set recentFinderWindows to GetRecentFinderWindows
     tell application "Finder" to set currentFinderWindows to every Finder window
     repeat with i from 1 to count recentFinderWindows
@@ -137,21 +131,12 @@ local function undoCloseTab()
         return false
       end tell
     end recentWindowIsCurrentlyOpen
-  ]]
-  )
+  ]])
 end
 
 local function getMainArea(appObj)
   -- the last common ancestors to all finder views
-  local mainArea =
-    ui.getUIElement(
-    appObj,
-    {
-      {"AXWindow", 1},
-      {"AXSplitGroup", 1},
-      {"AXSplitGroup", 1}
-    }
-  )
+  local mainArea = ui.getUIElement(appObj, {{"AXWindow", 1}, {"AXSplitGroup", 1}, {"AXSplitGroup", 1}})
   -- column view: axbrowser 1; axscrollarea 1 for icon, list and gallery
   if mainArea then
     return mainArea:attributeValue("AXChildren")[1]
@@ -256,12 +241,7 @@ local function toggleColumns()
   for _, col in ipairs(columns) do
     table.insert(columnChoices, {["text"] = col})
   end
-  timer.doAfter(
-    0.1,
-    function()
-      GlobalChooser:start(selectColumnChooserCallback, columnChoices, {"text"})
-    end
-  )
+  timer.doAfter(0.1, function() GlobalChooser:start(selectColumnChooserCallback, columnChoices, {"text"}) end)
 end
 
 local function clickHistoryToolbarItem(appObj, backOrForward)
@@ -273,89 +253,22 @@ local function clickHistoryToolbarItem(appObj, backOrForward)
   else
     return
   end
-  ui.getUIElement(
-    ax.windowElement(appObj:mainWindow()),
-    {
-      {"AXToolbar", 1},
-      {"AXGroup", 1},
-      {"AXGroup", 1},
-      {"AXButton", button}
-    }
-  ):performAction("AXShowMenu")
+  ui.getUIElement(ax.windowElement(appObj:mainWindow()),
+                  {{"AXToolbar", 1}, {"AXGroup", 1}, {"AXGroup", 1}, {"AXButton", button}}):performAction("AXShowMenu")
 end
 
 local hotkeys = {
-  {
-    "alt",
-    "f",
-    function()
-      browseInLaunchBar()
-    end
-  },
-  {
-    "alt",
-    "2",
-    function()
-      focusMainArea(_appObj)
-    end
-  },
-  {
-    "cmd",
-    "n",
-    function()
-      newWindow(_modal)
-    end
-  },
-  {
-    {"shift", "cmd"},
-    "t",
-    function()
-      undoCloseTab()
-    end
-  },
-  {
-    {},
-    "tab",
-    function()
-      moveFocusToFilesAreaIfInSearchMode(_appObj, _modal)
-    end
-  },
+  {"alt", "f", function() browseInLaunchBar() end},
+  {"alt", "2", function() focusMainArea(_appObj) end},
+  {"cmd", "n", function() newWindow(_modal) end},
+  {{"shift", "cmd"}, "t", function() undoCloseTab() end},
+  {{}, "tab", function() moveFocusToFilesAreaIfInSearchMode(_appObj, _modal) end},
   -- TODO: remove?
-  {
-    {"shift", "cmd"},
-    "up",
-    function()
-      _appObj:selectMenuItem({"File", "Show Original"})
-    end
-  },
-  {
-    {"shift", "cmd"},
-    "down",
-    function()
-      _appObj:selectMenuItem({"File", "Open in New Tab"})
-    end
-  },
-  {
-    "alt",
-    "o",
-    function()
-      openPackage()
-    end
-  },
-  {
-    {"alt", "shift"},
-    "r",
-    function()
-      rightSizeColumn(_appObj, "all")
-    end
-  },
-  {
-    "alt",
-    "r",
-    function()
-      rightSizeColumn(_appObj, "this")
-    end
-  }
+  {{"shift", "cmd"}, "up", function() _appObj:selectMenuItem({"File", "Show Original"}) end},
+  {{"shift", "cmd"}, "down", function() _appObj:selectMenuItem({"File", "Open in New Tab"}) end},
+  {"alt", "o", function() openPackage() end},
+  {{"alt", "shift"}, "r", function() rightSizeColumn(_appObj, "all") end},
+  {"alt", "r", function() rightSizeColumn(_appObj, "this") end}
 }
 
 function obj:start(appObj)
@@ -363,9 +276,7 @@ function obj:start(appObj)
   _modal:enter()
 end
 
-function obj:stop()
-  _modal:exit()
-end
+function obj:stop() _modal:exit() end
 
 function obj:init()
   if not obj.bundleID then

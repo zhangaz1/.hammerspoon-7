@@ -7,6 +7,7 @@ Personal [Hammerspoon](https://github.com/Hammerspoon/hammerspoon) config.
 - Modular and Spoon-based.
 - Documented.
 - Easy on system resources, even with all Spoons loaded. There are no redundant global objects, like application watchers. Furthermore, application specific objects like event taps and UI observers are stopped when the target app is deactivated.
+- Linted with `luacheck` and formatted with `LuaFormatter`.
 
 ## Notes
 
@@ -39,17 +40,18 @@ or resumes tracking of a given app if its timer is already running.
 
 **Parameters:**
 
-* rules - a table that defines inactivity periods after which an app will hide/quit.
- - each element must be one of 2 forms:
-   - a key value pair. Each key should equal to the bundle identifier string of the app you wish to set rules for.
-     - Each value must be a table containing exactly 2 key value pairs: (1) The keys, which are strings, should be named "quit" and "hide".
-     - The values for each keys are integers, and they should correspond to the period (in hours) of inactivity before an action takes place.
-     - For example: ["com.apple.Safari"] = {quit = 1, hide = 0.2}. This will set a rule for Safari to quit after 1 hour and hide after 12 minutes.
-   - a simple string representing that target app's bundle identifier. In this case, the default hide/quit values will be applied.
+- rules - a table that defines inactivity periods after which an app will hide/quit.
+
+* each element must be one of 2 forms:
+  - a key value pair. Each key should equal to the bundle identifier string of the app you wish to set rules for.
+    - Each value must be a table containing exactly 2 key value pairs: (1) The keys, which are strings, should be named "quit" and "hide".
+    - The values for each keys are integers, and they should correspond to the period (in hours) of inactivity before an action takes place.
+    - For example: ["com.apple.Safari"] = {quit = 1, hide = 0.2}. This will set a rule for Safari to quit after 1 hour and hide after 12 minutes.
+  - a simple string representing that target app's bundle identifier. In this case, the default hide/quit values will be applied.
 
 **Returns:**
 
-* the module object, for method chaining
+- the module object, for method chaining
 
 ### AppSpoonsManager.spoon
 
@@ -174,7 +176,6 @@ Starts the module.
 
 _Method_
 
-
 **Returns:**
 
 - A boolean, true if the module is active, otherwise false
@@ -199,18 +200,19 @@ Starts the module.
 
 Miscellaneous automations that are not app-specific.
 
-#### Globals:bindHotKeys(_mapping)
+#### Globals:bindHotKeys(\_mapping)
 
 _Method_
 
 This module offers the following functionalities:
- - rightClick - simulates a control-click on the currently focused UI element.
- - focusMenuBar - clicks the menu bar item that immediately follows the  menu bar item.
- - focusDock - shows the system-wide dock.
+
+- rightClick - simulates a control-click on the currently focused UI element.
+- focusMenuBar - clicks the menu bar item that immediately follows the  menu bar item.
+- focusDock - shows the system-wide dock.
 
 **Parameters:**
 
- - _mapping - A table that conforms to the structure described in the Spoon plugin documentation.
+- \_mapping - A table that conforms to the structure described in the Spoon plugin documentation.
 
 ### KeyboardLayoutManager.spoon
 
@@ -235,24 +237,25 @@ Binds hotkeys for this module
 **Parameters:**
 
 - mapping - A table containing hotkey modifier/key details for the following items:
- - `toggleInputSource` - switch between the "Hebrew" and "ABC" layouts.
+- `toggleInputSource` - switch between the "Hebrew" and "ABC" layouts.
 
 ### NotificationCenter.spoon
 
 Notification Center automations.
 
-#### NotificationCenter:bindHotkeys(_mapping)
+#### NotificationCenter:bindHotkeys(\_mapping)
 
 _Method_
 
 Bind hotkeys for this module. The `_mapping` table keys correspond to the following functionalities:
- - firstButton - clicks on the first (or only) button of a notification center banner. If banners are configured through system preferences to be transient, a mouse move operation will be performed first to try and reveal the button, should it exists.
- - secondButton - clicks on the second button of a notification center banner. If banners are configured through system preferences to be transient, a mouse move operation will be performed first to try and reveal the button, should it exists. If the button is in fact a menu button (that is, it offers a dropdown of additional options), revealing the menu will be favored over a simple click.
- - toggle - Reveal the notification center itself (side bar). Once revealed, a second call of this function will switch between the panel's 2 different modes ("Today" and "Notifications"). Closing the panel could be done normally, e.g. by pressing escape.
+
+- firstButton - clicks on the first (or only) button of a notification center banner. If banners are configured through system preferences to be transient, a mouse move operation will be performed first to try and reveal the button, should it exists.
+- secondButton - clicks on the second button of a notification center banner. If banners are configured through system preferences to be transient, a mouse move operation will be performed first to try and reveal the button, should it exists. If the button is in fact a menu button (that is, it offers a dropdown of additional options), revealing the menu will be favored over a simple click.
+- toggle - Reveal the notification center itself (side bar). Once revealed, a second call of this function will switch between the panel's 2 different modes ("Today" and "Notifications"). Closing the panel could be done normally, e.g. by pressing escape.
 
 **Parameters:**
 
-- _mapping. See the Spoon plugin documentation for the implementation.
+- \_mapping. See the Spoon plugin documentation for the implementation.
 
 ### StatusBar.spoon
 
@@ -267,14 +270,15 @@ Clicks on the "volume" status bar item to reveal its volume slider, and enters a
 
 _Method_
 
-Activates the modules and enters the  modal. The following hotkeys/functionalities are available:
- - →: increase volume by a level.
- - ←: decrease volume by a level.
- - ⇧→: increase volume by a couple of levels.
- - ⇧←: decrease volume by a couple of levels.
- - ⌥→: set volume to 100.
- - ⌥←: set volume to 0.
- - escape: close the volume menu and exit the modal (the modal will be exited anyway as soon as the volume menu is closed).
+Activates the modules and enters the modal. The following hotkeys/functionalities are available:
+
+- →: increase volume by a level.
+- ←: decrease volume by a level.
+- ⇧→: increase volume by a couple of levels.
+- ⇧←: decrease volume by a couple of levels.
+- ⌥→: set volume to 100.
+- ⌥←: set volume to 0.
+- escape: close the volume menu and exit the modal (the modal will be exited anyway as soon as the volume menu is closed).
 
 ### WifiWatcher.spoon
 
@@ -288,7 +292,7 @@ A callback to run when the Wi-Fi changes.
 
 **Returns:**
 
- - the module object, for method chaining.
+- the module object, for method chaining.
 
 #### WifiWatcher:start()
 
@@ -298,7 +302,7 @@ Starts the Wi-Fi watcher.
 
 **Returns:**
 
- - the module object, for method chaining.
+- the module object, for method chaining.
 
 #### WifiWatcher:stop()
 
@@ -308,12 +312,11 @@ Stops the Wi-Fi watcher.
 
 **Returns:**
 
- - the module object, for method chaining.
+- the module object, for method chaining.
 
 #### WifiWatcher:isActive()
 
 _Method_
-
 
 **Returns:**
 
@@ -327,93 +330,120 @@ Toggles the watcher.
 
 **Returns:**
 
- - the module object, for method chaining.
+- the module object, for method chaining.
 
 ### WindowManager.spoon
 
 Moves and resizes windows.
 
-#### WindowManager:bindHotKeys(_mapping)
+#### WindowManager:bindHotKeys(\_mapping)
 
 _Method_
 
 This module offers the following functionalities:
- - maximize - maximizes the frontmost window. If it's already maximized, it will be centered and resized to be a quarter of the screen.
- - pushLeft - moves and/or resizes a window towards the left of the screen.
- - pushRight - moves and/or resizes a window towards the right of the screen.
- - pushDown - moves and/or resizes a window towards the bottom of the screen.
- - pushUp - moves and/or resizes a window towards the top of the screen.
- - pushLeft - moves and/or resizes a window towards the left of the screen.
- - center - centers the frontmost window.
+
+- maximize - maximizes the frontmost window. If it's already maximized, it will be centered and resized to be a quarter of the screen.
+- pushLeft - moves and/or resizes a window towards the left of the screen.
+- pushRight - moves and/or resizes a window towards the right of the screen.
+- pushDown - moves and/or resizes a window towards the bottom of the screen.
+- pushUp - moves and/or resizes a window towards the top of the screen.
+- pushLeft - moves and/or resizes a window towards the left of the screen.
+- center - centers the frontmost window.
 
 **Parameters:**
 
- - _mapping - A table that conforms to the structure described in the Spoon plugin documentation.
+- \_mapping - A table that conforms to the structure described in the Spoon plugin documentation.
 
 ### WindowManagerModal.spoon
 
 Enables modal hotkeys that allow for more granular control over the size and position of the frontmost window. Shows a small window that serves as a cheat sheet.
 **Documentation underway**
 
-### _1Password7.spoon
+### \_1Password7.spoon
 
 1Password automations.
 **Documentation underway**
 
-### _ActivityMonitor.spoon
+### \_ActivityMonitor.spoon
 
 Activity Monitor.app automations.
 **Documentation underway**
 
-### _AdobeIllustrator.spoon
+### \_AdobeIllustrator.spoon
 
 Adobe Illustrator automations.
 **Documentation underway**
 
-### _AdobeInDesign.spoon
+### \_AdobeInDesign.spoon
 
 Adobe InDesign automations.
 **Documentation underway**
 
-### _AppStore.spoon
+### \_AppStore.spoon
 
 AppStore automations.
 **Documentation underway**
 
-### _Dash.spoon
+### \_Dash.spoon
 
 Dash (version 5 of later) automations.
 **Documentation underway**
 
-### _Finder.spoon
+### \_Finder.spoon
 
 Finder automations.
 **Documentation underway**
 
-### _Hammerspoon.spoon
+### \_Hammerspoon.spoon
 
 Hammerspoon (console) automations
 **Documentation underway**
 
-### _Mail.spoon
+### \_Mail.spoon
 
 Mail.app automations.
 **Documentation underway**
 
-### _Messages.spoon
+### \_Messages.spoon
 
 Messages.app automations.
 **Documentation underway**
 
-### _Notes.spoon
+### \_Notes.spoon
 
 Notes.app automations.
 **Documentation underway**
 
-### _Safari.spoon
+### \_Safari.spoon
 
 Safari automations.
-**Documentation underway**
+
+#### \_Safari.modalHotkeys
+
+_Variable_
+
+A table of key value pairs. The hotkeys to be toggled when the target app activates.
+
+- Each value is a table (as per the `hs.hotkey.bind` constructor) defining the hotkey of choice.
+- Each key is the name of the function to be executed by the hotkey.
+- No hotkeys are bound by default. Leave as is to disable a functionality.
+
+This module offers the following functionalities:
+
+- `moveTabLeft` - moves the focused tab one position to the left.
+- `moveTabRight` - moves the focused tab one position to the right.
+- `newWindow` - ensures a new window will be opened rather than a tab. Useful when the "Prefer tabs" setting in the Dock Preference Pane is set to "always".
+- `goToFirstInputField` - focuses a web page's first text field.
+- `goToNextPage` - navigates to a web page's next page, if applicable.
+- `goToPreviousPage` - navigates to a web page's previous page, if applicable.
+- `moveFocusToMainAreaAndChangeToABCAfterOpeningLocation` - unfocuses the address bar (if focused) after loading a web page. Useful when using Vimari's hints feature, which doesn't work with the address bar focused.
+- `changeToABCAfterFocusingAddressBar` - changes the active keyboard layout to ABC once the address bar has gained focus.
+- `focusSidebar` - focuses the side bar.
+- `focusMainArea` - focuses the main area, that is, the web page.
+- `newBookmarksFolder` - creates a new bookmarks folder. Works only while viewing bookmarks.
+- `rightSizeBookmarksOrHistoryColumn` - sizes to fit the first column of the bookmarks/history view.
+- `firstSearchResult` - in a history/bookmarks view and when the search field is focused, moves focus the 1st search result.
+
 ## To Do
 
 - Organize dependencies in Spoons.

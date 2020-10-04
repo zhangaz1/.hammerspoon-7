@@ -9,6 +9,7 @@ local Keycodes = require("hs.keycodes")
 local Settings = require("hs.settings")
 local Spoons = require("hs.spoons")
 local FNUtils = require("hs.fnutils")
+local Window = require("hs.window")
 local spoon = spoon
 local obj = {}
 
@@ -19,13 +20,12 @@ obj.author = "roeybiran <roeybiran@icloud.com>"
 obj.homepage = "https://github.com/Hammerspoon/Spoons"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
-local _frontAppBundleID = nil
-
 local keyboardLayoutSwitcherExcludedApps =
     {"at.obdev.LaunchBar", "com.contextsformac.Contexts"}
 
+-- called when the key to toggle the layout is pressed
 local function toggleInputSource()
-    local bundleID = _frontAppBundleID
+    local bundleID = Window.frontmostWindow():application():bundleID()
     local currentLayout = Keycodes.currentLayout()
     local newLayout = "ABC"
     if currentLayout == "ABC" then newLayout = "Hebrew" end
@@ -36,13 +36,12 @@ local function toggleInputSource()
         return
     end
 
-    print(bundleID)
     if bundleID == "com.apple.Safari" then
         spoon._Safari:saveLayoutForCurrentURL(newLayout)
     end
 
     local settingsTable = Settings.get("RBAppsLastActiveKeyboardLayouts") or {}
-    settingsTable[_frontAppBundleID] = {
+    settingsTable[bundleID] = {
         ["LastActiveKeyboardLayout"] = newLayout,
         ["LastActiveKeyboardLayoutTimestamp"] = os.time()
     }
@@ -55,7 +54,6 @@ end
 --- Parameters:
 ---  * bundleid - a string, the bundle identifier of the app.
 function obj:setInputSource(bundleid)
-    _frontAppBundleID = bundleid
     -- default to abc if no saved setting
     local newLayout = "ABC"
     -- special handling for safari
