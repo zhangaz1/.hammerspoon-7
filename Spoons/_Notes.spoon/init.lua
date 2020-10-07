@@ -1,4 +1,5 @@
 --- === Notes ===
+---
 --- Notes.app automations.
 
 local Hotkey = require("hs.hotkey")

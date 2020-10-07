@@ -1,5 +1,7 @@
 --- === Safari ===
+---
 --- Safari automations.
+---
 local EventTap = require("hs.eventtap")
 local AppleScript = require("hs.osascript").applescript
 local KeyCodes = require("hs.keycodes")
@@ -165,13 +167,12 @@ local function goToFirstInputField()
   set theFile to (POSIX file "%s" as alias)
   set theScript to read theFile as string
   tell application "Safari"
-  tell (window 1 whose visible of it = true)
-  tell (tab 1 whose visible of it = true)
-  return do JavaScript theScript
-  end tell
-end tell
-end tell
-]]
+    tell (window 1 whose visible of it = true)
+      tell (tab 1 whose visible of it = true)
+        return do JavaScript theScript
+      end tell
+    end tell
+  end tell]]
   script = string.format(script, jsFile)
   AppleScript(script)
 end
@@ -289,43 +290,6 @@ local function addObserver(appObj)
   setLayoutForURL()
 end
 
---- _Safari.modalHotkeys
---- Variable
---- A table of key value pairs. The hotkeys to be toggled when the target app activates.
----   - Each value is a table (as per the `hs.hotkey.bind` constructor) defining the hotkey of choice.
----   - Each key is the name of the function to be executed by the hotkey.
----   - No hotkeys are bound by default. Leave as is to disable a functionality.
----
---- This module offers the following functionalities:
----   - moveTabLeft - moves the focused tab one position to the left.
----   - moveTabRight - moves the focused tab one position to the right.
----   - newWindow - ensures a new window will be opened rather than a tab. Useful when the "Prefer tabs" setting in the Dock Preference Pane is set to "always".
----   - goToFirstInputField - focuses a web page's first text field.
----   - goToNextPage - navigates to a web page's next page, if applicable.
----   - goToPreviousPage - navigates to a web page's previous page, if applicable.
----   - moveFocusToMainAreaAndChangeToABCAfterOpeningLocation - unfocuses the address bar (if focused) after loading a web page. Useful when using Vimari's hints feature, which doesn't work with the address bar focused.
----   - changeToABCAfterFocusingAddressBar - changes the active keyboard layout to ABC once the address bar has gained focus.
----   - focusSidebar - focuses the side bar.
----   - focusMainArea - focuses the main area, that is, the web page.
----   - newBookmarksFolder - creates a new bookmarks folder. Works only while viewing bookmarks.
----   - rightSizeBookmarksOrHistoryColumn - sizes to fit the first column of the bookmarks/history view.
----   - firstSearchResult - in a history/bookmarks view and when the search field is focused, moves focus the 1st search result.
-obj.modalHotkeys = {
-  moveTabLeft = {"ctrl", ","},
-  moveTabRight = {"ctrl", "."},
-  newWindow = {"cmd", "n"},
-  goToFirstInputField = {"ctrl", "i"},
-  goToNextPage = {"ctrl", "n"},
-  goToPreviousPage = {"ctrl", "p"},
-  moveFocusToMainAreaAndChangeToABCAfterOpeningLocation = {{}, "return"},
-  changeToABCAfterFocusingAddressBar = {"cmd", "l"},
-  focusSidebar = {"alt", "1"},
-  focusMainArea = {"alt", "2"},
-  newBookmarksFolder = {{"cmd", "shift"}, "n"},
-  rightSizeBookmarksOrHistoryColumn = {"alt", "r"},
-  firstSearchResult = {{}, "tab"}
-}
-
 local functions = {
   moveTabLeft = function() moveTab("left") end,
   moveTabRight = function() moveTab("right") end,
@@ -343,6 +307,44 @@ local functions = {
   rightSizeBookmarksOrHistoryColumn = function() rightSizeBookmarksOrHistoryColumn(_appObj) end,
   firstSearchResult = function() firstSearchResult(_appObj, _modal) end
 }
+
+--- _Safari:bindModalHotkeys(hotkeysTable)
+---
+--- Method
+---
+--- Parameters:
+---
+--- * `hotkeysTable` - A table of key value pairs. The hotkeys to be toggled when the target app activates.
+---   * Each value is a table (as per the `hs.hotkey.bind` constructor) defining the hotkey of choice.
+---   * Each key is the name of the function to be executed by the hotkey.
+---   * No hotkeys are bound by default. Leave as is to disable.
+---
+--- This module offers the following functionalities:
+---
+--- * `moveTabLeft` - moves the focused tab one position to the left.
+--- * `moveTabRight` - moves the focused tab one position to the right.
+--- * `newWindow` - ensures a new window will be opened rather than a tab. Useful when the "Prefer tabs" setting in the Dock Preference Pane is set to "always".
+--- * `goToFirstInputField` - focuses a web page's first text field.
+--- * `goToNextPage` - navigates to a web page's next page, if applicable.
+--- * `goToPreviousPage` - navigates to a web page's previous page, if applicable.
+--- * `moveFocusToMainAreaAndChangeToABCAfterOpeningLocation` - unfocuses the address bar (if focused) after loading a web page. Useful when using Vimari's hints feature, which doesn't work with the address bar focused.
+--- * `changeToABCAfterFocusingAddressBar` - changes the active keyboard layout to ABC once the address bar has gained focus.
+--- * `focusSidebar` - focuses the side bar.
+--- * `focusMainArea` - focuses the main area, that is, the web page.
+--- * `newBookmarksFolder` - creates a new bookmarks folder. Works only while viewing bookmarks.
+--- * `rightSizeBookmarksOrHistoryColumn` - sizes to fit the first column of the bookmarks/history view.
+--- * `firstSearchResult` - in a history/bookmarks view and when the search field is focused, moves focus the 1st search result.
+---
+function obj:bindModalHotkeys(hotkeysTable)
+  for k, v in pairs(functions) do
+    if hotkeysTable[k] then
+      -- print(hs.inspect(v))
+      local mods, key = table.unpack(hotkeysTable[k])
+      _modal:bind(mods, key, v)
+    end
+  end
+  return self
+end
 
 function obj:saveLayoutForCurrentURL(newLayout)
   local settingsTable = Settings.get(layoutsPerURLKey) or {}
@@ -373,13 +375,6 @@ function obj:init()
     hs.showError("bundle indetifier for app spoon is nil")
   end
   _modal = Hotkey.modal.new()
-  for k, v in pairs(functions) do
-    if obj.modalHotkeys[k] then
-      -- print(hs.inspect(v))
-      local mods, key = table.unpack(obj.modalHotkeys[k])
-      _modal:bind(mods, key, v)
-    end
-  end
   return self
 end
 

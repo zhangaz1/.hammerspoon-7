@@ -1,4 +1,5 @@
 --- === KeyboardLayoutManager ===
+---
 --- A module that handles automatic keyboard layout switching under varying contexts.
 --- Features:
 --- * Saves the last used layout in a given app, and switches back to that layout when that app activates.
@@ -49,10 +50,14 @@ local function toggleInputSource()
 end
 
 --- KeyboardLayoutManager:setInputSource(bundleid)
+---
 --- Method
 --- Switch to an app's last used keyboard layout. Typically, called in an app watcher callback for the activated app.
+---
 --- Parameters:
+---
 ---  * bundleid - a string, the bundle identifier of the app.
+---
 function obj:setInputSource(bundleid)
     -- default to abc if no saved setting
     local newLayout = "ABC"
@@ -71,11 +76,15 @@ function obj:setInputSource(bundleid)
 end
 
 --- KeyboardLayoutManager:bindHotkeys(mapping)
+---
 --- Method
 --- Binds hotkeys for this module
+---
 --- Parameters:
+---
 ---  * mapping - A table containing hotkey modifier/key details for the following items:
 ---   * `toggleInputSource` - switch between the "Hebrew" and "ABC" layouts.
+---
 function obj:bindHotKeys(_mapping)
     local def = {toggleInputSource = function() toggleInputSource() end}
     Spoons.bindHotkeysToSpec(def, _mapping)

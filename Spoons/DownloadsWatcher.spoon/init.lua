@@ -1,4 +1,5 @@
 --- === DownloadsWatcher ===
+---
 --- Monitor the ~/Downloads folder, and execute a shell script that accepts newly downloaded files as arguments.
 --- The script can be found in the Spoon's folder.
 local PathWatcher = require("hs.pathwatcher")
@@ -92,16 +93,20 @@ local function delayedTimerCallbackFn()
 end
 
 --- DownloadsWatcher:stop()
+---
 --- Method
 --- Stops the module.
+---
 function obj:stop()
   pathWatcher:stop()
   return self
 end
 
 --- DownloadsWatcher:start()
+---
 --- Method
 --- Starts the module.
+---
 function obj:start()
   pathWatcher:start()
   return self

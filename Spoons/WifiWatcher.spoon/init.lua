@@ -1,4 +1,5 @@
 --- === WifiWatcher ===
+---
 --- Respond to changes in the current Wi-Fi network.
 local audiodevice = require("hs.audiodevice")
 local wifi = require("hs.wifi")
@@ -20,10 +21,14 @@ local isActive = false
 local wifiWatcher = nil
 
 --- WifiWatcher:userCallback()
+---
 --- Method
 --- A callback to run when the Wi-Fi changes.
+---
 --- Returns:
+---
 ---   * the module object, for method chaining.
+---
 function obj:userCallback()
   local knownNetworks = {
     "Biran",
@@ -49,10 +54,14 @@ local function wifiWatcherCallback()
 end
 
 --- WifiWatcher:start()
+---
 --- Method
 --- Starts the Wi-Fi watcher.
+---
 --- Returns:
+---
 ---   * the module object, for method chaining.
+---
 function obj:start()
   wifiWatcherCallback()
   wifiWatcher:start()
@@ -61,10 +70,14 @@ function obj:start()
 end
 
 --- WifiWatcher:stop()
+---
 --- Method
 --- Stops the Wi-Fi watcher.
+---
 --- Returns:
+---
 ---   * the module object, for method chaining.
+---
 function obj:stop()
   wifiWatcher:stop()
   isActive = false
@@ -72,18 +85,26 @@ function obj:stop()
 end
 
 --- WifiWatcher:isActive()
+---
 --- Method
+---
 --- Returns:
+---
 ---  * A boolean, true if the watcher is active, otherwise false.
+---
 function obj:isActive()
   return isActive
 end
 
 --- WifiWatcher:toggle()
+---
 --- Method
 --- Toggles the watcher.
+---
 --- Returns:
+---
 ---   * the module object, for method chaining.
+---
 function obj:toggle()
   if isActive then
     wifiWatcher:stop()

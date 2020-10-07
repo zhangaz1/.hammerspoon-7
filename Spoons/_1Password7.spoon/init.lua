@@ -1,4 +1,5 @@
 --- === 1Password ===
+---
 --- 1Password automations.
 local Hotkey = require("hs.hotkey")
 local ui = require("rb.ui")

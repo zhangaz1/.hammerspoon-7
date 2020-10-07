@@ -1,4 +1,5 @@
 --- === NotificationCenter ===
+---
 --- Notification Center automations.
 local ui = require("rb.ui")
 local ax = require("hs.axuielement")
@@ -44,17 +45,13 @@ local function toggle()
   currentMousePos = Mouse.getAbsolutePosition()
   local app = ax.applicationElement(application.applicationsForBundleID("com.apple.systemuiserver")[1])
   local menuBarIconPos =
-    ui.getUIElement(app, {{"AXMenuBar", 1}, {"AXMenuBarItem", "AXTitle", "Notification Center"}}):attributeValue("AXPosition")
+      ui.getUIElement(app, {{"AXMenuBar", 1}, {"AXMenuBarItem", "AXTitle", "Notification Center"}}):attributeValue(
+          "AXPosition")
   local x = menuBarIconPos.x + 10
   local y = menuBarIconPos.y + 10
   eventtap.leftClick(geometry.point({x, y}))
   Mouse.setAbsolutePosition(currentMousePos)
-  Timer.doAfter(
-    0.2,
-    function()
-      notificationCenterGetButton(1):performAction("AXPress")
-    end
-  )
+  Timer.doAfter(0.2, function() notificationCenterGetButton(1):performAction("AXPress") end)
 end
 
 local function clickButton(theButton)
@@ -74,12 +71,7 @@ local function clickButton(theButton)
       local newPosition = {x = x, y = y}
       Mouse.setAbsolutePosition(newPosition)
       button1 = ui.getUIElement(theWindow, {{"AXButton", 1}})
-      Timer.doAfter(
-        0.5,
-        function()
-          Mouse.setAbsolutePosition(originalPosition)
-        end
-      )
+      Timer.doAfter(0.5, function() Mouse.setAbsolutePosition(originalPosition) end)
       if theButton == 3 then
         eventtap.leftClick(newPosition)
         return
@@ -104,27 +96,23 @@ local function clickButton(theButton)
 end
 
 --- NotificationCenter:bindHotkeys(_mapping)
+---
 --- Method
 --- Bind hotkeys for this module. The `_mapping` table keys correspond to the following functionalities:
----   * firstButton - clicks on the first (or only) button of a notification center banner. If banners are configured through system preferences to be transient, a mouse move operation will be performed first to try and reveal the button, should it exists.
----   * secondButton - clicks on the second button of a notification center banner. If banners are configured through system preferences to be transient, a mouse move operation will be performed first to try and reveal the button, should it exists. If the button is in fact a menu button (that is, it offers a dropdown of additional options), revealing the menu will be favored over a simple click.
----   * toggle - Reveal the notification center itself (side bar). Once revealed, a second call of this function will switch between the panel's 2 different modes ("Today" and "Notifications"). Closing the panel could be done normally, e.g. by pressing escape.
+--- * `firstButton` - clicks on the first (or only) button of a notification center banner. If banners are configured through system preferences to be transient, a mouse move operation will be performed first to try and reveal the button, should it exists.
+--- * `secondButton` - clicks on the second button of a notification center banner. If banners are configured through system preferences to be transient, a mouse move operation will be performed first to try and reveal the button, should it exists. If the button is in fact a menu button (that is, it offers a dropdown of additional options), revealing the menu will be favored over a simple click.
+--- * `toggle` - reveals the notification center itself (side bar). Once revealed, a second call of this function will switch between the panel's 2 different modes ("Today" and "Notifications"). Closing the panel could be done normally, e.g. by pressing escape.
+---
 --- Parameters:
----  * _mapping. See the Spoon plugin documentation for the implementation.
+---
+---  * `_mapping` - see the Spoon plugin documentation for the implementation.
+---
 function obj:bindHotKeys(_mapping)
   local def = {
-    firstButton = function()
-      clickButton(1)
-    end,
-    secondButton = function()
-      clickButton(2)
-    end,
-    thirdButton = function()
-      clickButton(3)
-    end,
-    toggle = function()
-      toggle()
-    end
+    firstButton = function() clickButton(1) end,
+    secondButton = function() clickButton(2) end,
+    thirdButton = function() clickButton(3) end,
+    toggle = function() toggle() end
   }
   hs.spoons.bindHotkeysToSpec(def, _mapping)
   return self

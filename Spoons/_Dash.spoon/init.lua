@@ -1,4 +1,5 @@
 --- === Dash ===
+---
 --- Dash (version 5 of later) automations.
 local Hotkey = require("hs.hotkey")
 local ui = require("rb.ui")

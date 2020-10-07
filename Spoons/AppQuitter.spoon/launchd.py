@@ -5,7 +5,6 @@ import time
 import plistlib
 import os
 import subprocess
-from datetime import datetime
 
 # https://stackoverflow.com/questions/6337513/how-can-i-debug-a-launchd-script-that-doesnt-run-on-startup
 
@@ -57,37 +56,28 @@ plist_obj = plistlib.readPlist(PLIST_PATH)
 
 new_plist = {}
 
-now = datetime.now()
-NOW_STRING = "{}:{}".format(now.hour, now.minute)
-print("==> appquitter.py ==> " + NOW_STRING + ": Session begin")
-
 for bundle_id in plist_obj:
     if not is_running(bundle_id):
         # if the app is already not running, it's not interesting anymore
-        print("not running " + bundle_id)
         continue
 
     if is_frontmost(bundle_id):
         # if the app frontmost, don't touch it
-        print("frontmost " + bundle_id)
         continue
 
     for operation_key in plist_obj[bundle_id]:
         scheduled_action_time = plist_obj[bundle_id][operation_key]
 
+        # we haven't reached the deadline yet. Keep in .plist
         if scheduled_action_time > time.time():
             if bundle_id not in new_plist:
                 new_plist[bundle_id] = {}
             new_plist[bundle_id][operation_key] = scheduled_action_time
-            print("scheduled " + " " + operation_key + " ==> " + bundle_id)
             continue
 
         if operation_key == "quit":
-            print("quitting " + bundle_id)
             quit_app(bundle_id)
-        # just hide
         if operation_key == "hide":
-            print("hiding " + bundle_id)
             hide_app(bundle_id)
 
 

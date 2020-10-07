@@ -1,4 +1,5 @@
 --- === HammerspoonConsole ===
+---
 --- Hammerspoon (console) automations
 local Hotkey = require("hs.hotkey")
 local Console = require("hs.console")

@@ -1,4 +1,5 @@
 --- === Messages ===
+---
 --- Messages.app automations.
 local Hotkey = require("hs.hotkey")
 local UI = require("rb.ui")

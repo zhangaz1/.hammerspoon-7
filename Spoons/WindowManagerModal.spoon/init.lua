@@ -1,4 +1,5 @@
 --- === WindowManagerModal ===
+---
 --- Enables modal hotkeys that allow for more granular control over the size and position of the frontmost window. Shows a small window that serves as a cheat sheet.
 
 local Window = require("hs.window")

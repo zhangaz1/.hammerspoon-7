@@ -1,4 +1,5 @@
 --- === Mail ===
+---
 --- Mail.app automations.
 local osascript = require("hs.osascript")
 local eventtap = require("hs.eventtap")

@@ -12,6 +12,7 @@ Personal [Hammerspoon](https://github.com/Hammerspoon/hammerspoon) config.
 ## Notes
 
 - Works best with v0.9.79 or newer.
+- The `rb` folder included with this repo contains dependencies for some Spoons. It is required.
 - Spoons with names prefixed with an underscore are app-specific. They must be used in conjunction with `AppSpoonsManager.spoon` and `AppWatcher.spoon`, and will be activated when the target app gains focus.
 
 ## API
@@ -19,11 +20,12 @@ Personal [Hammerspoon](https://github.com/Hammerspoon/hammerspoon) config.
 ### AppQuitter.spoon
 
 Leverages `launchd` to quit and/or hide inactive apps.
+DO NOT activate this module if you don't plan on using it along with `hs.application.watcher`, this module relies on it exclusively to update its scheduled actions as apps go in and out of focus. Without it, the timers will quickly go out of sync.
+Ideally, this module's `update` method will be called in each callback of `hs.application.watcher`.
 
 #### AppQuitter:update(event, bundleID)
 
 _Method_
-
 Updates the module's timers.
 
 **Parameters:**
@@ -34,15 +36,12 @@ Updates the module's timers.
 #### AppQuitter:start([rules])
 
 _Method_
-
 Sets up and starts the module. Begins the tracking of running dock apps,
 or resumes tracking of a given app if its timer is already running.
 
 **Parameters:**
 
-- rules - a table that defines inactivity periods after which an app will hide/quit.
-
-* each element must be one of 2 forms:
+- rules - a table that defines inactivity periods after which an app will hide/quit. Each element must be one of 2 forms:
   - a key value pair. Each key should equal to the bundle identifier string of the app you wish to set rules for.
     - Each value must be a table containing exactly 2 key value pairs: (1) The keys, which are strings, should be named "quit" and "hide".
     - The values for each keys are integers, and they should correspond to the period (in hours) of inactivity before an action takes place.
@@ -60,7 +59,6 @@ Manages the activation and deactivation of the app-specific Spoons when an app g
 #### AppSpoonsManager:update(appObj, bundleID)
 
 _Method_
-
 Calls the `start()` method of the Spoon for the focused app, and calls `exit()` on all other Spoons. This method must be called in each callback of your `hs.application.watcher` instance.
 
 **Parameters:**
@@ -81,13 +79,11 @@ A table containing apps you consider to be transient and want to be taken into a
 #### AppWatcher.stop()
 
 _Method_
-
 Stops the module.
 
 #### AppWatcher:start()
 
 _Method_
-
 Starts the module.
 
 ### AppearanceWatcher.spoon
@@ -97,25 +93,21 @@ Perform actions when the system's theme changes. Actions can be configured by ed
 #### AppearanceWatcher:stop()
 
 _Method_
-
 Stops this module.
 
 #### AppearanceWatcher:start()
 
 _Method_
-
 starts this module.
 
 #### AppearanceWatcher:toggle()
 
 _Method_
-
 Toggles this module.
 
 #### AppearanceWatcher:isActive()
 
 _Method_
-
 Determines whether module is active.
 
 **Returns:**
@@ -129,13 +121,11 @@ Enters a transient mode in which the left and right arrow keys decrease and incr
 #### BrightnessControl:start()
 
 _Method_
-
 Starts the module.
 
 #### BrightnessControl:stop()
 
 _Method_
-
 Stops the module. Bound to the escape and return keys.
 
 #### BrightnessControl.increaseBrightnessKey
@@ -157,22 +147,19 @@ Reload the environment when .lua files in ~/.hammerspoon are modified.
 #### ConfigWatcher.toggle()
 
 _Method_
-
 Toggles the module.
 
 #### ConfigWatcher.stop()
 
 _Method_
-
 Stops the module.
 
 #### ConfigWatcher.start()
 
 _Method_
-
 Starts the module.
 
-#### ConfigWatcher.toggle()
+#### ConfigWatcher.isActive()
 
 _Method_
 
@@ -183,17 +170,16 @@ _Method_
 ### DownloadsWatcher.spoon
 
 Monitor the ~/Downloads folder, and execute a shell script that accepts newly downloaded files as arguments.
+The script can be found in the Spoon's folder.
 
 #### DownloadsWatcher:stop()
 
 _Method_
-
 Stops the module.
 
 #### DownloadsWatcher:start()
 
 _Method_
-
 Starts the module.
 
 ### Globals.spoon
@@ -203,7 +189,6 @@ Miscellaneous automations that are not app-specific.
 #### Globals:bindHotKeys(\_mapping)
 
 _Method_
-
 This module offers the following functionalities:
 
 - rightClick - simulates a control-click on the currently focused UI element.
@@ -217,11 +202,16 @@ This module offers the following functionalities:
 ### KeyboardLayoutManager.spoon
 
 A module that handles automatic keyboard layout switching under varying contexts.
+Features:
+
+- Saves the last used layout in a given app, and switches back to that layout when that app activates.
+- Switches by default to "ABC" if there's no saved setting for a given app.
+- Default switching behavior can be overridden for specific apps.
+- For Safari, the switching behavior is tweaked so layout is saved and cycled on a per-tab basis. Needs \_Safari.spoon.
 
 #### KeyboardLayoutManager:setInputSource(bundleid)
 
 _Method_
-
 Switch to an app's last used keyboard layout. Typically, called in an app watcher callback for the activated app.
 
 **Parameters:**
@@ -231,7 +221,6 @@ Switch to an app's last used keyboard layout. Typically, called in an app watche
 #### KeyboardLayoutManager:bindHotkeys(mapping)
 
 _Method_
-
 Binds hotkeys for this module
 
 **Parameters:**
@@ -246,21 +235,19 @@ Notification Center automations.
 #### NotificationCenter:bindHotkeys(\_mapping)
 
 _Method_
-
 Bind hotkeys for this module. The `_mapping` table keys correspond to the following functionalities:
 
-- firstButton - clicks on the first (or only) button of a notification center banner. If banners are configured through system preferences to be transient, a mouse move operation will be performed first to try and reveal the button, should it exists.
-- secondButton - clicks on the second button of a notification center banner. If banners are configured through system preferences to be transient, a mouse move operation will be performed first to try and reveal the button, should it exists. If the button is in fact a menu button (that is, it offers a dropdown of additional options), revealing the menu will be favored over a simple click.
-- toggle - Reveal the notification center itself (side bar). Once revealed, a second call of this function will switch between the panel's 2 different modes ("Today" and "Notifications"). Closing the panel could be done normally, e.g. by pressing escape.
+- `firstButton` - clicks on the first (or only) button of a notification center banner. If banners are configured through system preferences to be transient, a mouse move operation will be performed first to try and reveal the button, should it exists.
+- `secondButton` - clicks on the second button of a notification center banner. If banners are configured through system preferences to be transient, a mouse move operation will be performed first to try and reveal the button, should it exists. If the button is in fact a menu button (that is, it offers a dropdown of additional options), revealing the menu will be favored over a simple click.
+- `toggle` - reveals the notification center itself (side bar). Once revealed, a second call of this function will switch between the panel's 2 different modes ("Today" and "Notifications"). Closing the panel could be done normally, e.g. by pressing escape.
 
 **Parameters:**
 
-- \_mapping. See the Spoon plugin documentation for the implementation.
+- `_mapping` - see the Spoon plugin documentation for the implementation.
 
 ### StatusBar.spoon
 
 Enables a status menu item with the familiar Hammerspoon logo, but with customizable contents and a flashing mode to signal ongoing operations.
-**Documentation underway**
 
 ### VolumeControl.spoon
 
@@ -269,7 +256,6 @@ Clicks on the "volume" status bar item to reveal its volume slider, and enters a
 #### VolumeControl:start()
 
 _Method_
-
 Activates the modules and enters the modal. The following hotkeys/functionalities are available:
 
 - →: increase volume by a level.
@@ -287,7 +273,6 @@ Respond to changes in the current Wi-Fi network.
 #### WifiWatcher:userCallback()
 
 _Method_
-
 A callback to run when the Wi-Fi changes.
 
 **Returns:**
@@ -297,7 +282,6 @@ A callback to run when the Wi-Fi changes.
 #### WifiWatcher:start()
 
 _Method_
-
 Starts the Wi-Fi watcher.
 
 **Returns:**
@@ -307,7 +291,6 @@ Starts the Wi-Fi watcher.
 #### WifiWatcher:stop()
 
 _Method_
-
 Stops the Wi-Fi watcher.
 
 **Returns:**
@@ -325,7 +308,6 @@ _Method_
 #### WifiWatcher:toggle()
 
 _Method_
-
 Toggles the watcher.
 
 **Returns:**
@@ -335,20 +317,24 @@ Toggles the watcher.
 ### WindowManager.spoon
 
 Moves and resizes windows.
+Features:
+
+- Every window can be resized to be a quarter, half or the whole of the screen.
+- Every window can be positioned anywhere on the screen, WITHIN the constraints of a grid. The grids are 1x1, 2x2 and 4x4 for maximized, half-sized and quarter-sized windows, respectively.
+- Any given window can be cycled through all sizes and locations with just 4 keys. For example: northwest quarter → northeast quarter → right half ↓ southeast quarter ↓ bottom half ↓ full-screen.
 
 #### WindowManager:bindHotKeys(\_mapping)
 
 _Method_
-
 This module offers the following functionalities:
 
-- maximize - maximizes the frontmost window. If it's already maximized, it will be centered and resized to be a quarter of the screen.
-- pushLeft - moves and/or resizes a window towards the left of the screen.
-- pushRight - moves and/or resizes a window towards the right of the screen.
-- pushDown - moves and/or resizes a window towards the bottom of the screen.
-- pushUp - moves and/or resizes a window towards the top of the screen.
-- pushLeft - moves and/or resizes a window towards the left of the screen.
-- center - centers the frontmost window.
+- `maximize` - maximizes the frontmost window. If it's already maximized, it will be centered and resized to be a quarter of the screen.
+- `pushLeft` - moves and/or resizes a window towards the left of the screen.
+- `pushRight` - moves and/or resizes a window towards the right of the screen.
+- `pushDown` - moves and/or resizes a window towards the bottom of the screen.
+- `pushUp` - moves and/or resizes a window towards the top of the screen.
+- `pushLeft` - moves and/or resizes a window towards the left of the screen.
+- `center` - centers the frontmost window.
 
 **Parameters:**
 
@@ -357,76 +343,89 @@ This module offers the following functionalities:
 ### WindowManagerModal.spoon
 
 Enables modal hotkeys that allow for more granular control over the size and position of the frontmost window. Shows a small window that serves as a cheat sheet.
-**Documentation underway**
 
 ### \_1Password7.spoon
 
 1Password automations.
-**Documentation underway**
 
 ### \_ActivityMonitor.spoon
 
 Activity Monitor.app automations.
-**Documentation underway**
 
 ### \_AdobeIllustrator.spoon
 
 Adobe Illustrator automations.
-**Documentation underway**
 
 ### \_AdobeInDesign.spoon
 
 Adobe InDesign automations.
-**Documentation underway**
 
 ### \_AppStore.spoon
 
 AppStore automations.
-**Documentation underway**
 
 ### \_Dash.spoon
 
 Dash (version 5 of later) automations.
-**Documentation underway**
 
 ### \_Finder.spoon
 
 Finder automations.
-**Documentation underway**
+
+#### \_Finder:bindModalHotkeys(hotkeysTable)
+
+_Method_
+
+**Parameters:**
+
+- `hotkeysTable` - A table of key value pairs. The hotkeys to be toggled when the target app activates.
+  - Each value is a table (as per the `hs.hotkey.bind` constructor) defining the hotkey of choice.
+  - Each key is the name of the function to be executed by the hotkey.
+  - No hotkeys are bound by default. Leave as is to disable.
+
+This module offers the following functionalities:
+
+- `browseInLaunchBar` - shows files of the current folder in LaunchBar. Requires my [LaunchBar actions](https://github.com/roeybiran/launchbar-actions).
+- `focusMainArea` - focuses on Finder's main area - the files area.
+- `newWindow` - ensure a new window is opened rather than a tab. Relevant when the "Prefer tabs" is set to "Always" in the Dock preference pane.
+- `undoCloseTab` - undo the closing of the last tab. Requires Default Folder X.
+- `moveFocusToFilesAreaIfInSearchMode` - while in search view and the search field is focused, moves focus to the first result/file.
+- `showOriginalFile` - show the origin of an alias/symlink.
+- `openInNewTab` - opens the selected folder in a new tab.
+- `openPackage` - browses the inside of a package/bundle, rather than opens it.
+- `rightSizeColumnAllColumns` - in columns view, right sizes all columns.
+- `rightSizeColumnThisColumn` - in columns view, right sizes the active/selected column. In list view, right sizes the first column.
 
 ### \_Hammerspoon.spoon
 
 Hammerspoon (console) automations
-**Documentation underway**
 
 ### \_Mail.spoon
 
 Mail.app automations.
-**Documentation underway**
 
 ### \_Messages.spoon
 
 Messages.app automations.
-**Documentation underway**
 
 ### \_Notes.spoon
 
 Notes.app automations.
-**Documentation underway**
 
 ### \_Safari.spoon
 
 Safari automations.
 
-#### \_Safari.modalHotkeys
+#### \_Safari:bindModalHotkeys(hotkeysTable)
 
-_Variable_
+_Method_
 
-A table of key value pairs. The hotkeys to be toggled when the target app activates.
+**Parameters:**
 
-- Each value is a table (as per the `hs.hotkey.bind` constructor) defining the hotkey of choice.
-- Each key is the name of the function to be executed by the hotkey.
-- No hotkeys are bound by default. Leave as is to disable a functionality.
+- `hotkeysTable` - A table of key value pairs. The hotkeys to be toggled when the target app activates.
+  - Each value is a table (as per the `hs.hotkey.bind` constructor) defining the hotkey of choice.
+  - Each key is the name of the function to be executed by the hotkey.
+  - No hotkeys are bound by default. Leave as is to disable.
 
 This module offers the following functionalities:
 
@@ -448,7 +447,3 @@ This module offers the following functionalities:
 
 - Organize dependencies in Spoons.
 - Documentation and API for the app-specific Spoons.
-
-## Acknowledgements
-
-- [KSheet.spoon, by dharmapoudel](https://github.com/dharmapoudel)

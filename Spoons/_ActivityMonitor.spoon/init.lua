@@ -1,4 +1,5 @@
 --- === ActivityMonitor ===
+---
 --- Activity Monitor.app automations.
 
 local Hotkey = require("hs.hotkey")

@@ -1,4 +1,5 @@
 --- === StatusBar ===
+---
 --- Enables a status menu item with the familiar Hammerspoon logo, but with customizable contents and a flashing mode to signal ongoing operations.
 
 local HSApplication = require("hs.application")

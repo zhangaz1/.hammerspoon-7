@@ -1,4 +1,5 @@
 --- === VolumeControl ===
+---
 --- Clicks on the "volume" status bar item to reveal its volume slider, and enters a modal that allows to control the slider with the arrow keys.
 local Application = require("hs.application")
 local Hotkey = require("hs.hotkey")
@@ -31,6 +32,7 @@ local function modifyVolume(direction, withRepeat)
 end
 
 --- VolumeControl:start()
+---
 --- Method
 --- Activates the modules and enters the  modal. The following hotkeys/functionalities are available:
 ---   * →: increase volume by a level.
@@ -40,6 +42,7 @@ end
 ---   * ⌥→: set volume to 100.
 ---   * ⌥←: set volume to 0.
 ---   * escape: close the volume menu and exit the modal (the modal will be exited anyway as soon as the volume menu is closed).
+---
 function obj:start()
     local app = Application("com.apple.systemuiserver")
     local axApp = AX.applicationElement(app)

@@ -1,5 +1,7 @@
 --- === Finder ===
+---
 --- Finder automations.
+---
 local eventtap = require("hs.eventtap")
 local geometry = require("hs.geometry")
 local osascript = require("hs.osascript")
@@ -10,6 +12,7 @@ local Util = require("rb.util")
 local GlobalChooser = require("rb.fuzzychooser")
 local FNUtils = require("hs.fnutils")
 local Hotkey = require("hs.hotkey")
+local hs = hs
 local next = next
 
 local obj = {}
@@ -257,35 +260,71 @@ local function clickHistoryToolbarItem(appObj, backOrForward)
                   {{"AXToolbar", 1}, {"AXGroup", 1}, {"AXGroup", 1}, {"AXButton", button}}):performAction("AXShowMenu")
 end
 
-local hotkeys = {
-  {"alt", "f", function() browseInLaunchBar() end},
-  {"alt", "2", function() focusMainArea(_appObj) end},
-  {"cmd", "n", function() newWindow(_modal) end},
-  {{"shift", "cmd"}, "t", function() undoCloseTab() end},
-  {{}, "tab", function() moveFocusToFilesAreaIfInSearchMode(_appObj, _modal) end},
-  -- TODO: remove?
-  {{"shift", "cmd"}, "up", function() _appObj:selectMenuItem({"File", "Show Original"}) end},
-  {{"shift", "cmd"}, "down", function() _appObj:selectMenuItem({"File", "Open in New Tab"}) end},
-  {"alt", "o", function() openPackage() end},
-  {{"alt", "shift"}, "r", function() rightSizeColumn(_appObj, "all") end},
-  {"alt", "r", function() rightSizeColumn(_appObj, "this") end}
+local functions = {
+  browseInLaunchBar = function() browseInLaunchBar() end,
+  focusMainArea = function() focusMainArea(_appObj) end,
+  newWindow = function() newWindow(_modal) end,
+  undoCloseTab = function() undoCloseTab() end,
+  moveFocusToFilesAreaIfInSearchMode = function() moveFocusToFilesAreaIfInSearchMode(_appObj, _modal) end,
+  showOriginalFile = function() _appObj:selectMenuItem({"File", "Show Original"}) end,
+  openInNewTab = function() _appObj:selectMenuItem({"File", "Open in New Tab"}) end,
+  openPackage = function() openPackage() end,
+  rightSizeColumnAllColumns = function() rightSizeColumn(_appObj, "all") end,
+  rightSizeColumnThisColumn = function() rightSizeColumn(_appObj, "this") end
 }
+
+--- _Finder:bindModalHotkeys(hotkeysTable)
+---
+--- Method
+---
+--- Parameters:
+---
+--- * `hotkeysTable` - A table of key value pairs. The hotkeys to be toggled when the target app activates.
+---   * Each value is a table (as per the `hs.hotkey.bind` constructor) defining the hotkey of choice.
+---   * Each key is the name of the function to be executed by the hotkey.
+---   * No hotkeys are bound by default. Leave as is to disable.
+---
+--- This module offers the following functionalities:
+---
+--- * `browseInLaunchBar` - shows files of the current folder in LaunchBar. Requires my [LaunchBar actions](https://github.com/roeybiran/launchbar-actions).
+--- * `focusMainArea` - focuses on Finder's main area - the files area.
+--- * `newWindow` - ensure a new window is opened rather than a tab. Relevant when the "Prefer tabs" is set to "Always" in the Dock preference pane.
+--- * `undoCloseTab` - undo the closing of the last tab. Requires Default Folder X.
+--- * `moveFocusToFilesAreaIfInSearchMode` - while in search view and the search field is focused, moves focus to the first result/file.
+--- * `showOriginalFile` - show the origin of an alias/symlink.
+--- * `openInNewTab` - opens the selected folder in a new tab.
+--- * `openPackage` - browses the inside of a package/bundle, rather than opens it.
+--- * `rightSizeColumnAllColumns` - in columns view, right sizes all columns.
+--- * `rightSizeColumnThisColumn` - in columns view, right sizes the active/selected column. In list view, right sizes the first column.
+---
+function obj:bindModalHotkeys(hotkeysTable)
+  for k, v in pairs(functions) do
+    if hotkeysTable[k] then
+      -- print(hs.inspect(v))
+      local mods, key = table.unpack(hotkeysTable[k])
+      _modal:bind(mods, key, v)
+    end
+  end
+  return self
+end
 
 function obj:start(appObj)
   _appObj = appObj
   _modal:enter()
+  return self
 end
 
-function obj:stop() _modal:exit() end
+function obj:stop()
+  _modal:exit()
+  return self
+end
 
 function obj:init()
   if not obj.bundleID then
     hs.showError("bundle indetifier for app spoon is nil")
   end
   _modal = Hotkey.modal.new()
-  for _, v in ipairs(hotkeys) do
-    _modal:bind(table.unpack(v))
-  end
+  return self
 end
 
 return obj
