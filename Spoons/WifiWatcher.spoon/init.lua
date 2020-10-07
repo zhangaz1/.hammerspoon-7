@@ -23,6 +23,7 @@ local wifiWatcher = nil
 --- WifiWatcher:userCallback()
 ---
 --- Method
+---
 --- A callback to run when the Wi-Fi changes.
 ---
 --- Returns:
@@ -56,6 +57,7 @@ end
 --- WifiWatcher:start()
 ---
 --- Method
+---
 --- Starts the Wi-Fi watcher.
 ---
 --- Returns:
@@ -72,6 +74,7 @@ end
 --- WifiWatcher:stop()
 ---
 --- Method
+---
 --- Stops the Wi-Fi watcher.
 ---
 --- Returns:
@@ -99,6 +102,7 @@ end
 --- WifiWatcher:toggle()
 ---
 --- Method
+---
 --- Toggles the watcher.
 ---
 --- Returns:

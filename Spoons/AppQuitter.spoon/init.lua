@@ -52,12 +52,13 @@ end
 --- AppQuitter:update(event, bundleID)
 ---
 --- Method
+---
 --- Updates the module's timers.
 ---
 --- Parameters:
 ---
----  * event - A string, one of the `hs.application.watcher` event constants.
----  * bundleID - A string, the bundle identifier of event-triggering app.
+---  * `event` - A string, one of the `hs.application.watcher` event constants.
+---  * `bundleID` - A string, the bundle identifier of event-triggering app.
 ---
 function obj:update(event, bundleID)
   -- bail out if app is blacklisted
@@ -70,12 +71,13 @@ end
 --- AppQuitter:start([rules])
 ---
 --- Method
+---
 --- Sets up and starts the module. Begins the tracking of running dock apps,
 --- or resumes tracking of a given app if its timer is already running.
 ---
 --- Parameters:
 ---
---- * rules - a table that defines inactivity periods after which an app will hide/quit. Each element must be one of 2 forms:
+--- * `rules` - a table that defines inactivity periods after which an app will hide/quit. Each element must be one of 2 forms:
 ---     * a key value pair. Each key should equal to the bundle identifier string of the app you wish to set rules for.
 ---       * Each value must be a table containing exactly 2 key value pairs: (1) The keys, which are strings, should be named "quit" and "hide".
 ---       * The values for each keys are integers, and they should correspond to the period (in hours) of inactivity before an action takes place.

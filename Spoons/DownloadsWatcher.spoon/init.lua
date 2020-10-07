@@ -95,6 +95,7 @@ end
 --- DownloadsWatcher:stop()
 ---
 --- Method
+---
 --- Stops the module.
 ---
 function obj:stop()
@@ -105,6 +106,7 @@ end
 --- DownloadsWatcher:start()
 ---
 --- Method
+---
 --- Starts the module.
 ---
 function obj:start()

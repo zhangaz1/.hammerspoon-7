@@ -34,6 +34,7 @@ end
 --- VolumeControl:start()
 ---
 --- Method
+---
 --- Activates the modules and enters the  modal. The following hotkeys/functionalities are available:
 ---   * →: increase volume by a level.
 ---   * ←: decrease volume by a level.

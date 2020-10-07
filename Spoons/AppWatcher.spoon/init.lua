@@ -70,6 +70,7 @@ obj.transientApps = {
 --- AppWatcher.stop()
 ---
 --- Method
+---
 --- Stops the module.
 ---
 function obj:stop()
@@ -81,6 +82,7 @@ end
 --- AppWatcher:start()
 ---
 --- Method
+---
 --- Starts the module.
 ---
 function obj:start()

@@ -52,11 +52,12 @@ end
 --- KeyboardLayoutManager:setInputSource(bundleid)
 ---
 --- Method
+---
 --- Switch to an app's last used keyboard layout. Typically, called in an app watcher callback for the activated app.
 ---
 --- Parameters:
 ---
----  * bundleid - a string, the bundle identifier of the app.
+---  * `bundleid` - a string, the bundle identifier of the app.
 ---
 function obj:setInputSource(bundleid)
     -- default to abc if no saved setting
@@ -78,11 +79,12 @@ end
 --- KeyboardLayoutManager:bindHotkeys(mapping)
 ---
 --- Method
+---
 --- Binds hotkeys for this module
 ---
 --- Parameters:
 ---
----  * mapping - A table containing hotkey modifier/key details for the following items:
+---  * `mapping` - A table containing hotkey modifier/key details for the following items:
 ---   * `toggleInputSource` - switch between the "Hebrew" and "ABC" layouts.
 ---
 function obj:bindHotKeys(_mapping)

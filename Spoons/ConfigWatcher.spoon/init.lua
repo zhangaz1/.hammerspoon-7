@@ -38,6 +38,7 @@ end
 --- ConfigWatcher.toggle()
 ---
 --- Method
+---
 --- Toggles the module.
 ---
 function obj.toggle()
@@ -51,6 +52,7 @@ end
 --- ConfigWatcher.stop()
 ---
 --- Method
+---
 --- Stops the module.
 ---
 function obj.stop()
@@ -62,6 +64,7 @@ end
 --- ConfigWatcher.start()
 ---
 --- Method
+---
 --- Starts the module.
 ---
 function obj.start()

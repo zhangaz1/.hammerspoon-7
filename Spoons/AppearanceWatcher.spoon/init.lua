@@ -62,6 +62,7 @@ end
 --- AppearanceWatcher:stop()
 ---
 --- Method
+---
 --- Stops this module.
 ---
 function obj.stop()
@@ -73,6 +74,7 @@ end
 --- AppearanceWatcher:start()
 ---
 --- Method
+---
 --- starts this module.
 ---
 function obj.start()
@@ -87,6 +89,7 @@ end
 --- AppearanceWatcher:toggle()
 ---
 --- Method
+---
 --- Toggles this module.
 ---
 function obj.toggle()
@@ -100,6 +103,7 @@ end
 --- AppearanceWatcher:isActive()
 ---
 --- Method
+---
 --- Determines whether module is active.
 ---
 --- Returns:

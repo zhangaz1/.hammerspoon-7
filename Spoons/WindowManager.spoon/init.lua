@@ -128,6 +128,7 @@ local function center() Window.frontmostWindow():centerOnScreen() end
 --- WindowManager:bindHotKeys(_mapping)
 ---
 --- Method
+---
 --- This module offers the following functionalities:
 ---   * `maximize` - maximizes the frontmost window. If it's already maximized, it will be centered and resized to be a quarter of the screen.
 ---   * `pushLeft` - moves and/or resizes a window towards the left of the screen.
@@ -139,7 +140,7 @@ local function center() Window.frontmostWindow():centerOnScreen() end
 ---
 --- Parameters:
 ---
----   * _mapping - A table that conforms to the structure described in the Spoon plugin documentation.
+---   * `_mapping` - A table that conforms to the structure described in the Spoon plugin documentation.
 ---
 function obj:bindHotKeys(_mapping)
     local def = {

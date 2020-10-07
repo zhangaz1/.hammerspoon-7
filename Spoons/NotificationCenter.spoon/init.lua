@@ -98,6 +98,7 @@ end
 --- NotificationCenter:bindHotkeys(_mapping)
 ---
 --- Method
+---
 --- Bind hotkeys for this module. The `_mapping` table keys correspond to the following functionalities:
 --- * `firstButton` - clicks on the first (or only) button of a notification center banner. If banners are configured through system preferences to be transient, a mouse move operation will be performed first to try and reveal the button, should it exists.
 --- * `secondButton` - clicks on the second button of a notification center banner. If banners are configured through system preferences to be transient, a mouse move operation will be performed first to try and reveal the button, should it exists. If the button is in fact a menu button (that is, it offers a dropdown of additional options), revealing the menu will be favored over a simple click.

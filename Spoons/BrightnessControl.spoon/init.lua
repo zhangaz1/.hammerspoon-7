@@ -32,6 +32,7 @@ end
 --- BrightnessControl:start()
 ---
 --- Method
+---
 --- Starts the module.
 ---
 function obj.start()
@@ -41,6 +42,7 @@ end
 --- BrightnessControl:stop()
 ---
 --- Method
+---
 --- Stops the module. Bound to the escape and return keys.
 ---
 function obj.stop()
