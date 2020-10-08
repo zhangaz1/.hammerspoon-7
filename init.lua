@@ -181,3 +181,43 @@ spoon.NotificationCenter:bindHotKeys({
   toggle = {hyper, "n"}
 })
 spoon.StatusBar:start()
+
+-- "ActionEditor"
+-- pane1
+-- pane2
+-- "Contacts"
+-- contactAction1
+-- contactAction2
+-- contactAction3
+-- contactAction4
+-- "Dictionary"
+-- pane1
+-- pane2
+-- newWindow
+-- "FontBook"
+-- pane1
+-- pane2
+-- pane3
+-- "Chrome"
+-- closeOtherTabs
+-- "Keynote"
+-- pane1
+-- pane2
+-- "Music"
+-- pane1
+-- pane2
+-- focusFilterField
+-- "Photos"
+-- pane1
+-- pane2
+-- "Preview"
+-- pane1
+-- pane2
+-- "Reminders"
+-- pane1
+-- pane2
+-- "Script Debugger"
+-- pane1
+-- pane2
+-- "WhatsApp"
+--  switchToABCOnSearch
