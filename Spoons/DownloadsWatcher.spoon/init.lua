@@ -2,6 +2,7 @@
 ---
 --- Monitor the ~/Downloads folder, and execute a shell script that accepts newly downloaded files as arguments.
 --- The script can be found in the Spoon's folder.
+---
 local PathWatcher = require("hs.pathwatcher")
 local Task = require("hs.task")
 local FS = require("hs.fs")
